@@ -1,0 +1,74 @@
+\chapter{Methodology}\label{chapter:methodology}
+\section*{Methodology}
+
+% -- your framing paragraph, minus the graph-edit-distance citation --
+% content: "This work proposes a structure-aware RAG framework..." through
+% "...identify the lines that introduce security breaches."
+
+\subsection*{Architecture}
+% content: KB + agentic framework description, Patcher Agent / Vulnerability Verifier Agent bullets, figure
+This project builds a structure-aware retrieval system for vulnerability fixes:
+
+Load vulnerable vs fixed code pairs.
+Build a vulnerability-focused graph per pair.
+Embed those graphs into vectors.
+Index vectors in FAISS.
+Retrieve nearest historical fixes for new queries.
+Optionally generate patches with an LLM.
+Evaluate retrieval and patch quality.
+
+
+Where each stage lives:
+Entry CLI orchestration: main.py
+Config and active dataset/embedder selection: config.yaml
+Dataset loading and registry: \_\_init\_\_.py
+CVEfixes pinned-file dataset variant: cvefixes\_file.py
+Split logic (including precomputed splits): split.py
+Index build pipeline: indexing.py
+FAISS wrapper and metadata persistence: faiss\_index.py
+Query batch retrieval: query.py
+Retriever search call: retriever.py
+Embedders registry: \_\_init\_\_.py
+Combined embedder + PCA behavior: combined.py
+Patching experiment runner used by sweep: run\_embedding\_sweep.py
+Evaluation entrypoint: \_\_main\_\_.py
+
+\subsection*{Data Pipeline}
+
+\subsection*{Graph Generation}
+% content: Joern pipeline as-is
+
+\subsection*{Graph Loading}
+% content: NetworkX MultiDiGraph import, cleanups
+
+\subsection*{Graph Sampling}
+\paragraph{Bounded slicing}
+\paragraph{Semantic difference}
+% content: node labeling + weight table, as-is
+
+\subsection*{Embedders}
+% content ONLY: your config choices --
+% - 128-dim, L2-normalized, configurable PCA (shared preamble)
+% - "Combined" embedder: concatenation (384d) + PCA reduction, robustness rationale
+% - CodeBERT (seq) variant: your pipeline diagram/config
+% - CodeBERT (pat) variant: your pipeline diagram/config
+% (general NetLSD/WL/GIN explanations moved to Literature Review above)
+
+\subsection*{Agent Architecture}
+% content: kept whole, as-is --
+\paragraph{Agent roles.}
+\paragraph{Structure-aware prompt construction.}
+\paragraph{Patching architectures (experimental axis).}
+\paragraph{Structure-aware tooling.}
+\paragraph{Backend abstraction.}
+\paragraph{Versioned prompts.}
+\paragraph{Reproducibility and cost tracking.}
+
+\subsection*{Evaluation}
+% content: merge the two overlapping metric lists into one
+% e.g. group as Retrieval Metrics / Patching Metrics / System Metrics
+% - hit@k, MRR, CWE Recall, Effective dimensionality
+% - Patch vulnerability verification (loop counts)
+% - Efficiency (tokens + USD cost)
+% - Patch Quality (qualitative, security specialists)
+% - Storage complexity
