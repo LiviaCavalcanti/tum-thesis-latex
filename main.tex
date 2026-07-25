@@ -4,6 +4,14 @@
 %\documentclass[headsepline,footsepline,footinclude=false,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc,BCOR=12mm,DIV=12]{scrbook} % two-sided
 \documentclass[headsepline,footsepline,footinclude=false,oneside,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc]{scrbook} % one-sided
 
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,calc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[most]{tcolorbox}
+
 % TODO: change citation style in settings
 \input{settings}
 
@@ -43,7 +51,6 @@
 \input{chapters/03_dataset}
 \input{chapters/04_methodology}
 \input{chapters/05_results}
-
 \appendix{}
 
 \microtypesetup{protrusion=false}
