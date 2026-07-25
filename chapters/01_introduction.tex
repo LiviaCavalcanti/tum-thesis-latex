@@ -4,87 +4,128 @@
 \chapter{Introduction}\label{chapter:introduction}
 
 \section{Section}
-Citation test~\parencite{latex}.
+% Citation test~\parencite{latex}.
+\section{Research Background}
+To meet compliance requirements, organizations must adhere to International Standards and regulations such as ISO/IEC 27001 ~\cite{iso27001}. 
+This standard establishes best practices for data protection, cyber-resilience, and operational excellence. 
+To accomplish that and improve development robustness, enterprises must anticipate and adapt to vulnerabilities and potential attacks. 
+For software companies, this goal demands evolving software development life cycles to rapidly identify, generate, and deploy risk mitigation for vulnerabilities. 
+One possible approach is to integrate automated systems that proactively generate patches for buggy programs. 
 
-\subsection{Subsection}
+With the advent and widespread adoption of Large Language Models (LLMs), a new venue for automated remediation emerged ~\cite{Xia_2024}. 
+However, the current LLM approaches remain insufficient for security patching due to two primary failure reasons:
 
-See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot}, \autoref{fig:sample-listing}.
+% \begin{enumerate}[leftmargin=*, label=\arabic*.]
 
-\begin{table}[htpb]
-  \caption[Example table]{An example for a simple table.}\label{tab:sample}
-  \centering
-  \begin{tabular}{l l l l}
-    \toprule
-      A & B & C & D \\
-    \midrule
-      1 & 2 & 1 & 2 \\
-      2 & 3 & 2 & 3 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+%     \item \textbf{Semantic Misunderstanding:} 84–94\% of AI patches rely on localized fixes that fail to address root causes, making them significantly more fragile and easier to bypass than human-authored patches \cite{mahmud2025systematic}.
 
-\begin{figure}[htpb]
-  \centering
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}[node distance=3cm]
-    \node (R0) {$R_1$};
-    \node (R1) [right of=R0] {$R_2$};
-    \node (R2) [below of=R1] {$R_4$};
-    \node (R3) [below of=R0] {$R_3$};
-    \node (R4) [right of=R1] {$R_5$};
+%     \item \textbf{Vulnerability Identification Failures:} Models frequently misidentify vulnerability contexts, with some retrieval tasks showing failure rates as high as 91.6\% \cite{McClanahan2024Meets}. 
+%     This leads to "semantic hallucinations", where a model might apply mitigation steps for the wrong operating system \cite{McClanahan2024Meets} or package version \cite{zemicheal2024llm}, creating a false sense of security while leaving the actual system exposed.
 
-    \path[every node]
-      (R0) edge (R1)
-      (R0) edge (R3)
-      (R3) edge (R2)
-      (R2) edge (R1)
-      (R1) edge (R4);
-  \end{tikzpicture}
-  \caption[Example drawing]{An example for a simple drawing.}\label{fig:sample-drawing}
-\end{figure}
+% \end{enumerate}
 
-\begin{figure}[htpb]
-  \centering
+\subsection{Problem Statement}
+These failures are aggravated by providing lengthy raw source code to the LLM. 
+In these cases, vulnerability-relevant logic is diluted by implementation details and boilerplate code, thereby degrading the quality of security analysis ~\cite{contextenhancedYang}.
+Empirical results from the same work suggest that this code noise induces what the authors term Analysis Focus Drift, wherein the model performs a code quality review rather than a vulnerability analysis.
+Thus, there is an opportunity to develop methodologies that enrich security-relevant information while filtering out implementation noise. 
+Moreover, although various studies show that knowledge bases improve LLM responses in security applications ~\cite{du2025vulragenhancingllmbasedvulnerability, seo2026autopatch, wang2025valign, guo2025bluecodeagentblueteamingagent}, it is unclear which approach optimizes patch quality effectively in multi-agent environments.
 
-  \pgfplotstableset{col sep=&, row sep=\\}
-  % This should probably go into a file in data/
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1000 \\
-    2 & 1500 \\
-    3 & 1600 \\
-  }\exampleA
-  \pgfplotstableread{
-    a & b    \\
-    1 & 1200 \\
-    2 & 800 \\
-    3 & 1400 \\
-  }\exampleB
-  % This should probably go into a file in figures/
-  \begin{tikzpicture}
-    \begin{axis}[
-        ymin=0,
-        legend style={legend pos=south east},
-        grid,
-        thick,
-        ylabel=Y,
-        xlabel=X
-      ]
-      \addplot table[x=a, y=b]{\exampleA};
-      \addlegendentry{Example A};
-      \addplot table[x=a, y=b]{\exampleB};
-      \addlegendentry{Example B};
-    \end{axis}
-  \end{tikzpicture}
-  \caption[Example plot]{An example for a simple plot.}\label{fig:sample-plot}
-\end{figure}
+\subsection{Research Objectives}
 
-\begin{figure}[htpb]
-  \centering
-  \begin{tabular}{c}
-  \begin{lstlisting}[language=SQL]
-    SELECT * FROM tbl WHERE tbl.str = "str"
-  \end{lstlisting}
-  \end{tabular}
-  \caption[Example listing]{An example for a source code listing.}\label{fig:sample-listing}
-\end{figure}
+To evaluate the proposed framework, we address two primary research questions:
+ 
+\textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
+ 
+\textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
+
+If within reach, we aim to also address the following complementary research questions:
+ 
+\textbf{CRQ1: }How does the structure-aware RAG framework with a small model compare with existing approaches (e.g., zero-shot small models and AutoPatch)?
+
+\textbf{CRQ2: }What is the computational and financial cost of the approach (e.g., token usage, storage complexity and size, end-to-end pipeline costs)? 
+
+
+
+% \subsection{Subsection}
+
+% See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot}, \autoref{fig:sample-listing}.
+
+% \begin{table}[htpb]
+%   \caption[Example table]{An example for a simple table.}\label{tab:sample}
+%   \centering
+%   \begin{tabular}{l l l l}
+%     \toprule
+%       A & B & C & D \\
+%     \midrule
+%       1 & 2 & 1 & 2 \\
+%       2 & 3 & 2 & 3 \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+% \begin{figure}[htpb]
+%   \centering
+%   % This should probably go into a file in figures/
+%   \begin{tikzpicture}[node distance=3cm]
+%     \node (R0) {$R_1$};
+%     \node (R1) [right of=R0] {$R_2$};
+%     \node (R2) [below of=R1] {$R_4$};
+%     \node (R3) [below of=R0] {$R_3$};
+%     \node (R4) [right of=R1] {$R_5$};
+
+%     \path[every node]
+%       (R0) edge (R1)
+%       (R0) edge (R3)
+%       (R3) edge (R2)
+%       (R2) edge (R1)
+%       (R1) edge (R4);
+%   \end{tikzpicture}
+%   \caption[Example drawing]{An example for a simple drawing.}\label{fig:sample-drawing}
+% \end{figure}
+
+% \begin{figure}[htpb]
+%   \centering
+
+%   \pgfplotstableset{col sep=&, row sep=\\}
+%   % This should probably go into a file in data/
+%   \pgfplotstableread{
+%     a & b    \\
+%     1 & 1000 \\
+%     2 & 1500 \\
+%     3 & 1600 \\
+%   }\exampleA
+%   \pgfplotstableread{
+%     a & b    \\
+%     1 & 1200 \\
+%     2 & 800 \\
+%     3 & 1400 \\
+%   }\exampleB
+%   % This should probably go into a file in figures/
+%   \begin{tikzpicture}
+%     \begin{axis}[
+%         ymin=0,
+%         legend style={legend pos=south east},
+%         grid,
+%         thick,
+%         ylabel=Y,
+%         xlabel=X
+%       ]
+%       \addplot table[x=a, y=b]{\exampleA};
+%       \addlegendentry{Example A};
+%       \addplot table[x=a, y=b]{\exampleB};
+%       \addlegendentry{Example B};
+%     \end{axis}
+%   \end{tikzpicture}
+%   \caption[Example plot]{An example for a simple plot.}\label{fig:sample-plot}
+% \end{figure}
+
+% \begin{figure}[htpb]
+%   \centering
+%   \begin{tabular}{c}
+%   \begin{lstlisting}[language=SQL]
+%     SELECT * FROM tbl WHERE tbl.str = "str"
+%   \end{lstlisting}
+%   \end{tabular}
+%   \caption[Example listing]{An example for a source code listing.}\label{fig:sample-listing}
+% \end{figure}
