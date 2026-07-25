@@ -1,3 +1,109 @@
+
+% \usepackage[backend=biber, style=numeric, sorting=none, maxnames=3, minnames=1]{biblatex}
+% \addbibresource{references.bib}
+
+% ── Palette (matching presentation) ──────────────────────────────────
+\definecolor{ccode}{RGB}{239, 68, 68}
+\definecolor{ccpg}{RGB}{59, 130, 246}
+\definecolor{csub}{RGB}{16, 185, 129}
+\definecolor{cemb}{RGB}{168, 85, 247}
+\definecolor{ckb}{RGB}{245, 158, 11}
+\definecolor{crank}{RGB}{236, 72, 153}
+\definecolor{notecol}{RGB}{100, 116, 139}
+\definecolor{shadowcol}{RGB}{101, 67, 33}
+\definecolor{slidebg}{RGB}{248, 250, 252}
+
+\definecolor{c1}{RGB}{41,128,185}
+\definecolor{c2}{RGB}{52,152,219}
+\definecolor{c3}{RGB}{155,89,182}
+\definecolor{c4}{RGB}{142,68,173}
+\definecolor{c5}{RGB}{230,126,34}
+\definecolor{c6}{RGB}{211,84,0}
+% \definecolor{banana}{RGB}{253, 231, 76} 
+% \definecolor{strongcyan}{RGB}{78, 205, 196}
+% \definecolor{spaceindigo}{RGB}{195, 195, 230}
+% \definecolor{powderblush}{RGB}{247, 177, 171}
+\definecolor{c7}{RGB}{63,81,181}
+\definecolor{c8}{RGB}{0,128,128}
+\definecolor{c9}{RGB}{219,39,119}
+\definecolor{hit}{RGB}{39,174,96}
+\definecolor{miss}{RGB}{192,57,43}
+\definecolor{warn}{RGB}{243,156,18}
+
+\tikzset{
+    % Cylinder style for databases
+    cylinder/.style = {
+        shape=cylinder,
+        cylinder body fill=ckb!25,
+        cylinder end fill=ckb!35,
+        draw=ckb!60,
+        line width=1.5pt,
+        shape aspect=0.6,
+        minimum width=2cm,
+        minimum height=1.5cm,
+        shape border rotate=90
+    },
+    % Folded box style for processing
+    foldedbox/.style = {
+        rectangle,
+        rounded corners=4pt,
+        % draw=gray,
+        line width=1.5pt,
+        minimum width=2.2cm,
+        minimum height=0.9cm,
+        align=center,
+        % font=\ttfamily\footnotesize,
+        font=\sffamily\scriptsize,
+        text=black!60,
+        path picture={
+            \draw[line width=1pt] 
+            ([shift={(3pt,-3pt)}]path picture bounding box.north east) 
+            -- (path picture bounding box.north east) 
+            -- ([shift={(3pt,-3pt)}]path picture bounding box.north east);
+        }
+    },
+    % Input box style (vulnerable - red)
+    inputbox/.style = {
+        foldedbox,
+        fill=ccode!15,
+        draw=ccode!50
+    },
+    % Input box style (patched - blue)
+    patchbox/.style = {
+        foldedbox,
+        fill=ccpg!15,
+        draw=ccpg!50
+    },
+    % Process box style (purple)
+    processbox/.style = {
+        foldedbox,
+        fill=cemb!12,
+        draw=cemb!50
+    },
+    % Output box style (green)
+    outputbox/.style = {
+        foldedbox,
+        fill=csub!15,
+        draw=csub!50
+    },
+    % Dashed grouping box
+    groupbox/.style = {
+        rectangle,
+        draw=notecol,
+        dashed,
+        line width=1.5pt,
+        rounded corners=8pt,
+        inner sep=15pt
+    },
+    % Arrow style
+    arrow/.style = {
+        ->,
+        >= Stealth,
+        line width=1pt,
+        draw=black!70
+    }
+}
+
 \chapter{Methodology}\label{chapter:methodology}
 \section*{Methodology}
 
@@ -40,9 +146,157 @@ Evaluation entrypoint: \_\_main\_\_.py
 
 \subsection*{Graph Loading}
 % content: NetworkX MultiDiGraph import, cleanups
+This work utilizes Joern to generate the Code Property Graph (CPG) from a code snippet. 
+For snippets that are not well-formed C/C++ programs, the pipeline first wraps the code with the minimum necessary macros and type definitions (e.g. \ \verb|typedef unsigned int u32|, \verb|#define NULL ((void*)0)|) and writes a parseable source file.
+The C/C++ code files are exported to a binary graph  with the Joern shell command \verb|joern-parse --language newc|, where \verb|newc| specifies the C++ specifities avoiding will-formed graphs.  
+Then, the compiled graph is exported to GraphML format with the shell-command \verb|joern-export --repr cpg --format graphml|. 
+Each export generates a directory tree where each subdirectory contains an \verb|export.xml| file with a subgraph of the the whole CPG. 
+The nodes can have different labels (e.g.\ \verb|CALL|, \verb|IDENTIFIER|, \verb|CONTROL_STRUCTURE|), whereas the edges can belong to one of the following graph representation: 
+Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG), and Program Dependency Graph (PDG). % TODO: define these graphs
+% The output is grouped into folders. The <empthy> folder contains the symbols that are inate of the language.
+% For each operator we have subfolders. Each folder contains a export.xml file with the actual graph. 
+% The <includes> folder contains the imports definitions. Then we have the folder named after the C file that also contains an export.xml file. 
+% It main import nodes from the others folders. 
+
+The pipeline generates both \textit{vulnerable} and \textit{patched} code snippet graphs.  
+
+\subsection*{Graph Loading}
+The exported graph is imported into the pipeline using the NetworkX library as a \verb|MultiDiGraph|. %TODO: explain library 
+All the export.xml discovered by recursively exploring the subdirectories. Once the graph they store is imported to the pipeline, it is merged by reading each file with \verb|nx.read_graph|and updating the combined graph iteratively. 
+The NetworkX library considers each graph, node and edges as a dictionary and update the data structure by adding one graph set of nodes and edges at a time.
+The Joern definition of the graph is, that is, the node and edge attributes, is conserved, therefore, the graph consistency depends on the Joern export. 
+% The Joern-assigned node and edge attributes are preserved as-is;
+% however, the multi-file export may contain edges referencing nodes
+% outside the exported scope (e.g.\ language built-ins).
+% The loader removes such attributeless stub nodes and their
+% dangling edges to produce a self-contained graph.
+Once the graph is loaded, the following cleanups are applied:
+\begin{itemize}
+  \item Nodes with the label \verb|COMMENT| or \verb|UNKNOWN| are removed
+  \item Any remaining edges whose source or target were removed are pruned.
+\end{itemize}
 
 \subsection*{Graph Sampling}
+Once the CPG is loaded, it contains the full code, including the boilerplate added in the pipelene.
+Thefore it is necessary to isolate the subgraph related to the vulnerability from the irrelevant rest of the code. 
+For that, a subsample is calculated from the difference between the vulnerable graph and the patched graph, the so called $G_{\mathrm{vuln}}$. 
+By doing so we expect to be able to generalize the search for the vulnerability removing the specificities of a given system that are inprint in the graph.
+
 \paragraph{Bounded slicing}
+To include context that may be relevant, a bounded search is performed with the goal of include any relevant settings in which the vulnerability occurs.
+The slice is a configurable neighbourhood expansion ($n \in \{0,1,2,3\}$ hops). $n=0$ is the original sampled graph, that is, only directly changed nodes.
+    
+\paragraph{Semantic difference}
+Before perform the sampling, each node needs to be deterministically identifiable to avoid different results depending on runs or randomness resulting from non-deterministic ID assigned by Joern across runs.
+The nodes in the sample are further enriched with semantic labels resulting of the two graphs comparison.
+Each node of the sample is labeled as either:
+\begin{itemize}
+  \item Removed node: every node present in $G_\mathrm{orig}$ but absent in the $G_\mathrm{patch}$.
+  \item Fix-adjacent node: every node present in $G_\mathrm{orig}$ that is a removed node neighbor.
+  \item Edge-changed node: every node attached to an edge which any of the nodes changed between the two graphs. 
+\end{itemize}
+
+Besides the labelling, the $G_\mathrm{vuln}$ nodes also received weights. 
+\begin{center}
+\begin{tabular}{lc}
+  \textbf{Label} & \textbf{Weight} \\
+  \hline
+  \texttt{removed}       & 1.0 \\
+  \texttt{fix\_adjacent} & 0.8 \\
+  \texttt{edge\_changed} & 0.6 \\
+  \texttt{context}       & 0.2 \\
+\end{tabular}
+\end{center}
+
+These weights are directly proportional to the relation of the node to the vulnerability and will be integrated to the embedders for further prunning.
+
+\begin{tikzpicture}[node distance=0.8cm and 2.2cm]
+
+    % ===== TOP GROUP: CODE PARSING & ANALYSIS =====
+    \begin{scope}[local bounding box=analysis_group]
+        
+        % Vulnerable input
+        \node[inputbox] (vuln_code) {Vulnerable\\Code};
+        
+        % Joern Parse
+        \node[processbox, right=of vuln_code] (joern) {Joern Parse};
+        
+        % GraphML Export
+        \node[processbox, right=of joern] (export) {GraphML\\Export};
+        
+    \end{scope}
+
+    \begin{scope}[local bounding box=analysis_group_patched, yshift=-2.3cm]
+        
+        % Patched input
+        \node[inputbox] (patched_code) {Patched\\Code};
+        
+        % Joern Parse
+        \node[processbox, right=of patched_code] (joern2) {Joern Parse};
+        
+        % GraphML Export
+        \node[processbox, right=of joern2] (export2) {GraphML\\Export};
+        
+    \end{scope}
+    
+    % Graph DB - centered above the middle section
+    \node[cylinder, right=3cm of export, yshift=-1.15cm] (graphdb) {};
+    
+    % Dashed box around analysis (encompasses both scopes equally)
+    \node[groupbox, fit=(analysis_group) (analysis_group_patched), label={[anchor=north, yshift=-2pt]\textbf{CODE ANALYSIS}}] {};
+    
+    % ===== MIDDLE GROUP: GRAPH PROCESSING =====
+    \begin{scope}[local bounding box=processing_group, yshift=-5.5cm]
+        
+        % Graph Loading (aligned with the left of export)
+        \node[processbox] (load) {Graph Loading\\Merge XML,\\Filter Nodes};
+        
+        % Semantic Diff
+        \node[processbox, right=of load] (diff) {Semantic Diff\\Fingerprint\\Matching};
+        
+        % Graph Sampling
+        \node[processbox, right=of diff] (sampling) {Graph Sampling\\Extract\\Vulnerability};
+        
+    \end{scope}
+    
+    % Dashed box around processing
+    \node[groupbox, fit=(processing_group), label={[anchor=north, yshift=-2pt]\textbf{GRAPH PROCESSING}}] {};
+    
+    % ===== BOTTOM: OUTPUT (centered below sampling) =====
+    \node[outputbox, below=1.2cm of sampling] (output) {Vulnerability\\Subgraph\\with diff\_weight};
+    
+    % ===== ARROWS =====
+    
+    % Vulnerable group arrows
+    \draw[arrow] (vuln_code) -- (joern);
+    \draw[arrow] (joern) -- (export);
+    
+    % Perpendicular arrow from export to graphdb
+    \draw[arrow] (export.east) -- ++(1.1,0) |- (graphdb.west);
+
+    % Patched group arrows
+    \draw[arrow] (patched_code) -- (joern2);
+    \draw[arrow] (joern2) -- (export2);
+    
+    % Perpendicular arrow from export2 to graphdb
+    \draw[arrow] (export2.east) -- ++(1.1,0) |- (graphdb.west);
+    
+    % From graph DB to loading (routed cleanly)
+    \draw[arrow] (graphdb.south) -- ++(0,-1.6) -| (load.north);
+    
+    % Processing arrows
+    \draw[arrow] (load) -- (diff);
+    \draw[arrow] (diff) -- (sampling);
+    
+    % To output
+    \draw[arrow] (sampling) -- (output);
+    
+    % ===== LABELS =====
+    \node[left=0.6cm of vuln_code, yshift=-11pt, font=\small\bfseries] {INPUT};
+    \node[below=0.6cm of output, font=\small\bfseries] {OUTPUT};
+
+\end{tikzpicture}
+
 \paragraph{Semantic difference}
 % content: node labeling + weight table, as-is
 
@@ -56,6 +310,152 @@ Evaluation entrypoint: \_\_main\_\_.py
 
 \subsection*{Agent Architecture}
 % content: kept whole, as-is --
+
+
+% The patching pipeline follows a clean **layered separation**: retrieval happens before the agent ever runs, then the agent's job is purely to turn *retrieved context + vulnerable code* into a *patch*.
+
+% ### Layer 1 — Abstractions (base.py)
+
+% Everything flows through three dataclasses:
+
+% - **`PatchContext`** — the input packet: `example_db` (the retrieved similar CVE's metadata), `target_db` (the CVE to fix), `target_code` (vulnerable C source), and optionally `graph_context` + `query_pair` (CPG graphs for graph-aware variants).
+% - **`AgentResult`** — the output packet: `parsed` (the `PatchResult` with `cot` + `vuln_patch`), `turns` (one `InvocationRecord` per LLM call), `tool_calls` (log of tool executions), `prompt_fingerprint`, token totals.
+% - **`Agent` (Protocol)** — anything with `.name` and `.run(ctx: PatchContext) → AgentResult`. The architectures below implement this.
+
+% ### Layer 2 — Registered Architectures (registry.py)
+
+% Two architectures are registered by name, selectable via `--architecture` or `config.yaml agents.architecture`:
+
+% ---
+
+% #### `single_turn` (single_turn.py)
+% One LLM call, few-shot prompt, marker-parsed output.
+
+% ```
+% PatchContext
+%     │
+%     ▼
+% build_input_dict()   ← combines example+target into template vars
+%     │
+%     ▼
+% AutoPatchPatcher(prompt_variant)   ← renders one of 4 prompt templates
+%     │                                 (default / default_v2 / graph / graph_v2)
+%     ▼
+% backend.complete(messages)         ← single LLM call
+%     │
+%     ▼
+% parse [CoT START]...[Patched Code START]   ← marker extraction
+%     │
+%     ▼
+% AgentResult(turns=[1 record])
+% ```
+
+% Graph variants (`graph`, `graph_v2`) additionally serialize `G_vuln` into structured sections (`[Vulnerability Diff]` / `[Data Flow]` / `[Control Dependencies]`) and inject them as `{target_graph_context}` in the prompt.
+
+% ---
+
+% #### `tool_calling` (tool_calling.py)
+% ReAct-style loop: the LLM reasons and calls tools iteratively until it calls `submit_patch` or hits the iteration cap (default 6).
+
+% ```
+% PatchContext
+%     │
+%     ▼
+% [system: ReAct workflow instructions]
+% [user: target CWE/CVE + vulnerable code]
+%     │
+%     ▼  ┌─────────── iteration loop (max 6) ───────────────────┐
+%     │  │                                                       │
+%     │  │  backend.complete(messages, tools=TOOL_SCHEMAS)       │
+%     │  │        │                                              │
+%     │  │        ├─ tool_calls? ──► execute_tool(name, args)   │
+%     │  │        │    │              append result to messages  │
+%     │  │        │    └── submit_patch? ──► exit loop          │
+%     │  │        │                                              │
+%     │  │        └─ finish_reason="stop"? ──► extract code fallback, exit
+%     │  └───────────────────────────────────────────────────────┘
+%     │
+%     ▼
+% AgentResult(turns=[N records], tool_calls=[log])
+% ```
+
+% **5 tools** (tools.py):
+
+% | Tool | What it does |
+% |---|---|
+% | `get_vulnerability_context` | Returns CVE description, CWE category, and typical fix patterns from the static knowledge base (cwe_descriptions.py) — covers CWE-20/190/362/400/416/476/787 |
+% | `analyze_example_fix` | Diffs `example_db.original_code` → `example_db.vuln_patch` and returns a structured unified diff (truncated to a token budget) + the `fix_list` |
+% | `check_c_syntax` | Parses the patch with tree-sitter-c if available, falls back to brace-balance heuristics |
+% | `verify_fix_correctness` | Calls a second LLM (same deployment by default) as a judge to check whether the patch addresses the root cause |
+% | `submit_patch` | Terminal tool — records the final `patch` + `reasoning` and exits the loop |
+
+% Patch extraction on `stop` (without `submit_patch`): tries `[Patched Code START]` markers → longest `` ```c `` block → longest `` ``` `` block → bare C heuristic.
+
+% ### Layer 3 — LLM Transport (`src/agents/backends.py`)
+
+% `CompletionBackend` is a protocol; the `complete()` signature was extended with `tools=` and `tool_choice=` kwargs, so the same backend handles both architectures. Four implementations:
+
+% | Backend | Use |
+% |---|---|
+% | `LiveBackend` | Real Azure/litellm call (lazy import) |
+% | `MockBackend` | Scripted deterministic output for unit tests |
+% | `RecordBackend` | Wraps Live, records to JSONL cassette |
+% | `ReplayBackend` | Reads from cassette, zero network |
+
+% The process-wide `use_backend()` context manager lets you swap backends without changing any call sites.
+
+% ### Layer 4 — Batch Runner (`src/agents/batch_inference.py`)
+
+% ```
+% run_batch_inference(query_pairs, retriever, db_cache, ..., architecture="single_turn")
+%     │
+%     ▼
+% build_agent(architecture, prompt_variant, model_name, ...)  ← registry lookup
+%     │
+%     ▼  for each query pair:
+%     │    retriever.retrieve(pair) → (example_pair, retrieval_info)
+%     │    resolve db_cache entries (exact key → cve_id prefix fallback)
+%     │    agent.run(PatchContext(...))
+%     │    compute similarity/ROUGE vs ground truth
+%     │    write row to results.jsonl
+%     ▼
+% run_meta.json  (architecture, prompt_variant, prompt_fingerprint, git_commit, model)
+% results.jsonl  (architecture, n_turns, n_tool_calls, prompt_fingerprint per row)
+% ```
+
+% ### Layer 5 — Experiment Grid (`experiments/exp/prompt/patching_experiment.py`)
+
+% `PatchingExperiment` varies axes `architecture × prompt_variant × retriever_mode × model_name` as a grid, calling `run_batch_inference` per cell — matching the retrieval-experiment pattern for embedders.
+
+% ### Summary diagram
+
+% ```
+% Retrieval experiment (separate)
+%     └─ produces indices/*.hnsw → query mode → results.jsonl
+%                                                     │
+%                                                     ▼
+% PatchingExperiment grid
+%   architecture × prompt_variant × retriever_mode × model
+%                     │
+%                     ▼
+%           build_agent(architecture)
+%                     │
+%           ┌─────────┴──────────┐
+%    single_turn          tool_calling
+%    (1 LLM call,         (≤6 LLM calls,
+%     4 prompt             5 tools,
+%     variants)            ReAct loop)
+%                     │
+%                     ▼
+%             CompletionBackend
+%        (Live / Mock / Record / Replay)
+%                     │
+%                     ▼
+%               results.jsonl
+%                     │
+%                     ▼
+%         python -m src.evaluate → metrics dashboard
+
 \paragraph{Agent roles.}
 \paragraph{Structure-aware prompt construction.}
 \paragraph{Patching architectures (experimental axis).}
