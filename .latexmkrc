@@ -7,3 +7,8 @@ sub makeglossaries {
   popd;
   return $return;
 }
+
+# Configure biber as bibliography backend
+$bibtex = 'biber --output_safechars --output_directory=build %B';
+$max_repeat = 5;
+$pdf_mode = 1;
