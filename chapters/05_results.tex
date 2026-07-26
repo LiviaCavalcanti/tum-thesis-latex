@@ -38,8 +38,18 @@ What direction actually gets better results
  multi-agent is worth measuring, but given the 29% CWE-match retrieval and the diff-vs-full-function issue, I'd expect retrieval quality (#1) and the diff output format (#2) to move results more than adding agents.
 
 
+\subsection{File vs. Method}
+After investigation, I found that the method graphs were actually degenerated, that is, Joern was not able to understand the code elements 
+resulting in a graph of unique node element, containing the whole code and edges have as source the node but the other end is null.
+This behavior could result from the lack of the definition of all elements definition, making it dificult for the joern create the graphs.
 
- \begin{table}[htbp]
+Because the dataset also contain the file, we've done a comparison of the performance using the file and the method as input. 
+\begin{table}[htbp]
+    % 1. Add your table title/name here
+  \caption{Comparison of CVE Retrieval Performance using file and method as input} 
+  
+  % 2. Add a label RIGHT AFTER the caption for cross-referencing
+  \label{tab:cvefixes_file_method}
 \centering
 \caption{Performance Comparison across Embedders}
 \label{tab:embedder_metrics}
@@ -70,3 +80,11 @@ What direction actually gets better results
 \bottomrule
 \end{tabular}
 \end{table}
+
+The results are in the Table~\ref{tab:cvefixes_file_method}. 
+They show that file-level graphs outperform the method-level graphs, especially for the combined embedder for which $\text{hit@1}$ jumps from 0.333 to 0.889 ($+0.556$), and mrr jumps from 0.454 to 0.944 ($+0.491$).
+\texttt{CodeBERT\_pattern} $\text{hit@1}$ increases from 0.678 to 0.889 ($+0.211$).
+\texttt{CodeBERT\_seq} has a more modest $\text{hit@1}$ improvement from 0.722 to 0.889 ($+0.167$).
+These improvements shows that the extra content encoded in the file-level graph bring important context wich may include global variables, imports, and cross-method, resulting in structures that leads to a better vulnerability identification.
+This improvements make that the final performance of the embedders are equivalent. 
+This allows us to conclude that enough context information allows a simple embedder of graph topographic description to perform equivalently to a semantic level pretrained model.
