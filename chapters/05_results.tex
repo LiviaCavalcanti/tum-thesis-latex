@@ -1,1 +1,72 @@
 \chapter{Results}\label{chapter:results}
+
+Per-record fingerprints:
+
+\texttt{single\_turn} $\to$ 34b727c79607 (the few-shot marker prompt from the registry, via \texttt{single\_turn.py})
+
+\texttt{tool\_calling} $\to$ `` empty — it uses its own hardcoded ReAct \texttt{\_SYSTEM\_PROMPT} + tool schemas in src/agents/architectures/tool\_calling.py
+
+The \texttt{run\_meta.json} showed one fingerprint for both only because that field is computed at the run level from the "default" variant name, regardless of what the architecture actually does internally. So they differ in both prompt and control-flow.
+
+What's actually shared: the model (gpt-4o), the retrieved example, the target code, and the split. 
+And the real reason the surface metrics look similar isn't the prompt — it's that both outputs are dominated by the unchanged function body they copy verbatim, which saturates \texttt{BLEU\/ROUGE\/Jaccard}. 
+% The fix regions genuinely differ, and the hunk metric already showed tool_calling is measurably better there (\texttt{hunk\_token\_jaccard $15$–$5$, hunk\_removed\_f1 $+0.17$}). 
+So the correct statement is: "different prompts and control flow, but surface metrics can't see the difference because copied boilerplate dominates them."
+
+How to evaluate adding a multi-agent architecture
+% The infrastructure is built for exactly this: a multi-agent is a new Agent subclass (\texttt{src\/agents\/base.py}) registered in src/agents/registry.py, run through the same harness (batch_inference → src.evaluate → dashboard) so it's tracked identically. The evaluation discipline matters more than the code:
+% Decide what you're isolating. Today single_turn vs tool_calling confounds prompt + orchestration, so you can't attribute the delta. For a clean multi-agent comparison, hold the generation prompt and tools constant and vary only the orchestration (e.g. planner → patcher → reviewer). Otherwise you get another uninterpretable result.
+% Control confounds: same model, same precomputed retrieval, same CVE-aware split, same target code. Use --mode precomputed so retrieval is identical across arms.
+% Score on discriminating + operational axes, not surface means:
+% Quality: hunk_f1, hunk_added_f1, hunk_token_jaccard (the metric we just wired).
+% Paired per-query deltas + a sign/Wilcoxon test — never compare aggregate means over different evaluated subsets (that was the original trap).
+% Coverage/robustness: parse-error & skip rate, n_turns, n_tool_calls.
+% Cost: prompt/completion tokens and latency — multi-agent multiplies calls, so define a budget and report quality-per-token.
+% Functional signal: the LLM-judge and human-label pipelines already exist (src/evaluate/llm_evaluation.py, llm_vulnerability_eval.jsonl, human_labels.jsonl) — a reviewer agent should be judged on whether it moves the verdict, not text overlap.
+% Pre-register a win condition, e.g. "+X hunk_f1 at ≤ current parse-error rate and $≤ N×$ tokens."
+% Line runs up side-by-side with the existing experiments/dashboard_scripts/comparison_dashboard.py.
+% Concretely: implement MultiAgentAgent in architectures, register it, run main.py --mode batch --architecture multi_agent, then python -m src.evaluate <run>.
+
+What direction actually gets better results
+% The hunk metric already localizes the real failure: patches echo the function and rarely produce the correct changed line (hunk_added_f1 $≈$ 0.02). That reframes priorities — surface fluency is fine; the fix is wrong. Ranked by likely leverage:
+
+% Retrieval is the ceiling (highest leverage). I checked: the retrieved example shares the query's CWE only 29% of the time (CVE 17%). The model is usually shown a different vulnerability class as its "similar example." This is a RAG project — improving the retriever (graph embeddings, CWE-filtered / reranked retrieval, larger top-k with selection) will likely beat any orchestration change. Test it directly: does hunk_f1 rise on the subset where cwe_match=True? If yes, retrieval is your bottleneck.
+% Change the output contract: emit a diff/hunk, not a whole rewritten function. Regenerating the full function is what buries the fix and produces the "echo" failure. Asking for a unified diff or minimal changed lines targets hunk_added_f1 head-on and is a small change.
+% Give the agent a real verification signal. tool_calling gestures at this but only has syntax/LLM checks. A reviewer/multi-agent loop only helps if it has ground truth — surrounding code, a compile step, or a PoC/test. More LLM opinion without a signal won't move correctness.
+% Cheap robustness win: fix the 4 tool_calling parse-errors (all hit max_iterations=6 without submit_patch) — raise the cap or force submit on the last turn.
+% Evaluate what you want to optimize: invest in functional/build-based correctness so you're not steering on text overlap.
+ multi-agent is worth measuring, but given the 29% CWE-match retrieval and the diff-vs-full-function issue, I'd expect retrieval quality (#1) and the diff output format (#2) to move results more than adding agents.
+
+
+
+ \begin{table}[htbp]
+\centering
+\caption{Performance Comparison across Embedders}
+\label{tab:embedder_metrics}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Embedder} & \textbf{Metric} & \textbf{Method} & \textbf{File} & \textbf{Delta} & \textbf{Direction} \\
+\midrule
+\multirow{5}{*}{codebert\_pattern} 
+  & hit@1       & 0.678 & 0.889 & +0.211 & $\uparrow$ \\
+  & hit@5       & 0.789 & 0.889 & +0.100 & $\uparrow$ \\
+  & hit@10      & 0.789 & 0.889 & +0.100 & $\uparrow$ \\
+  & mrr         & 0.720 & 0.889 & +0.169 & $\uparrow$ \\
+  & cwe\_recall & 0.619 & 0.650 & +0.031 & $\uparrow$ \\
+\midrule
+\multirow{5}{*}{codebert\_seq} 
+  & hit@1       & 0.722 & 0.889 & +0.167 & $\uparrow$ \\
+  & hit@5       & 0.778 & 0.889 & +0.111 & $\uparrow$ \\
+  & hit@10      & 0.789 & 0.889 & +0.100 & $\uparrow$ \\
+  & mrr         & 0.741 & 0.889 & +0.148 & $\uparrow$ \\
+  & cwe\_recall & 0.627 & 0.605 & -0.022 & $\downarrow$ \\
+\midrule
+\multirow{5}{*}{combined} 
+  & hit@1       & 0.333 & 0.889 & +0.556 & $\uparrow$ \\
+  & hit@5       & 0.656 & 1.000 & +0.344 & $\uparrow$ \\
+  & hit@10      & 0.811 & 1.000 & +0.189 & $\uparrow$ \\
+  & mrr         & 0.454 & 0.944 & +0.491 & $\uparrow$ \\
+  & cwe\_recall & 0.384 & 0.750 & +0.366 & $\uparrow$ \\
+\bottomrule
+\end{tabular}
+\end{table}
