@@ -519,7 +519,7 @@ FAISS and HNSW
 
 
 \subsection*{Agent Architecture}
-% content: kept whole, as-is --
+the agent may never call the $submit\_patch$, what might result in a parser error in the evaluator, since there is not patch snippet to be evaluated.
 
 
 % The patching pipeline follows a clean **layered separation**: retrieval happens before the agent ever runs, then the agent's job is purely to turn *retrieved context + vulnerable code* into a *patch*.
