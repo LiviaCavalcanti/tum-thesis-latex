@@ -88,3 +88,25 @@ They show that file-level graphs outperform the method-level graphs, especially 
 These improvements shows that the extra content encoded in the file-level graph bring important context wich may include global variables, imports, and cross-method, resulting in structures that leads to a better vulnerability identification.
 This improvements make that the final performance of the embedders are equivalent. 
 This allows us to conclude that enough context information allows a simple embedder of graph topographic description to perform equivalently to a semantic level pretrained model.
+
+
+\begin{table}[htbp]
+\centering
+\caption{Patch Evaluation Metrics Across CWEs and Overall System Performance}
+\label{tab:cwe_evaluation}
+\small
+\begin{tabular}{lcccccc cc}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Exact Match} & \textbf{Hunk F1} & \textbf{BERTScore F1} & \textbf{Char Ratio} & \textbf{Norm. Edit Dist.} & \textbf{BLEU-4} & \textbf{ROUGE-L} \\
+\midrule
+CWE-190 & 15 & 5 & 0.6149 & 0.6960 & 0.7735 & -- & 0.7504 & 0.7908 \\
+CWE-20  & 15 & 3 & 0.8643 & 0.9121 & 0.8581 & -- & 0.8579 & 0.9293 \\
+CWE-362 & 15 & 8 & 0.9983 & 0.9648 & 0.9966 & -- & 0.9912 & 0.9961 \\
+CWE-416 & 14 & 10 & 0.9344 & 0.9387 & 0.9706 & -- & 0.9593 & 0.9730 \\
+CWE-476 & 14 & 9 & 0.9007 & 0.9334 & 0.9001 & -- & 0.8910 & 0.9246 \\
+CWE-787 & 15 & 0 & 0.2625 & 0.5243 & 0.8732 & -- & 0.8941 & 0.9431 \\
+\midrule
+\textbf{General (All)} & \textbf{88} & \textbf{35} & \textbf{0.7590} & \textbf{0.8258} & \textbf{0.8944} & \textbf{0.1051} & \textbf{0.8899} & \textbf{0.9256} \\
+\bottomrule
+\end{tabular}
+\end{table}
