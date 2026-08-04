@@ -637,12 +637,15 @@ It consists of one LLM call, few-shot prompt and, a marker-parsed output.
   \end{tikzpicture}
 \end{figure}
 
-% Graph variants (`graph`, `graph_v2`) additionally serialize `G_vuln` into structured sections (`[Vulnerability Diff]` / `[Data Flow]` / `[Control Dependencies]`) and inject them as `{target_graph_context}` in the prompt.
+% Graph variants (`graph`, `graph_v2`) additionally serialize `G_vuln` into structured sections (`[Vulnerability Diff]` / `[Data Flow]` / `[Control Dependencies]`
+% ) and inject them as `{target_graph_context}` in the prompt.
 
 % ---
 
 % #### `tool_calling` (tool_calling.py)
-% ReAct-style loop: the LLM reasons and calls tools iteratively until it calls `submit_patch` or hits the iteration cap (default 6).
+ReAct~\cite{react2023google} loop where the LLM reasons and calls tools iteratively until it reaches a submition point and it calls \texttt{submit\_patch}.
+It may also happen that the agent hits the maximum number of iterations, which is set to 6.
+
 
 % ```
 % PatchContext
@@ -666,15 +669,27 @@ It consists of one LLM call, few-shot prompt and, a marker-parsed output.
 % AgentResult(turns=[N records], tool_calls=[log])
 % ```
 
-% **5 tools** (tools.py):
+The pipeline has the following functions available as tools:
 
-% | Tool | What it does |
-% |---|---|
-% | `get_vulnerability_context` | Returns CVE description, CWE category, and typical fix patterns from the static knowledge base (cwe_descriptions.py) — covers CWE-20/190/362/400/416/476/787 |
-% | `analyze_example_fix` | Diffs `example_db.original_code` → `example_db.vuln_patch` and returns a structured unified diff (truncated to a token budget) + the `fix_list` |
-% | `check_c_syntax` | Parses the patch with tree-sitter-c if available, falls back to brace-balance heuristics |
-% | `verify_fix_correctness` | Calls a second LLM (same deployment by default) as a judge to check whether the patch addresses the root cause |
-% | `submit_patch` | Terminal tool — records the final `patch` + `reasoning` and exits the loop |
+\begin{table}[ht]
+\centering
+\begin{tabularx}{\textwidth}{l X}
+  \toprule
+  \textbf{Tool} & \textbf{Functionality} \\
+  \midrule
+  \texttt{get\_vulnerability\_context} & Returns CVE description, CWE category, and typical fix patterns from the static knowledge base (\texttt{cwe\_descriptions.py}). It covers CWE-20/190/362/400/416/476/787 \\
+  \addlinespace
+  \texttt{analyze\_example\_fix} & Calculate the difference between \texttt{example\_db.original\_code} and \texttt{example\_db.vuln\_patch} and returns a structured unified diff (truncated to a token budget). Also return a record of the fixes (\texttt{fix\_list}) \\
+  \addlinespace
+  \texttt{check\_c\_syntax} & Parses the patch with tree-sitter-c if available, falls back to brace-balance heuristics \\
+  \addlinespace
+  \texttt{verify\_fix\_correctness}      & Calls a second LLM (same deployment by default) as a judge to check whether the patch addresses the root cause \\
+  \texttt{submit\_patch} & Records the final \texttt{patch} + \texttt{reasoning} and exits the loop \\
+\end{tabularx} 
+\end{table}
+
+
+
 
 % Patch extraction on `stop` (without `submit_patch`): tries `[Patched Code START]` markers → longest `` ```c `` block → longest `` ``` `` block → bare C heuristic.
 
@@ -759,3 +774,5 @@ It consists of one LLM call, few-shot prompt and, a marker-parsed output.
 % - Efficiency (tokens + USD cost)
 % - Patch Quality (qualitative, security specialists)
 % - Storage complexity
+
+Also included LLM-as-a-judge evaluator inspired on ~\cite{google2026llmjudge}
