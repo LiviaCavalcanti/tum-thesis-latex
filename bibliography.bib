@@ -492,3 +492,30 @@ url={https://openreview.net/forum?id=J91IKwJrqv}
   location = {Melbourne VIC, Australia},
   series = {WSDM '19}
 }
+
+@inproceedings{google2026llmjudge,
+author = {Shi, Sherry and Wei, Renyao and Tufano, Michele and Cambronero, Jose and Cheng, Runxiang and Ivancic, Franjo and Rondon, Pat},
+title = {Towards a Human-in-the-Loop Framework for Reliable Patch Evaluation Using an LLM-as-a-Judge},
+year = {2026},
+isbn = {9798400724077},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3786175.3788348},
+doi = {10.1145/3786175.3788348},
+abstract = {Reliable evaluation is crucial for advancing Automated Program Repair (APR), but prevailing benchmarks rely on execution-based evaluation metrics (pass@k), which fail to capture true patch validity. Determining validity can require costly manual annotation. To reduce this cost, we introduce a human-in-the-loop framework to LLM-based patch validity judgment. Driven by the observation that human judgment is better aligned when using a shared rubric, we first employ an LLM to generate a per-bug rubric, followed by a one-time human review and optional refinement to this rubric, and then employ an LLM to judge patches using the refined rubric. We apply this framework to assign binary validity labels to patches for issues found by Google sanitizer tools. Our results show that this framework yields substantial agreement with human consensus (Cohen’s kappa 0.75), high recall (0.94) and high precision (0.80) when considering patches that have unanimous agreement from 3 human raters on the validity labels. On the full dataset including patches where human raters disagree, we find this approach can still be further improved (Cohen’s kappa 0.57, recall 0.93, precision 0.65) and identify possible future directions.},
+booktitle = {Proceedings of the 1st International Workshop on AI for Software Quality Evaluation - Judgment, Metrics, Benchmarks, and Beyond},
+pages = {19–28},
+numpages = {10},
+location = {
+},
+series = {AI-SQE '26}
+}
+
+@conference{react2023google,
+title = "REACT: SYNERGIZING REASONING AND ACTING IN LANGUAGE MODELS",
+abstract = "While large language models (LLMs) have demonstrated impressive performance across tasks in language understanding and interactive decision making, their abilities for reasoning (e.g. chain-of-thought prompting) and acting (e.g. action plan generation) have primarily been studied as separate topics. In this paper, we explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner, allowing for greater synergy between the two: reasoning traces help the model induce, track, and update action plans as well as handle exceptions, while actions allow it to interface with and gather additional information from external sources such as knowledge bases or environments. We apply our approach, named ReAct, to a diverse set of language and decision making tasks and demonstrate its effectiveness over state-of-the-art baselines in addition to improved human interpretability and trustworthiness. Concretely, on question answering (HotpotQA) and fact verification (Fever), ReAct overcomes prevalent issues of hallucination and error propagation in chain-of-thought reasoning by interacting with a simple Wikipedia API, and generating human-like task-solving trajectories that are more interpretable than baselines without reasoning traces. Furthermore, on two interactive decision making benchmarks (ALFWorld and WebShop), ReAct outperforms imitation and reinforcement learning methods by an absolute success rate of 34\% and 10\% respectively, while being prompted with only one or two in-context examples.",
+author = "Shunyu Yao and Jeffrey Zhao and Dian Yu and Nan Du and Izhak Shafran and Karthik Narasimhan and Yuan Cao",
+note = "Publisher Copyright: {\textcopyright} 2023 11th International Conference on Learning Representations, ICLR 2023. All rights reserved.; 11th International Conference on Learning Representations, ICLR 2023 ; Conference date: 01-05-2023 Through 05-05-2023",
+year = "2023",
+language = "English (US)",
+}

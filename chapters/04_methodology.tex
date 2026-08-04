@@ -346,7 +346,6 @@ Besides that, the embedding may have a PCA.
     % Architecture
     \vspace{0.2cm}
     \begin{figure}[h!]
-      \centering
       \begin{minipage}{0.48\textwidth}
         \begin{tikzpicture}[
         node distance=0.35cm and 0.6cm,
@@ -521,44 +520,122 @@ FAISS and HNSW
 \subsection*{Agent Architecture}
 the agent may never call the $submit\_patch$, what might result in a parser error in the evaluator, since there is not patch snippet to be evaluated.
 
+The pipeline was implemented in layers that are cleanly separated.
+In a larger scale, we can split the pipeline in retrieval and generation, where the retrieval happens independently and before the agent ever runs.
+The agent's receives the \texttt{retrieved context + vulnerable code} and is responsible to return a *patch*.
 
-% The patching pipeline follows a clean **layered separation**: retrieval happens before the agent ever runs, then the agent's job is purely to turn *retrieved context + vulnerable code* into a *patch*.
+Just like the retrieval, the generation code is built on top of abstractions that allow easier extention of different implementation for experimentation purposes.
 
-% ### Layer 1 — Abstractions (base.py)
 
-% Everything flows through three dataclasses:
+We have three dataclasses trough which the flow passes:
 
-% - **`PatchContext`** — the input packet: `example_db` (the retrieved similar CVE's metadata), `target_db` (the CVE to fix), `target_code` (vulnerable C source), and optionally `graph_context` + `query_pair` (CPG graphs for graph-aware variants).
-% - **`AgentResult`** — the output packet: `parsed` (the `PatchResult` with `cot` + `vuln_patch`), `turns` (one `InvocationRecord` per LLM call), `tool_calls` (log of tool executions), `prompt_fingerprint`, token totals.
-% - **`Agent` (Protocol)** — anything with `.name` and `.run(ctx: PatchContext) → AgentResult`. The architectures below implement this.
+\begin{itemize}
+  \item PatchContext — the input packet: \texttt{example\_db} (the retrieved similar CVE's metadata), 
+  \texttt{target\_db} (the CVE to fix), \texttt{target\_code} (vulnerable C source), 
+  and optionally \texttt{graph\_context} $+$ \texttt{query\_pair} (CPG graphs for graph-aware variants).
+  \item AgentResult — the output packet: `parsed` (the `PatchResult` with `cot` + \texttt{vuln\_patch}), `turns` (one `InvocationRecord` per LLM call), \texttt{tool\_calls} (log of tool executions), \texttt{prompt\_fingerprint}, token totals.
+  \item Agent (Protocol) — anything with `.name` and `.run(ctx: PatchContext) -> AgentResult`. 
+\end{itemize}
 
-% ### Layer 2 — Registered Architectures (registry.py)
+To allow the easy switch between different agents architecture, there is a \texttt{resgistry.py}
+An architecture is identified by name and selectable via `--architecture` on the CLI or \texttt{config.yaml agents.architecture}:
 
-% Two architectures are registered by name, selectable via `--architecture` or `config.yaml agents.architecture`:
+The goal is to keep the architecture as simple as possible, so we are starting with a simple agent called \texttt{single\_turn} (located \text{single\_turn.py})
+It consists of one LLM call, few-shot prompt and, a marker-parsed output.
 
-% ---
 
-% #### `single_turn` (single_turn.py)
-% One LLM call, few-shot prompt, marker-parsed output.
+\vspace{0.2cm}
+\begin{figure}[h!]
+  % \centering
+  \begin{tikzpicture}[
+    node distance=0.25cm,
+    ctxstyle/.style={
+      draw=csub!70, fill=csub!15,
+      rounded corners=5pt,
+      minimum width=3.8cm,
+      minimum height=0.55cm,
+      font=\tiny\sffamily\bfseries,
+      align=center
+    },
+    opstyle/.style={
+      draw=c5!70, fill=c5!10,
+      rounded corners=3pt,
+      minimum width=3.8cm,
+      minimum height=0.45cm,
+      font=\tiny\sffamily,
+      align=center
+    },
+    patchstyle/.style={
+      draw=ccpg!70, fill=ccpg!10,
+      rounded corners=5pt,
+      minimum width=3.8cm,
+      minimum height=0.55cm,
+      font=\tiny\sffamily\bfseries,
+      align=center
+    },
+    llmstyle/.style={
+      draw=cemb!70, fill=cemb!10,
+      rounded corners=4pt,
+      minimum width=3.8cm,
+      minimum height=0.45cm,
+      font=\tiny\sffamily\bfseries,
+      align=center
+    },
+    outstyle/.style={
+      draw=hit!70, fill=hit!10,
+      rounded corners=4pt,
+      minimum width=3.8cm,
+      minimum height=0.45cm,
+      font=\tiny\sffamily\bfseries,
+      align=center
+    },
+    arr/.style={
+      -{Stealth[length=3.5pt, width=3.5pt]},
+      line width=0.8pt,
+      color=notecol!80
+    },
+    lbl/.style={font=\tiny\sffamily, text=notecol}
+  ]
 
-% ```
-% PatchContext
-%     │
-%     ▼
-% build_input_dict()   ← combines example+target into template vars
-%     │
-%     ▼
-% AutoPatchPatcher(prompt_variant)   ← renders one of 4 prompt templates
-%     │                                 (default / default_v2 / graph / graph_v2)
-%     ▼
-% backend.complete(messages)         ← single LLM call
-%     │
-%     ▼
-% parse [CoT START]...[Patched Code START]   ← marker extraction
-%     │
-%     ▼
-% AgentResult(turns=[1 record])
-% ```
+    % 1. Input Context
+    \node[ctxstyle] (ctx) 
+      {PatchContext};
+
+    % 2. Input Dict Builder
+    \node[opstyle, below=0.3cm of ctx] (build) 
+      {\textbf{build\_input\_dict()}\\combines example+target into template vars};
+
+    % 3. Prompt Patcher
+    \node[patchstyle, below=0.3cm of build] (patcher) 
+      {AutoPatchPatcher(prompt\_variant)\\{\tiny renders 1 of 4 prompt templates}};
+
+    % 4. LLM Backend Call
+    \node[llmstyle, below=0.3cm of patcher] (back) 
+      {backend.complete(messages)\\{\tiny single LLM call}};
+
+    % 5. Parser
+    \node[opstyle, below=0.3cm of back] (parse) 
+      {\textbf{parse markers}\\extract [CoT START]\ldots[Patched Code START]};
+
+    % 6. Final Result
+    \node[outstyle, below=0.3cm of parse] (res) 
+      {AgentResult(turns=[1 record])};
+
+    % Arrows
+    \draw[arr] (ctx) -- (build);
+    \draw[arr] (build) -- (patcher);
+    \draw[arr] (patcher) -- (back);
+    \draw[arr] (back) -- (parse);
+    \draw[arr] (parse) -- (res);
+
+    % Optional Side Stage Labels (matching the layer indicator style)
+    \node[lbl, left=0.15cm of build] {\rotatebox{90}{Setup}};
+    \node[lbl, left=0.15cm of patcher] {\rotatebox{90}{Prompt}};
+    \node[lbl, left=0.15cm of back] {\rotatebox{90}{Inference}};
+    \node[lbl, left=0.15cm of parse] {\rotatebox{90}{Output}};
+
+  \end{tikzpicture}
+\end{figure}
 
 % Graph variants (`graph`, `graph_v2`) additionally serialize `G_vuln` into structured sections (`[Vulnerability Diff]` / `[Data Flow]` / `[Control Dependencies]`) and inject them as `{target_graph_context}` in the prompt.
 
@@ -666,8 +743,8 @@ the agent may never call the $submit\_patch$, what might result in a parser erro
 %                     ▼
 %         python -m src.evaluate → metrics dashboard
 
-\paragraph{Agent roles.}
-\paragraph{Structure-aware prompt construction.}
+\textbf{Agent roles.}
+\textbf{Structure-aware prompt construction.}
 \paragraph{Patching architectures (experimental axis).}
 \paragraph{Structure-aware tooling.}
 \paragraph{Backend abstraction.}
