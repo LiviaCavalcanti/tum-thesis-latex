@@ -640,34 +640,120 @@ It consists of one LLM call, few-shot prompt and, a marker-parsed output.
 % Graph variants (`graph`, `graph_v2`) additionally serialize `G_vuln` into structured sections (`[Vulnerability Diff]` / `[Data Flow]` / `[Control Dependencies]`
 % ) and inject them as `{target_graph_context}` in the prompt.
 
-% ---
 
+\paragraph{Structure-aware tooling.}
 % #### `tool_calling` (tool_calling.py)
 ReAct~\cite{react2023google} loop where the LLM reasons and calls tools iteratively until it reaches a submition point and it calls \texttt{submit\_patch}.
 It may also happen that the agent hits the maximum number of iterations, which is set to 6.
 
+\vspace{0.2cm}
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}[
+    node distance=0.25cm,
+    ctxstyle/.style={
+      draw=csub!70, fill=csub!15,
+      rounded corners=5pt,
+      minimum width=4.5cm,
+      minimum height=0.55cm,
+      font=\tiny\sffamily\bfseries,
+      align=center
+    },
+    msgstyle/.style={
+      draw=c5!70, fill=c5!10,
+      rounded corners=3pt,
+      minimum width=4.5cm,
+      minimum height=0.55cm,
+      font=\tiny\sffamily,
+      align=center
+    },
+    llmstyle/.style={
+      draw=cemb!70, fill=cemb!10,
+      rounded corners=4pt,
+      minimum width=4.5cm,
+      minimum height=0.55cm,
+      font=\tiny\sffamily\bfseries,
+      align=center
+    },
+    toolstyle/.style={
+      draw=ccpg!70, fill=ccpg!10,
+      rounded corners=3pt,
+      minimum width=4.2cm,
+      minimum height=0.5cm,
+      font=\tiny\sffamily,
+      align=center
+    },
+    outstyle/.style={
+      draw=hit!70, fill=hit!10,
+      rounded corners=4pt,
+      minimum width=4.5cm,
+      minimum height=0.55cm,
+      font=\tiny\sffamily\bfseries,
+      align=center
+    },
+    arr/.style={
+      -{Stealth[length=3.5pt, width=3.5pt]},
+      line width=0.8pt,
+      color=notecol!80
+    },
+    lbl/.style={font=\tiny\sffamily, text=notecol}
+  ]
 
-% ```
-% PatchContext
-%     │
-%     ▼
-% [system: ReAct workflow instructions]
-% [user: target CWE/CVE + vulnerable code]
-%     │
-%     ▼  ┌─────────── iteration loop (max 6) ───────────────────┐
-%     │  │                                                       │
-%     │  │  backend.complete(messages, tools=TOOL_SCHEMAS)       │
-%     │  │        │                                              │
-%     │  │        ├─ tool_calls? ──► execute_tool(name, args)   │
-%     │  │        │    │              append result to messages  │
-%     │  │        │    └── submit_patch? ──► exit loop          │
-%     │  │        │                                              │
-%     │  │        └─ finish_reason="stop"? ──► extract code fallback, exit
-%     │  └───────────────────────────────────────────────────────┘
-%     │
-%     ▼
-% AgentResult(turns=[N records], tool_calls=[log])
-% ```
+    % 1. Context & Setup
+    \node[ctxstyle] (ctx) 
+      {PatchContext};
+
+    \node[msgstyle, below=0.3cm of ctx] (prompt) 
+      {[system: ReAct workflow instructions]\\{[user: target CWE/CVE + vulnerable code]}};
+
+    % 2. Loop Internal Steps
+    \node[llmstyle, below=0.45cm of prompt] (llm) 
+      {backend.complete(messages, tools=TOOL\_SCHEMAS)\\{\tiny single LLM completion step}};
+
+    \node[toolstyle, below=0.35cm of llm] (tool) 
+      {\textbf{execute\_tool(name, args)}\\append result to messages};
+
+    % Branch Decision Nodes inside loop
+    \node[outstyle, below=0.35cm of tool] (submit) 
+      {\textbf{submit\_patch?}\\Exit loop \& return patch};
+
+    \node[msgstyle, right=0.5cm of llm, yshift=-0.5cm, align=left] (fallback) 
+      {\textbf{finish\_reason = "stop"?}\\Extract code fallback \& exit};
+
+    % 3. Iteration Box Container
+    \begin{scope}[on background layer]
+      \node[
+        draw=notecol!50, fill=c5!5, dashed, rounded corners=5pt,
+        inner xsep=0.4cm, inner ysep=0.3cm,
+        fit=(llm) (tool) (submit) (fallback)
+      ] (loopbox) {};
+    \end{scope}
+
+    \node[lbl, anchor=north west, xshift=2pt, yshift=-2pt] 
+      at (loopbox.north west) {\textbf{Iteration Loop} (max 6 turns)};
+
+    % 4. Final Output Result
+    \node[outstyle, below=0.5cm of loopbox] (res) 
+      {AgentResult(turns=[N records], tool\_calls=[log])};
+
+    % Connections / Flow
+    \draw[arr] (ctx) -- (prompt);
+    \draw[arr] (prompt) -- (llm);
+    
+    % Loop Execution
+    \draw[arr] (llm) -- node[lbl, right] {tool\_calls} (tool);
+    \draw[arr] (tool) -- (submit);
+    \draw[arr] (submit.west) -- ++(-0.3cm,0) |- node[lbl, left, yshift=0.8cm] {next turn} (llm.west);
+
+    % Branch Exits
+    \draw[arr] (llm.east) |- (fallback.north);
+    \draw[arr] (submit.south) -- (submit.south |- loopbox.south);
+    \draw[arr] (fallback.south) |- (loopbox.south);
+    \draw[arr] (loopbox.south) -- (res);
+
+  \end{tikzpicture}
+\end{figure}
+
 
 The pipeline has the following functions available as tools:
 
@@ -689,22 +775,30 @@ The pipeline has the following functions available as tools:
 \end{table}
 
 
+\paragraph{Backend abstraction.}
+The pipeline has a LLM Transport (\texttt{src\/agents\/backends.py}) abstraction that is defined by a protocol (\texttt{CompletionBackend}) that allows different LLM completion.
+With this we can run part of the pipeline without rerun the whole pipeline. 
+Also, it allows record and mocked responses so we can experiment only part of the pipeline without incurring high costs
+The \texttt{complete()} signature was extended with \texttt{tools=} and \texttt{tool\_choice=} kwargs, so the same backend handles both architectures. 
+Four implementations:
 
+\begin{table}[ht]
+\centering
+\begin{tabularx}{\textwidth}{l X}
+  \toprule
+  \textbf{Backend} & \textbf{Function} \\
+  \midrule
+  \texttt{LiveBackend} & Azure\/litellm call (lazy import) \\
+  \addlinespace
+  \texttt{MockBackend} & Deterministic output for unit tests \\
+  \addlinespace
+  \texttt{RecordBackend} & Wraps Live, records to JSONL cassette \\
+  \addlinespace
+  \texttt{ReplayBackend} & Reads from cassette, zero network  \\
+\end{tabularx} 
+\end{table}
 
-% Patch extraction on `stop` (without `submit_patch`): tries `[Patched Code START]` markers → longest `` ```c `` block → longest `` ``` `` block → bare C heuristic.
-
-% ### Layer 3 — LLM Transport (`src/agents/backends.py`)
-
-% `CompletionBackend` is a protocol; the `complete()` signature was extended with `tools=` and `tool_choice=` kwargs, so the same backend handles both architectures. Four implementations:
-
-% | Backend | Use |
-% |---|---|
-% | `LiveBackend` | Real Azure/litellm call (lazy import) |
-% | `MockBackend` | Scripted deterministic output for unit tests |
-% | `RecordBackend` | Wraps Live, records to JSONL cassette |
-% | `ReplayBackend` | Reads from cassette, zero network |
-
-% The process-wide `use_backend()` context manager lets you swap backends without changing any call sites.
+To swap between backends, it is only necessary to call \texttt{use\_backend()} context manager, no other call change is needed.
 
 % ### Layer 4 — Batch Runner (`src/agents/batch_inference.py`)
 
@@ -761,8 +855,8 @@ The pipeline has the following functions available as tools:
 \textbf{Agent roles.}
 \textbf{Structure-aware prompt construction.}
 \paragraph{Patching architectures (experimental axis).}
-\paragraph{Structure-aware tooling.}
-\paragraph{Backend abstraction.}
+
+
 \paragraph{Versioned prompts.}
 \paragraph{Reproducibility and cost tracking.}
 
