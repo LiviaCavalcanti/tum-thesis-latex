@@ -112,8 +112,8 @@
 The goal here is to use historical knowledge from previous fixes to fix other code with the same vulnerability.
 
 \subsection*{Architecture}
-% content: KB + agentic framework description, Patcher Agent / Vulnerability Verifier Agent bullets, figure
-This project builds a structure-aware retrieval system for vulnerability fixes in code snippets. 
+% content: KB + agentic framework description
+This project present a structure-aware retrieval system that identify the type of vulnerabirality and suggest a fix patch given a code snippet. 
 
 
 % Where each stage lives:
@@ -544,7 +544,8 @@ We have three dataclasses trough which the flow passes:
   \item PatchContext — the input packet: \texttt{example\_db} (the retrieved similar CVE's metadata), 
   \texttt{target\_db} (the CVE to fix), \texttt{target\_code} (vulnerable C source), 
   and optionally \texttt{graph\_context} $+$ \texttt{query\_pair} (CPG graphs for graph-aware variants).
-  \item AgentResult — the output packet: `parsed` (the `PatchResult` with `cot` + \texttt{vuln\_patch}), `turns` (one `InvocationRecord` per LLM call), \texttt{tool\_calls} (log of tool executions), \texttt{prompt\_fingerprint}, token totals.
+  \item AgentResult — the output packet: `parsed` (the `PatchResult` with `cot` + \texttt{vuln\_patch}), `turns` (one `InvocationRecord` per LLM call), 
+  \texttt{tool\_calls} (log of tool executions), \texttt{prompt\_fingerprint}, and token totals.
   \item Agent (Protocol) — anything with `.name` and `.run(ctx: PatchContext) -> AgentResult`. 
 \end{itemize}
 
@@ -557,6 +558,8 @@ It consists of one LLM call, few-shot prompt and, a marker-parsed output.
 
 \vspace{0.2cm}
 \begin{figure}[h!]
+  \caption[Patch pipeline]{Main methods of the patching pipeline with agent}\label{diagram:patch_pipeline}
+
   % \centering
   \begin{tikzpicture}[
     node distance=0.25cm,
@@ -653,12 +656,13 @@ It consists of one LLM call, few-shot prompt and, a marker-parsed output.
 
 
 \paragraph{Structure-aware tooling.}
-% #### `tool_calling` (tool_calling.py)
+
 ReAct~\cite{react2023google} loop where the LLM reasons and calls tools iteratively until it reaches a submition point and it calls \texttt{submit\_patch}.
 It may also happen that the agent hits the maximum number of iterations, which is set to 6.
 
 \vspace{0.2cm}
 \begin{figure}[h!]
+  \caption[Tool Agent Pipeline]{Workflow steps of tool calling agent}\label{diagram:workflowtoolagent}
   \centering
   \begin{tikzpicture}[
     node distance=0.25cm,
@@ -769,6 +773,8 @@ It may also happen that the agent hits the maximum number of iterations, which i
 The pipeline has the following functions available as tools:
 
 \begin{table}[ht]
+\caption[Available Tools Table]{List of the tools that the agent can call throughout its pipeline.}\label{tab:sample}
+
 \centering
 \begin{tabularx}{\textwidth}{l X}
   \toprule
