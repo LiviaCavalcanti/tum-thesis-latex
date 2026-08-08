@@ -800,12 +800,14 @@ The \texttt{complete()} signature was extended with \texttt{tools=} and \texttt{
 Four implementations:
 
 \begin{table}[ht]
+ \caption[Types of API call Table]{An example for a simple table.}\label{tab:sample}
+
 \centering
 \begin{tabularx}{\textwidth}{l X}
   \toprule
   \textbf{Backend} & \textbf{Function} \\
   \midrule
-  \texttt{LiveBackend} & Azure\/litellm call (lazy import) \\
+  \texttt{LiveBackend} & Azure/litellm call (lazy import) \\
   \addlinespace
   \texttt{MockBackend} & Deterministic output for unit tests \\
   \addlinespace
