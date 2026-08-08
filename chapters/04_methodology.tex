@@ -110,36 +110,64 @@
 % -- your framing paragraph, minus the graph-edit-distance citation --
 % content: "This work proposes a structure-aware RAG framework..." through
 % "...identify the lines that introduce security breaches."
+The goal here is to use historical knowledge from previous fixes to fix other code with the same vulnerability.
+Identifying where the vulnerability in previous fixes consists of, given a code change that address the vulnerability,
+the removed code and/or the added code are the fixes and the code around it are where the vulnerability resided.
+This code changes are done by developers and logged in systems that catalog the vulnerabilities. 
+Once a vulnerability is identified in one project, it can be easily exploited in other projects. 
+therefore, other projects, especially those open-source, might quickly address the issue. 
+this require verifying continuously the catalog of vulnerabilities which is a toll for the software development process and usually require specialized professionals on companies. 
+This task on open source projects where many contributions are made by voluntary developers drag the development speed, at the sama time as not addressing them may hurt the adoption of the developed code by the users.
+
+Once a vulnerability is identified and fixed, we have an expansion of the communatary knowledge.
+and fixing it in other projects will roughly consists of applying a similar change in a similar context as the first one identified.
+This workflow works specially well when we have open catalogs of the vulnerabilities that were addressed. 
+This shared knowledge can also be useful for enterprises, that basically have to go through the same process. 
+But the developpers are dedicated to a set of tasks and among them they might deal with the same security monitoring toll as the open source groups.
+
+The usage of an automated tool does not aim to vanish the need of such security activities. 
+As the proposed pipeline only works if a developper fixed a vulnerability in the first step. 
+Instead, it'S goal is to maximize the propagation of the human knowledge, free the security experts time to look for other unknown vulnerabilities, reduce the attack window for known vulnerabilities, and allow that even teams without securities experts can have their code free from vulnerabilities.
 
 \subsection*{Architecture}
 % content: KB + agentic framework description, Patcher Agent / Vulnerability Verifier Agent bullets, figure
-This project builds a structure-aware retrieval system for vulnerability fixes:
-
-Load vulnerable vs fixed code pairs.
-Build a vulnerability-focused graph per pair.
-Embed those graphs into vectors.
-Index vectors in FAISS.
-Retrieve nearest historical fixes for new queries.
-Optionally generate patches with an LLM.
-Evaluate retrieval and patch quality.
+This project builds a structure-aware retrieval system for vulnerability fixes in code snippets. 
 
 
-Where each stage lives:
-Entry CLI orchestration: main.py
-Config and active dataset/embedder selection: config.yaml
-Dataset loading and registry: \_\_init\_\_.py
-CVEfixes pinned-file dataset variant: cvefixes\_file.py
-Split logic (including precomputed splits): split.py
-Index build pipeline: indexing.py
-FAISS wrapper and metadata persistence: faiss\_index.py
-Query batch retrieval: query.py
-Retriever search call: retriever.py
-Embedders registry: \_\_init\_\_.py
-Combined embedder + PCA behavior: combined.py
-Patching experiment runner used by sweep: run\_embedding\_sweep.py
-Evaluation entrypoint: \_\_main\_\_.py
+% Where each stage lives:
+% Entry CLI orchestration: main.py
+% Config and active dataset/embedder selection: config.yaml
+% Dataset loading and registry: \_\_init\_\_.py
+% CVEfixes pinned-file dataset variant: cvefixes\_file.py
+% Split logic (including precomputed splits): split.py
+% Index build pipeline: indexing.py
+% FAISS wrapper and metadata persistence: faiss\_index.py
+% Query batch retrieval: query.py
+% Retriever search call: retriever.py
+% Embedders registry: \_\_init\_\_.py
+% Combined embedder + PCA behavior: combined.py
+% Patching experiment runner used by sweep: run\_embedding\_sweep.py
+% Evaluation entrypoint: \_\_main\_\_.py
 
 \subsection*{Data Pipeline}
+
+The process consists of, first, build the index, an offline process:
+
+\begin{itemize}
+  \item  loading a vulneral code snippet 
+  \item build a CPG from the code
+  \item embed the graph
+  \item index the embeddings into a vector database, FAISS
+\end{itemize}
+
+then the online process consists of:
+\begin{itemize}
+  \item transform the code snippet input into an embedding
+  \item query the vector database to find similar code, indicating they contain a similar vulnerability
+  \item use the index data, especially the patched code to prompt an LLM to fix the vulnerability.
+\end{itemize}
+
+On development phase, it is also possible to evaluate retrieval and patch quality.
 
 \subsection*{Graph Generation}
 % content: Joern pipeline as-is
