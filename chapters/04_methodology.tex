@@ -105,29 +105,11 @@
 }
 
 \chapter{Methodology}\label{chapter:methodology}
-\section*{Methodology}
 
 % -- your framing paragraph, minus the graph-edit-distance citation --
 % content: "This work proposes a structure-aware RAG framework..." through
 % "...identify the lines that introduce security breaches."
 The goal here is to use historical knowledge from previous fixes to fix other code with the same vulnerability.
-Identifying where the vulnerability in previous fixes consists of, given a code change that address the vulnerability,
-the removed code and/or the added code are the fixes and the code around it are where the vulnerability resided.
-This code changes are done by developers and logged in systems that catalog the vulnerabilities. 
-Once a vulnerability is identified in one project, it can be easily exploited in other projects. 
-therefore, other projects, especially those open-source, might quickly address the issue. 
-this require verifying continuously the catalog of vulnerabilities which is a toll for the software development process and usually require specialized professionals on companies. 
-This task on open source projects where many contributions are made by voluntary developers drag the development speed, at the sama time as not addressing them may hurt the adoption of the developed code by the users.
-
-Once a vulnerability is identified and fixed, we have an expansion of the communatary knowledge.
-and fixing it in other projects will roughly consists of applying a similar change in a similar context as the first one identified.
-This workflow works specially well when we have open catalogs of the vulnerabilities that were addressed. 
-This shared knowledge can also be useful for enterprises, that basically have to go through the same process. 
-But the developpers are dedicated to a set of tasks and among them they might deal with the same security monitoring toll as the open source groups.
-
-The usage of an automated tool does not aim to vanish the need of such security activities. 
-As the proposed pipeline only works if a developper fixed a vulnerability in the first step. 
-Instead, it'S goal is to maximize the propagation of the human knowledge, free the security experts time to look for other unknown vulnerabilities, reduce the attack window for known vulnerabilities, and allow that even teams without securities experts can have their code free from vulnerabilities.
 
 \subsection*{Architecture}
 % content: KB + agentic framework description, Patcher Agent / Vulnerability Verifier Agent bullets, figure
@@ -170,12 +152,13 @@ then the online process consists of:
 On development phase, it is also possible to evaluate retrieval and patch quality.
 
 \subsection*{Graph Generation}
+
 % content: Joern pipeline as-is
 
 \subsection*{Graph Loading}
 % content: NetworkX MultiDiGraph import, cleanups
 This work utilizes Joern to generate the Code Property Graph (CPG) from a code snippet. 
-For snippets that are not well-formed C/C++ programs, the pipeline first wraps the code with the minimum necessary macros and type definitions (e.g. \ \verb|typedef unsigned int u32|, \verb|#define NULL ((void*)0)|) and writes a parseable source file.
+For snippets that are not well-formed C/C++ programs, notably those from AutoPatch, the pipeline first wraps the code with the minimum necessary macros and type definitions (e.g. \ \verb|typedef unsigned int u32|, \verb|#define NULL ((void*)0)|) and writes a parseable source file.
 The C/C++ code files are exported to a binary graph  with the Joern shell command \verb|joern-parse --language newc|, where \verb|newc| specifies the C++ specifities avoiding will-formed graphs.  
 Then, the compiled graph is exported to GraphML format with the shell-command \verb|joern-export --repr cpg --format graphml|. 
 Each export generates a directory tree where each subdirectory contains an \verb|export.xml| file with a subgraph of the the whole CPG. 
