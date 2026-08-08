@@ -3,6 +3,25 @@
 
 \chapter{Introduction}\label{chapter:introduction}
 
+Identifying where the vulnerability in previous fixes consists of, given a code change that address the vulnerability,
+the removed code and/or the added code are the fixes and the code around it are where the vulnerability resided.
+This code changes are done by developers and logged in systems that catalog the vulnerabilities. 
+Once a vulnerability is identified in one project, it can be easily exploited in other projects. 
+therefore, other projects, especially those open-source, might quickly address the issue. 
+this require verifying continuously the catalog of vulnerabilities which is a toll for the software development process and usually require specialized professionals on companies. 
+This task on open source projects where many contributions are made by voluntary developers drag the development speed, at the sama time as not addressing them may hurt the adoption of the developed code by the users.
+
+Once a vulnerability is identified and fixed, we have an expansion of the communatary knowledge.
+and fixing it in other projects will roughly consists of applying a similar change in a similar context as the first one identified.
+This workflow works specially well when we have open catalogs of the vulnerabilities that were addressed. 
+This shared knowledge can also be useful for enterprises, that basically have to go through the same process. 
+But the developpers are dedicated to a set of tasks and among them they might deal with the same security monitoring toll as the open source groups.
+
+The usage of an automated tool does not aim to vanish the need of such security activities. 
+As the proposed pipeline only works if a developper fixed a vulnerability in the first step. 
+Instead, it'S goal is to maximize the propagation of the human knowledge, free the security experts time to look for other unknown vulnerabilities, reduce the attack window for known vulnerabilities, and allow that even teams without securities experts can have their code free from vulnerabilities.
+
+
 \section{Section}
 % Citation test~\parencite{latex}.
 \section{Research Background}
