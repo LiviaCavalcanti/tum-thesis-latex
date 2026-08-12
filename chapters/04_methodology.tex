@@ -104,18 +104,6 @@
     }
 }
 
-\chapter{Methodology}\label{chapter:methodology}
-
-% -- your framing paragraph, minus the graph-edit-distance citation --
-% content: "This work proposes a structure-aware RAG framework..." through
-% "...identify the lines that introduce security breaches."
-The goal here is to use historical knowledge from previous fixes to fix other code with the same vulnerability.
-
-\subsection*{Architecture}
-% content: KB + agentic framework description
-This project present a structure-aware retrieval system that identify the type of vulnerabirality and suggest a fix patch given a code snippet. 
-
-
 % Where each stage lives:
 % Entry CLI orchestration: main.py
 % Config and active dataset/embedder selection: config.yaml
@@ -131,51 +119,71 @@ This project present a structure-aware retrieval system that identify the type o
 % Patching experiment runner used by sweep: run\_embedding\_sweep.py
 % Evaluation entrypoint: \_\_main\_\_.py
 
-\subsection*{Data Pipeline}
+\chapter{Methodology}\label{chapter:methodology}
 
-The process consists of, first, build the index, an offline process:
+One of the goals of this work is to use historical knowledge from previous fixes to generate fixes for new, structurally similar vulnerable code.
+
+\section*{Architecture}
+% content: KB + agentic framework description
+This project presents a structure-aware retrieval system that identifies the type of vulnerability in a code snippet and suggests a patch grounded in similar previously seen fixes. 
+These previously fixed code snippets are used to build a knowledge base (KB) indexed with embeddings built from the code. This knowledge base is combined with an agentic generation layer that, given the context retrieved, prompts an LLM to produce a candidate patch.
+
+\section*{Data Pipeline}
+
+Following the architecture definition, the data pipeline was implemented in separate layers: Retrieval and Generation.
+Besides that, the system can be split into offline retrieval-index construction of the KB, and an online stage in which retrieval occurs independently, before the patch generation.
+
+\paragraph{Offline index construction.} Building the index process consists of:
 
 \begin{itemize}
-  \item  loading a vulneral code snippet 
-  \item build a CPG from the code
-  \item embed the graph
-  \item index the embeddings into a vector database, FAISS
+  \item loading a vulnerable code snippet; 
+  \item building a CPG from the code;
+  \item embedding the graph;
+  \item indexing the resulting embeddings into a vector database (FAISS).
 \end{itemize}
 
-then the online process consists of:
+\paragraph{Online Query and generation.} At inference time, the pipeline runs the following steps:
 \begin{itemize}
-  \item transform the code snippet input into an embedding
-  \item query the vector database to find similar code, indicating they contain a similar vulnerability
-  \item use the index data, especially the patched code to prompt an LLM to fix the vulnerability.
+  \item transforms the input code snippet into an embedding;
+  \item queries the vector database to retrieve similar code, indicating they contain a similar underlying vulnerability;
+  \item uses the retrieved entry's data, notably, the patched code, to prompt an LLM to generate a fix for the query vulnerability.
 \end{itemize}
 
-On development phase, it is also possible to evaluate retrieval and patch quality.
+In the development phase, retrieval and patch can be assessed on a held-out test set using the automated evaluation script described in ~\ref{section:evaluation}. %TODO: add the section
 
-\subsection*{Graph Generation}
+\section*{Graph Generation}\label{sec:graph-generation}
 
-% content: Joern pipeline as-is
-
-\subsection*{Graph Loading}
-% content: NetworkX MultiDiGraph import, cleanups
-This work utilizes Joern to generate the Code Property Graph (CPG) from a code snippet. 
+This work uses Joern to generate the Code Property Graph (CPG) from a code snippet. 
 For snippets that are not well-formed C/C++ programs, notably those from AutoPatch, the pipeline first wraps the code with the minimum necessary macros and type definitions (e.g. \ \verb|typedef unsigned int u32|, \verb|#define NULL ((void*)0)|) and writes a parseable source file.
-The C/C++ code files are exported to a binary graph  with the Joern shell command \verb|joern-parse --language newc|, where \verb|newc| specifies the C++ specifities avoiding will-formed graphs.  
-Then, the compiled graph is exported to GraphML format with the shell-command \verb|joern-export --repr cpg --format graphml|. 
-Each export generates a directory tree where each subdirectory contains an \verb|export.xml| file with a subgraph of the the whole CPG. 
-The nodes can have different labels (e.g.\ \verb|CALL|, \verb|IDENTIFIER|, \verb|CONTROL_STRUCTURE|), whereas the edges can belong to one of the following graph representation: 
-Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG), and Program Dependency Graph (PDG). % TODO: define these graphs
+
+The resulting C/C++ file is compiled into a binary graph representation with the Joern shell command \verb|joern-parse --language newc|, where \verb|newc| is used to handle C\/C++ language constructs and to avoid malformed graphs.  
+Then, the compiled graph is exported to GraphML format with the shell command \texttt{joern-export --repr cpg --format graphml}. 
+Each export generates a directory tree where each subdirectory contains an \verb|export.xml| file with a subgraph of the full CPG.
+
+The nodes can have different labels (e.g.\ \verb|CALL|, \verb|IDENTIFIER|, \verb|CONTROL_STRUCTURE|), while the edges can belong to one of the following graph representations layered over the same node set: 
+Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG), and Program Dependency Graph (PDG). % TODO: review the following definitions
+\begin{itemize}
+    \item AST: syntactic parse structure of the source code.
+    \item CFG: possible execution paths through the code (branches, loops).
+    \item CDG: control-dependency relationships between statements (which conditionals govern which statements' execution).
+    \item PDG: data- and control-dependency edges combined, capturing both what controls a statement's execution and what data it depends on.
+\end{itemize}
+
 % The output is grouped into folders. The <empthy> folder contains the symbols that are inate of the language.
 % For each operator we have subfolders. Each folder contains a export.xml file with the actual graph. 
 % The <includes> folder contains the imports definitions. Then we have the folder named after the C file that also contains an export.xml file. 
 % It main import nodes from the others folders. 
 
-The pipeline generates both \textit{vulnerable} and \textit{patched} code snippet graphs.  
+The pipeline generates graphs for both the \textit{vulnerable} and the \textit{patched} version of each code snippet.  
 
-\subsection*{Graph Loading}
+
+\section*{Graph Loading}
 The exported graph is imported into the pipeline using the NetworkX library as a \verb|MultiDiGraph|. %TODO: explain library 
-All the export.xml discovered by recursively exploring the subdirectories. Once the graph they store is imported to the pipeline, it is merged by reading each file with \verb|nx.read_graph|and updating the combined graph iteratively. 
-The NetworkX library considers each graph, node and edges as a dictionary and update the data structure by adding one graph set of nodes and edges at a time.
-The Joern definition of the graph is, that is, the node and edge attributes, is conserved, therefore, the graph consistency depends on the Joern export. 
+
+All  \verb|export.xml| files are discovered by recursively exploring the export's subdirectories. Each file is read individually with \verb|nx.read_graphml| and merged into a single combined graph iteratively. 
+The NetworkX library represents each graph, node, and edge as dictionaries. Therefore, each merge updates the dictionaries with the loaded graph's entries.
+
+ 
 % The Joern-assigned node and edge attributes are preserved as-is;
 % however, the multi-file export may contain edges referencing nodes
 % outside the exported scope (e.g.\ language built-ins).
@@ -183,23 +191,24 @@ The Joern definition of the graph is, that is, the node and edge attributes, is 
 % dangling edges to produce a self-contained graph.
 Once the graph is loaded, the following cleanups are applied:
 \begin{itemize}
-  \item Nodes with the label \verb|COMMENT| or \verb|UNKNOWN| are removed
-  \item Any remaining edges whose source or target were removed are pruned.
+  \item nodes labeled with \verb|COMMENT| or \verb|UNKNOWN| are removed;
+  \item any remaining edges whose source or target in previous step are removed are pruned.
 \end{itemize}
 
-\subsection*{Graph Sampling}
-Once the CPG is loaded, it contains the full code, including the boilerplate added in the pipelene.
-Thefore it is necessary to isolate the subgraph related to the vulnerability from the irrelevant rest of the code. 
-For that, a subsample is calculated from the difference between the vulnerable graph and the patched graph, the so called $G_{\mathrm{vuln}}$. 
-By doing so we expect to be able to generalize the search for the vulnerability removing the specificities of a given system that are inprint in the graph.
+[TO BE REMOVED]
+\section*{Graph Sampling}
+Once loaded, the CPG contains the full code file, including the boilerplate added in the graph-generation wrapping pipeline step (Section~\ref{sec:graph-generation}).
+Therefore, it is necessary to isolate the subgraph related to the vulnerability from the irrelevant rest of the code. 
+For that, a subsample is calculated from the difference between the vulnerable graph and the patched graph, the so-called $G_{\mathrm{vuln}}$. 
+By doing so, we expect to be able to generalize the search for the vulnerability, removing the specificities of a given system that are imprinted in the graph.
 
 \paragraph{Bounded slicing}
-To include context that may be relevant, a bounded search is performed with the goal of include any relevant settings in which the vulnerability occurs.
-The slice is a configurable neighbourhood expansion ($n \in \{0,1,2,3\}$ hops). $n=0$ is the original sampled graph, that is, only directly changed nodes.
+To include context that may be relevant, a bounded search is performed with the goal of including any relevant settings in which the vulnerability occurs.
+The slice is a configurable neighborhood expansion ($n \in \{0,1,2,3\}$ hops). $n=0$ is the original sampled graph, that is, only the directly changed nodes.
     
 \paragraph{Semantic difference}
-Before perform the sampling, each node needs to be deterministically identifiable to avoid different results depending on runs or randomness resulting from non-deterministic ID assigned by Joern across runs.
-The nodes in the sample are further enriched with semantic labels resulting of the two graphs comparison.
+Before performing the sampling, each node needs to be deterministically identifiable to avoid different results depending on runs or randomness resulting from a non-deterministic ID assigned by Joern across runs.
+The nodes in the sample are further enriched with semantic labels resulting from the comparison of the two graphs.
 Each node of the sample is labeled as either:
 \begin{itemize}
   \item Removed node: every node present in $G_\mathrm{orig}$ but absent in the $G_\mathrm{patch}$.
@@ -308,9 +317,6 @@ These weights are directly proportional to the relation of the node to the vulne
 
 \end{tikzpicture}
 
-\paragraph{Semantic difference}
-% content: node labeling + weight table, as-is
-
 \subsection*{Embedders}
 % content ONLY: your config choices --
 % - 128-dim, L2-normalized, configurable PCA (shared preamble)
@@ -319,40 +325,41 @@ These weights are directly proportional to the relation of the node to the vulne
 % - CodeBERT (pat) variant: your pipeline diagram/config
 % (general NetLSD/WL/GIN explanations moved to Literature Review above)
 
-For reference, we started with deterministic embedders that work either with heuristics or with well-defined mathematical formulations.
-All embedders are \textbf{unsupervised}, that is, no labelled training data required.
-By default their output is L2-normalised vectors with a default dimension of 128, but configurable.
-Besides that, the embedding may have a PCA.
+Two embedding families were evaluated: deterministic embedders, built on heuristics or well-defined mathematical formulations, and semantic embedders, built on pretrained language model of code.
+All embedders are \textbf{unsupervised}, that is, no labeled training data required.
+By default, each embedder output is an L2-normalized vector with a dimension of 128.
+This vector is then passed through the PCA reduction step.
 
 \begin{itemize}
 
   \item \textbf{NetLSD} (\textit{Network Laplacian Spectral Descriptor}) ~\cite{netlsd}.
-  Computes the heat trace of the normalised graph Laplacian across a timescale that aims to get graph expressive representations similar to random walk models.
+  Computes the heat trace of the normalized graph Laplacian across a timescale that aims to get graph expressive representations similar to random walk models.
   It is node permutation-invariant and captures global spectral structure, adapting to scale encoding both local and global features, that is, it is scale-adaptable. 
-  It is also capable of comparing different size graphs. It supports weighted graphs. 
-  It was created to be an alternative to the NP-approach graph edit distance, being then efficiently computable, so the comparison calculation happens in a constant time. 
+  It can also compare graphs of different sizes and supports weighted graphs. 
+  NetLSD was created to be an alternative to graph edit distance, which is NP-hard to compute exactly. NetLSD comparison is efficiently computable; the calculation can be done in a constant time given precomputed descriptors. 
 
   \item \textbf{WL} (\textit{Weisfeiler-Lehman Kernel}).
-    Iterative colour refinement over node types followed by weighted sum pooling and a linear projection. 
+    Implemented via iterative color refinement over node types, followed by weighted sum pooling (\texttt{global\_add\_pool}) and a linear projection. 
     In this work, it was implemented in PyTorch Geometric with no external dependency. 
     % \texttt{diff\_weight} biases pooling toward high-signal nodes.
-    WL test iteratively : 
+    WL proceeds in the following iterative fashion: 
     (1) aggregates the labels of nodes and their neighborhoods, 
-    and (2) hashes theaggregated labels into unique new labels
+    and (2) hashes the aggregated labels into unique new node labels.
+    As input, it receives  11-class one-hot over CPG node types (METHOD, CALL, IDENTIFIER, etc.) which can be, optionally, enriched with one-hot encoding 5-dimension diff-label and a 1-dimension \texttt{diff\_weight} scalar, resulting in 17 dims per node. The pipeline uses it untrained with the random weights fixed at seed 42.
 
   \item \textbf{GIN} (\textit{Graph Isomorphism Network}) ~\cite{xu2019gin}
-   Message-passing neural Network that is as powerful as the Weisfeiler-Lehman graph isomorphism test, which evaluates whether two graphs are topologically identical.
-    A Graph Neural Network that represents each node by recursively aggregating the neighboring represention. 
-    The node representation is updated at each layer k, by aggregating the representations of its neighbors via a sum aggregator, followed by an MLP:
+   A message-passing neural Network that evaluates whether two graphs are topologically identical. It is equivalent to the Weisfeiler-Lehman isomorphism test in expressiveness.
+   At an algorithm level, it consists of a Graph Neural Network that represents each node by recursively aggregating the neighboring representations. 
+    The node representation is updated at each layer \texttt{k} by aggregating the representations of its neighbors via a sum aggregator, followed by an MLP:
     $$h_v^{(k)} = \text{MLP}^{(k)}\!\left((1+\epsilon)\cdot h_v^{(k-1)} + \sum_{u \in \mathcal{N}(v)} h_u^{(k-1)}\right)$$
 
-  Where $\epsilon$ is either a learnable paramet or a fixed scalar (TODO: check what is the case here).
+  Where $\epsilon$ is either a learnable parameter or a fixed scalar (TODO: check what is the case here).
   $h_v^{(0)}$ is initialized from the node features. (TODO: explain network initialization).
   The number of layers is equivalent to the number of neighbor hops that will be encoded by each node.
-  This choice is a trade-off of the amount of local structural pattern against the global one.  
-  Therefore it learns to embed the subtree in a low dimensional space, not only discriminating different structures but also mapping similar embeddings for similar structures and capturing dependencies between graph structures.
-  Graph-level embeddings are obtained via dual pooling concatenating sum pooling and mean pooling outputs. 
-  The sum pooling preserves structural size information, while mean pooling makes the normalized representations normalized.
+  This choice is a trade-off between the amount of local structural pattern and the global one.  
+  Therefore, it learns to embed the subtree in a low-dimensional space, not only discriminating different structures but also mapping similar embeddings for similar structures and capturing dependencies between graph structures.
+  Graph-level embeddings are obtained via dual pooling, concatenating sum pooling and mean pooling outputs. 
+  The sum pooling preserves structural size information, while mean pooling makes the normalized representations.
   $$\mathbf{h}_G = \left[\sum_{v} h_v^{(K)}\ \Big\|\ \frac{1}{|V|}\sum_{v} h_v^{(K)}\right]$$   
     % Architecture
     \vspace{0.2cm}
@@ -523,17 +530,21 @@ Besides that, the embedding may have a PCA.
   %     (out-seq.east) -- ++(1,0) |- (code-pat.west);
   % \end{tikzpicture}
 
-PCA and L2 normalization Discussion with experiments
+\section*{FAISS}
 
-FAISS and HNSW
+As an indexer, we used FAISS flat. It was built using batches of 32 graphs embeddings per index call. The index metric used is the cosine similarity. Because the vectors are L2-normalized, the cosine similarity boils down to the inner product. Give the L2-normalization formula:
+$$\mathbf{x}_{\text{norm}} = \frac{\mathbf{x}}{\Vert{}\mathbf{x}\Vert{}_2} = \frac{\mathbf{x}}{\sqrt{\sum_{i=1}^{n} x_i^2}}$$
+And the cosine similarity:
+$$\text{Cosine Similarity} = \cos(\theta) = \frac{\mathbf{a} \cdot \mathbf{b}}{\Vert{}\mathbf{a}\Vert{} \Vert{}\mathbf{b}\Vert{}} = \frac{\sum_{i=1}^{n} a_i b_i}{\sqrt{\sum_{i=1}^{n} a_i^2} \sqrt{\sum_{i=1}^{n} b_i^2}}$$
+ 
+Because by definition the $${\Vert{}\mathbf{x}\Vert{}_2}$$ = 1, the cosine formula becomes an inner product calculation:
+$$\langle \mathbf{a}, \mathbf{b} \rangle = \mathbf{a} \cdot \mathbf{b} = \sum_{i=1}^{n} a_i b_i$$
 
+The PCA-based embedders save the fitted PCA to reuse them on the inference time. Each vector indexes the following metadata: cve  identifier number, cwe identifier number, function name, project, variant, number of nodes nodes, plus any extra fields from \texttt{pair.meta}. 
 
-\subsection*{Agent Architecture}
-the agent may never call the $submit\_patch$, what might result in a parser error in the evaluator, since there is not patch snippet to be evaluated.
+\section*{Agent Architecture}
 
-The pipeline was implemented in layers that are cleanly separated.
-In a larger scale, we can split the pipeline in retrieval and generation, where the retrieval happens independently and before the agent ever runs.
-The agent's receives the \texttt{retrieved context + vulnerable code} and is responsible to return a *patch*.
+The agent receives the \texttt{retrieved context + vulnerable code} and is responsible for returning a *patch*.
 
 Just like the retrieval, the generation code is built on top of abstractions that allow easier extention of different implementation for experimentation purposes.
 
@@ -791,6 +802,7 @@ The pipeline has the following functions available as tools:
 \end{tabularx} 
 \end{table}
 
+agent receives the \texttt{retrieved context + vulnerable code} and is responsible for returning
 
 \paragraph{Backend abstraction.}
 The pipeline has a LLM Transport (\texttt{src\/agents\/backends.py}) abstraction that is defined by a protocol (\texttt{CompletionBackend}) that allows different LLM completion.
@@ -877,6 +889,73 @@ To swap between backends, it is only necessary to call \texttt{use\_backend()} c
 
 
 \paragraph{Versioned prompts.}
+
+
+\noindent
+\begin{lightprompt}
+_SYSTEM_PROMPT = """\
+You are an expert C/C++ security engineer specializing in vulnerability patching.
+
+Your task: given vulnerable C code and a retrieved similar vulnerability example, generate a minimal patch that fixes the vulnerability.
+
+## Workflow
+
+1. **Diagnose**: Call `get_vulnerability_context` to understand the CVE, CWE category, and typical fix patterns for this class of vulnerability.
+2. **Study the example**: Call `analyze_example_fix` to see how a similar vulnerability was fixed. Extract the fix pattern.
+3. **Generate a patch**: Write Search & Replace blocks for ONLY the lines that need changing (see format below). Do NOT output the entire source file.
+4. **(Optional) Verify**: Call `verify_fix_correctness` with your diagnosis and patch to confirm the fix addresses the root cause. **If the verdict is INCORRECT, revise and verify again before submitting. Do not submit a patch that has been flagged as incorrect.**
+5. **Submit**: Call `submit_patch` with your Search & Replace blocks.
+
+## Patch format
+
+Use one or more Search & Replace blocks — each one replaces an exact code section:
+
+<<<<<<< SEARCH
+[exact lines from the vulnerable code, copied verbatim including whitespace]
+=======
+[patched replacement lines]
+>>>>>>> REPLACE
+
+- Copy the SEARCH lines **exactly** from the target code (tabs, spacing, everything).
+- Use one block per change location.
+- Do NOT use unified diff format (– no `@@` headers, no `+`/`-` line prefixes).
+
+## Rules
+
+- The patch MUST address the actual root cause, not just add superficial checks.
+- Do NOT invent struct members, functions, or APIs that don’t exist in the codebase.
+- Keep the patch minimal — change only what’s necessary to fix the vulnerability.
+- If the example’s CWE differs from the target’s CWE, adapt your approach accordingly.
+- Never submit a patch that `verify_fix_correctness` has flagged as INCORRECT.
+- You MUST call `submit_patch` to finalize your answer.
+
+## Output discipline
+
+- Do NOT write explanatory text between tool calls. Message content must be empty or at most one short sentence.
+- All reasoning belongs in the `reasoning` argument of `submit_patch`, not in message content.
+"""
+\end{lightprompt}
+
+kjnlknkl
+
+\begin{lightprompt}
+ "## Target Vulnerable Code",
+    "",
+    f"**CWE:** {target_db.get('cwe_type', 'Unknown')}",
+    f"**CVE:** {target_db.get('cve_id', 'Unknown')}",
+    "",
+    "```c",
+    ctx.target_code,
+    "```",
+    "",
+    "Generate a patched version of this code that fixes the vulnerability.",
+    "Use the available tools to understand the vulnerability and verify your fix."
+\end{lightprompt}
+
+\begin{lightprompt}
+"Error: one or more SEARCH blocks were not found  verbatim in the target source. Copy the exact lines from the target code (including tabs/whitespace) and call submit_patch again"
+\end{lightprompt}
+
 \paragraph{Reproducibility and cost tracking.}
 
 \subsection*{Evaluation}
@@ -888,4 +967,66 @@ To swap between backends, it is only necessary to call \texttt{use\_backend()} c
 % - Patch Quality (qualitative, security specialists)
 % - Storage complexity
 
-Also included LLM-as-a-judge evaluator inspired on ~\cite{google2026llmjudge}
+
+% Coverage/robustness: parse-error & skip rate, n_turns, n_tool_calls.
+% Cost: prompt/completion tokens and latency — multi-agent multiplies calls, so define a budget and report quality-per-token.
+% Functional signal: the LLM-judge and human-label pipelines already exist (src/evaluate/llm_evaluation.py, llm_vulnerability_eval.jsonl, human_labels.jsonl) — a reviewer agent should be judged on whether it moves the verdict, not text overlap.
+% Pre-register a win condition, e.g. "+X hunk_f1 at ≤ current parse-error rate and $≤ N×$ tokens."
+\subsection{Retrieval}
+\textbf{CWE hit@1}
+\textbf{CVE hit@1}
+\textbf{Confidence Score}
+
+
+\subsection{Patching}
+
+\textbf{LLM-as-a-judge} evaluator inspired on ~\cite{google2026llmjudge}
+Given the bug context (e.g., bug description), the patch in the unified diff     format [ 12 ], and the golden rubric as input, the LLM judge is instructed to output its validity assessment. The assessment consists of a “thought” section that captures its thinking steps, a binary label (“VALID” or “INVALID”), and a justification that captures its reasoning more concisely. We store the LLM judge’s output label and justification for further analyses, such as qualitatively understanding why certain patches are accepted or rejected
+
+
+Hunk definition: A hunk is a block of consecutive edits applied to a specific region in the source code.  ~\cite{nashid2025characterizingmultihunkpatchesdivergence}
+the change can be of two types:  deletion or addition
+
+Hunk metrics calculation pipeline:
+\noindent \textbf{Line Normalization:} \\
+Normalize each line by collapsing whitespace and stripping:
+\[
+L = \{\text{norm}(l) : l \in \text{lines}, l \neq \emptyset\}
+\]
+
+\noindent \textbf{Change Extraction:}
+\begin{align*}
+\text{gold\_added} &= \text{ref\_lines} \setminus \text{base} \\
+\text{gold\_removed} &= \text{base} \setminus \text{ref\_lines} \\
+\text{gen\_added} &= \text{gen\_lines} \setminus \text{base} \\
+\text{gen\_removed} &= \text{base} \setminus \text{gen\_lines} \\
+\text{gold\_changed} &= \text{gold\_added} \cup \text{gold\_removed} \\
+\text{gen\_changed} &= \text{gen\_added} \cup \text{gen\_removed}
+\end{align*}
+
+\noindent \textbf{Hunk F1 (line-level):}
+\[
+\text{hunk\_f1} = \frac{2 \cdot |\text{gen\_changed} \cap \text{gold\_changed}|}{|\text{gen\_changed}| + |\text{gold\_changed}|} \quad \text{(when both non-empty)}
+\]
+
+\noindent \textbf{Hunk Jaccard:}
+\[
+\text{hunk\_jaccard} = \frac{|\text{gen\_changed} \cap \text{gold\_changed}|}{|\text{gen\_changed} \cup \text{gold\_changed}|}
+\]
+
+\noindent \textbf{Hunk Token Jaccard:}
+\[
+\text{hunk\_token\_jaccard} = \frac{|\text{tokens}(\text{gen\_changed}) \cap \text{tokens}(\text{gold\_changed})|}{|\text{tokens}(\text{gen\_changed}) \cup \text{tokens}(\text{gold\_changed})|}
+\]
+
+\vspace{1em}
+\noindent Plus separate F1 scores for \textbf{added} and \textbf{removed} lines using the same set-based formula.
+
+\textbf{BERTScore} Measure Patch quality via embeddings
+
+2 · P · R/P + R
+
+Harmonic mean of contextualembedding-based precision and recall.
+
+\textbf{Experiments Comparison between Methodologies}
+Paired per-query deltas + a sign/Wilcoxon test — never compare aggregate means over different evaluated subsets (that was the original trap)
