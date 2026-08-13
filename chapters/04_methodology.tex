@@ -618,7 +618,7 @@ Three data classes carry the flow through the pipeline and standardize the infor
 \begin{itemize}
   \item \textbf{PatchContext}: wraps the input, including the similar CVE's metadata retrieved from a registered database, the CVE identifier, vulnerable C source,  query pair (%TODO verify it
   and, for graph-aware variants, the CPG graph context.
-  \item \textbf{AgentResult}: wraps the output data consisting of Chain of Thought and the vulnerable code, the patched code, each of the LLM call turns (stored as \texttt{InvocationRecord}, log of tool call executions along with prompt fingerprints, and the total number of tokens.
+  \item \textbf{AgentResult}: wraps the output data consisting of Chain of Thought and the vulnerable code, the patched code, each of the LLM call turns ( \texttt{InvocationRecord} format), log of tool call executions along with prompt fingerprints, and the total number of tokens.
 \item \textbf{Agent}: base class that works as a Protocol containing the agent name and a run method implementation that receives a \texttt{PatchContext} as input and generates a \texttt{AgentResult} object. With that, it is possible to easily integrate different agent approaches by following the pipeline's interface while maintaining the observability necessary for performance evaluation.  
 \end{itemize}
 
@@ -629,9 +629,28 @@ The work developed two agent implementations \texttt{Single Turn}, a minimal one
 
 \subsection*{Single-turn LLM}
 
-The design goal is to keep the baseline architecture as simple as possible.
-It consists of a single LLM call using a few-shot prompt and the output extracted via a marker parsing.
-The input is the vulnerable code and the set of vulnerable classes that can be present in the code.
+The baseline prompt uses the Autopatch paper's approach as reference, and is powered by an LLM(GPT-4o, temperature=0.2). 
+The AutoPatch approach separates the example from the system instructions, allowing the LLM to clearly distinguish between what the task is, the example, and the target input. To do so, the approach uses a few-shot prompt and builds 4 messages assembled from template files declared in \texttt{registry.yaml}, a record of historically available prompt templates. 
+
+The first prompt is a system message that establishes the persona and task of the agent. It contains the CWE of the retrieved example, the CVE identifier of the retrieved example, and symbolic, variable-agnostic fix steps extracted from the example stored in JSON (present in the AutoPatch dataset).
+The system prompt instructs step-by-step reasoning ending with a structured output. 
+
+After that, the user messages are passed to the model using their own templates. The first user message (user\_example.txt) contains the retrieved example as the few-shot demonstration.
+This includes concrete variable name substitutions, concrete function name substitutions, root cause description of the example CVE, and vulnerable C source of the example.
+
+Another prompt template, called \texttt{Assistant message}, provides a pre-filled model answer for the example with the expected reasoning style. 
+It includes  chain-of-thought reasoning for the example fix and gold patched code as template fields.
+The assistant template also includes directive for the expected reasoning format: \texttt{"in the following format, including the leading and trailing ``` ... [CoT START] ... [Patched Code START] ... [Patched Code END]"}. By using separate templates, the formatting structure is preserved and clearly distinguished throughout the conversation.
+
+The second user message contains the actual code to be patched. 
+It has the same structure as the first user message, but with the fields: target code, target root cause, target vulnerability-related variable mapping, target vulnerability-related function mapping, and target supplementary code.
+
+The use of multiple messages also allows generalization of the naming convention in the target code. The example's variable/function mappings, in both system prompt and first user message, teach the model how to adapt from abstract fix patterns (from the example) to concrete variable names in the target code.
+
+
+The system also includes a second version that adds an explicit verification step to promote reasoning and error fixing.
+In this version, the system prompt also contains an explicit sub-step: \texttt{"Confirm your plan addresses the Root Cause and covers all instances of the bug pattern in the function."} The assistant message prompt inserts an explicit verification sub-step between CoT and patch generation: \texttt{"Step 2. Verify the plan. a) Root cause addressed? b) API compliance? c) Resource ownership?"}
+
  % simple agent called \texttt{single\_turn} (located \text{single\_turn.py})
 
 % recreate or remove the diagram
@@ -739,15 +758,63 @@ The input is the vulnerable code and the set of vulnerable classes that can be p
 This agent follows a ReAct loop~\cite{react2023google}, in which the LLM reasons and calls tools iteratively until it reaches a submission point and calls \texttt{submit\_patch}, or until it hits the maximum number of iterations, set to 6.
 
 The agent calls follow the OpenAI function-calling format. 
-At each iteration, the agent calls \texttt{backend.complete(model, messages, tools=full\_tools, tool\_choice="auto")} with the five tool schemas. 
-The response is then sent by \texttt{finish\_reason}.
+At each iteration, the agent calls \texttt{backend.complete(model, messages, tools=full\_tools, tool\_choice="auto")} passing the five tool schemas. 
+The response is then dispatched based on the \texttt{finish\_reason}.
 If the LLM's response includes \texttt{tool\_calls}, the respective tool call will be executed and appended to the conversation as \texttt{assistant} and \texttt{tool} messages.
 
-The loop may terminate for two reasons: 
+The loop terminates when one of the four reasons is met: 
 \begin{enumerate}
-    \item \texttt{stop}: no tool call was made, and the agent attempts to extract a patch from the free-form response text as a fallback.
-    \item \texttt{length}: the LLM response extrapolates the token limit, a recovery prompt instructs the model to respond in a shorter fashion. If any iterations remain, the loop continues.
+    \item the agent calls \texttt{submit_patch}, exiting the loop with the resconstructed patch;
+    \item the agent returns \texttt{finish_reason="stop"} and no tool calls are made, triggering a fallback code extraction.
+    \item \texttt{finish_reason="length"} on the final iteration, the LLM response extrapolates the token limit, a recovery prompt instructs the model to respond in a shorter fashion. If any iterations remain, the loop continues;
+    \item unexpected \texttt{finish_reason}, ending with failure.
 \end{enumerate}
+
+
+\noindent
+\begin{lightprompt}{title=System Prompt, label={lst:sys-structure-aware}}
+_SYSTEM_PROMPT = """\
+You are an expert C/C++ security engineer specializing in vulnerability patching.
+
+Your task: given vulnerable C code and a retrieved similar vulnerability example, generate a minimal patch that fixes the vulnerability.
+
+## Workflow
+
+1. **Diagnose**: Call `get_vulnerability_context` to understand the CVE, CWE category, and typical fix patterns for this class of vulnerability.
+2. **Study the example**: Call `analyze_example_fix` to see how a similar vulnerability was fixed. Extract the fix pattern.
+3. **Generate a patch**: Write Search & Replace blocks for ONLY the lines that need changing (see format below). Do NOT output the entire source file.
+4. **(Optional) Verify**: Call `verify_fix_correctness` with your diagnosis and patch to confirm the fix addresses the root cause. **If the verdict is INCORRECT, revise and verify again before submitting. Do not submit a patch that has been flagged as incorrect.**
+5. **Submit**: Call `submit_patch` with your Search & Replace blocks.
+
+## Patch format
+
+Use one or more Search & Replace blocks — each one replaces an exact code section:
+
+<<<<<<< SEARCH
+[exact lines from the vulnerable code, copied verbatim including whitespace]
+=======
+[patched replacement lines]
+>>>>>>> REPLACE
+
+- Copy the SEARCH lines **exactly** from the target code (tabs, spacing, everything).
+- Use one block per change location.
+- Do NOT use unified diff format (– no `@@` headers, no `+`/`-` line prefixes).
+
+## Rules
+
+- The patch MUST address the actual root cause, not just add superficial checks.
+- Do NOT invent struct members, functions, or APIs that don’t exist in the codebase.
+- Keep the patch minimal — change only what’s necessary to fix the vulnerability.
+- If the example’s CWE differs from the target’s CWE, adapt your approach accordingly.
+- Never submit a patch that `verify_fix_correctness` has flagged as INCORRECT.
+- You MUST call `submit_patch` to finalize your answer.
+
+## Output discipline
+
+- Do NOT write explanatory text between tool calls. Message content must be empty or at most one short sentence.
+- All reasoning belongs in the `reasoning` argument of `submit_patch`, not in message content.
+"""
+\end{lightprompt}
 
 \vspace{0.2cm}
 \begin{figure}[h!]
@@ -872,14 +939,18 @@ The pipeline has the following functions available as tools:
   \texttt{get\_vulnerability\_context} & Returns CVE description, CWE category, and typical fix patterns from the static knowledge base (\texttt{cwe\_descriptions.py}).% It covers CWE-20/190/362/400/416/476/787 
   \\
   \addlinespace
-  \texttt{analyze\_example\_fix} & Calculate the difference between the input code to be patched and example code from the retriever execution, and returns a structured unified diff following a token budget. Also return a record of the fixes (\texttt{fix\_list}) TODO add details about the fix list\\
+  \texttt{analyze\_example\_fix} & Computes a unified diff between the input code to be patched and example code from the retriever execution, and returns a structured unified diff following a token budget.\\
   \addlinespace
   \texttt{check\_c\_syntax} & Parses the candidate patch with \texttt{tree-sitter-c} when available, falling back to brace-balance heuristics otherwise\\
   \addlinespace
-  \texttt{verify\_fix\_correctness} & Calls a second LLM (same deployment by default) as a judge to assess whether the candidate patch addresses the root cause; returns \texttt{CORRECT}, \texttt{INCORRECT}, or \texttt{UNCERTAIN} with justification. Falls back to CWE-specific heuristics if the judge call is unavailable. \\
+  \texttt{verify\_fix\_correctness} & Calls a secondary LLM (same Azure deployment by default) as a judge to assess whether the candidate patch addresses the root cause; returns \texttt{CORRECT}, \texttt{INCORRECT}, or \texttt{UNCERTAIN} with justification. This LLM call happens independently of the main flux, which include a different system prompt. Falls back to CWE-specific heuristics if the judge call is unavailable. \\
   \texttt{submit\_patch} & Records the final \texttt{patch} and its \texttt{reasoning}, and exits the loop \\
 \end{tabularx} 
 \end{table}
+
+\begin{lightprompt}[title=Patch Instructions, label={lst:patch_instructions}]
+"Error: one or more SEARCH blocks were not found verbatim in the target source. Copy the exact lines from the target code (including tabs/whitespace) and call submit_patch again"
+\end{lightprompt}
 
 \paragraph{Patch representation and materialization.} The patch output follows a SEARCH\&REPLACE block format. 
 Each \texttt{submit\_patch} output contains one or more blocks in the following format:
@@ -895,10 +966,12 @@ Each \texttt{submit\_patch} output contains one or more blocks in the following 
 % TODO review
 This format has a couple of advantages. First, compared to returning the full code, which in many cases can be lengthy, it avoids truncation errors, any "generation errors" that change non-vulnerable code, and, ultimately, unnecessary output token costs. Second, compared to standard unified diff, it is required to add to the header the exact lines of change, which can lead to frequent hallucinations and makes it more difficult to reconstruct original code files if only a snippet was passed.  
 
-The SEARCH\&REPLACE pairs are extracted with regular expression and applied to the vulnerable input code in sequence using string matching.
-If any SEARCH block does not match the input code, the submission is rejected and an error message is sent to the model as the tool result. 
-As the next step of the loop, the model might then correct the SEARCH block and resubmit it.
+The SEARCH\&REPLACE pairs are extracted via regular expression and applied to the target code in sequence using string matching.
+If any SEARCH block does not match the input code verbatim, the submission is rejected with error feedback sent to the model as the tool result. 
+This allows iterative refinement.
+As the next step, the model re-enters the loop to correct the SEARCH block, by using the \ref{lst:patch_instructions} prompt and resubmit it.
 If the match succeeds, the reconstructed patched file is returned as result and the loop ends.
+
 
 \paragraph{Backend abstraction.}
 The pipeline has a LLM Transport abstraction
@@ -939,7 +1012,10 @@ For each query, it assembles a \texttt{PatchContext} before the agent runs that 
 
 %TODO: the Oracle vs. Precomputed retriever distinction is methodologically important — Oracle presumably serves as an upper-bound / ablation condition isolating patch-generation quality from retrieval quality. Worth stating this framing explicitly if that's the intent, since it directly supports a "how much does retrieval error contribute to patch failure" analysis in your Results chapter.
 
-Ea
+\subsection{Baseline No-Retrieval Variant}
+Uses an identical system prompt as the Structure tooling aware agent, but without any retrieval tool call: \texttt{"You have NO access to similar vulnerability examples — use CWE knowledge and verification only."} 
+For that, the \texttt{analyze\_example\_fix} tool is excluded from the tool list, so the model has no mechanism to inspect a retrieved example. This serves as the ablation baseline. Nevertheless, to make it fair, the prompt lists what are the CWEs that may be present in the code snippet.
+
 
 
 % ### Layer 4 — Batch Runner (`src/agents/batch_inference.py`)
@@ -994,76 +1070,6 @@ Ea
 %                     ▼
 %         python -m src.evaluate → metrics dashboard
 
-\textbf{Structure-aware prompt construction.}
-
-
-\paragraph{Versioned prompts.}
-
-
-\noindent
-\begin{lightprompt}
-_SYSTEM_PROMPT = """\
-You are an expert C/C++ security engineer specializing in vulnerability patching.
-
-Your task: given vulnerable C code and a retrieved similar vulnerability example, generate a minimal patch that fixes the vulnerability.
-
-## Workflow
-
-1. **Diagnose**: Call `get_vulnerability_context` to understand the CVE, CWE category, and typical fix patterns for this class of vulnerability.
-2. **Study the example**: Call `analyze_example_fix` to see how a similar vulnerability was fixed. Extract the fix pattern.
-3. **Generate a patch**: Write Search & Replace blocks for ONLY the lines that need changing (see format below). Do NOT output the entire source file.
-4. **(Optional) Verify**: Call `verify_fix_correctness` with your diagnosis and patch to confirm the fix addresses the root cause. **If the verdict is INCORRECT, revise and verify again before submitting. Do not submit a patch that has been flagged as incorrect.**
-5. **Submit**: Call `submit_patch` with your Search & Replace blocks.
-
-## Patch format
-
-Use one or more Search & Replace blocks — each one replaces an exact code section:
-
-<<<<<<< SEARCH
-[exact lines from the vulnerable code, copied verbatim including whitespace]
-=======
-[patched replacement lines]
->>>>>>> REPLACE
-
-- Copy the SEARCH lines **exactly** from the target code (tabs, spacing, everything).
-- Use one block per change location.
-- Do NOT use unified diff format (– no `@@` headers, no `+`/`-` line prefixes).
-
-## Rules
-
-- The patch MUST address the actual root cause, not just add superficial checks.
-- Do NOT invent struct members, functions, or APIs that don’t exist in the codebase.
-- Keep the patch minimal — change only what’s necessary to fix the vulnerability.
-- If the example’s CWE differs from the target’s CWE, adapt your approach accordingly.
-- Never submit a patch that `verify_fix_correctness` has flagged as INCORRECT.
-- You MUST call `submit_patch` to finalize your answer.
-
-## Output discipline
-
-- Do NOT write explanatory text between tool calls. Message content must be empty or at most one short sentence.
-- All reasoning belongs in the `reasoning` argument of `submit_patch`, not in message content.
-"""
-\end{lightprompt}
-
-kjnlknkl
-
-\begin{lightprompt}
- "## Target Vulnerable Code",
-    "",
-    f"**CWE:** {target_db.get('cwe_type', 'Unknown')}",
-    f"**CVE:** {target_db.get('cve_id', 'Unknown')}",
-    "",
-    "```c",
-    ctx.target_code,
-    "```",
-    "",
-    "Generate a patched version of this code that fixes the vulnerability.",
-    "Use the available tools to understand the vulnerability and verify your fix."
-\end{lightprompt}
-
-\begin{lightprompt}
-"Error: one or more SEARCH blocks were not found  verbatim in the target source. Copy the exact lines from the target code (including tabs/whitespace) and call submit_patch again"
-\end{lightprompt}
 
 \paragraph{Reproducibility and cost tracking.}
 
@@ -1084,19 +1090,25 @@ We evaluate the system across three axes: \textit{retrieval metrics}, assess whe
 % Functional signal: the LLM-judge and human-label pipelines already exist (src/evaluate/llm_evaluation.py, llm_vulnerability_eval.jsonl, human_labels.jsonl) — a reviewer agent should be judged on whether it moves the verdict, not text overlap.
 % Pre-register a win condition, e.g. "+X hunk_f1 at ≤ current parse-error rate and $≤ N×$ tokens."
 \subsection{Retrieval}
-\textbf{CWE hit@1}
-\textbf{CVE hit@1}
-\textbf{Confidence Score}
+\textbf{CWE hit@1} measures whether the top-1 retrieved example shares the same CWE category as the queried vulnerability.
+
+\textbf{CVE hit@1} is a stricter version of the CWE hit@1. It measures whether the top-1 retrieved example corresponds to the same underlying CVE (or CVE-fix pair) as the query, rather than merely the same vulnerability class.
+%TODO: compare CVE hit@1  — same CVE ID vs. same fix-commit lineage?
+
+\textbf{Confidence Score} is the similarity score assigned by the retriever to its top-1 match, used to measure the ranking signal quality. It can also be used as a threshold to reject low-confidence retrievals rather than return wrong CVEs examples (see Section~\ref{img:retrieval_pattern}).
+
+\textbf{Effective dimensionality} of the embedding space is used to characterize how much of the embedding's nominal dimensionality is actually used to separate examples.
 
 
-\subsection{Patching}
+\subsection{Patching Metrics}
 
-\textbf{LLM-as-a-judge} evaluator inspired on ~\cite{google2026llmjudge}
-Given the bug context (e.g., bug description), the patch in the unified diff     format [ 12 ], and the golden rubric as input, the LLM judge is instructed to output its validity assessment. The assessment consists of a “thought” section that captures its thinking steps, a binary label (“VALID” or “INVALID”), and a justification that captures its reasoning more concisely. We store the LLM judge’s output label and justification for further analyses, such as qualitatively understanding why certain patches are accepted or rejected
+\textbf{LLM-as-a-judge.} following the evaluator design of ~\cite{google2026llmjudge}.
+The evaluator receives the bug context (e.g., bug description) and the candidate patch. The LLM judge is instructed to output its validity assessment, which consists of a “thought” section capturing its thinking steps, a binary label (“VALID” or “INVALID”), and a concise justification. 
+Both label and justification are stored for further analyses, such as finding patterns of why certain patches are accepted or rejected, related to code language or structure.
 
 
-Hunk definition: A hunk is a block of consecutive edits applied to a specific region in the source code.  ~\cite{nashid2025characterizingmultihunkpatchesdivergence}
-the change can be of two types:  deletion or addition
+\textbf{Hunk-level metrics}: A hunk is a block of consecutive edits applied to a specific region in the source code\cite{nashid2025characterizingmultihunkpatchesdivergence}. 
+Each change can be either and a deletion or an addition.
 
 Hunk metrics calculation pipeline:
 \noindent \textbf{Line Normalization:} \\
@@ -1141,3 +1153,8 @@ Harmonic mean of contextualembedding-based precision and recall.
 
 \textbf{Experiments Comparison between Methodologies}
 Paired per-query deltas + a sign/Wilcoxon test — never compare aggregate means over different evaluated subsets (that was the original trap)
+
+
+add discussion section
+- how did i come to these results
+- why i took these decisions
