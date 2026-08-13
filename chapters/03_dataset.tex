@@ -34,6 +34,61 @@ CWE-775 & Resource Handling  & Missing Release of Resource & 1  & 1.33\% \\
 \end{tabularx}
 \end{table}
 
+Updated todo list
+
+Searched for text `example_anonymized_target_fix_list`, 5 results
+
+Searched for regex `anonymized.*fix_list|fix_list.*anonymized`, 5 results
+
+Searched for text `fix_list` (`**/src/data/**`), no results
+
+Read [](file:///home/z0050s2b/rag-patching/src/agents/patcher.py#220-220), lines 220 to 280
+
+Searched for text `fix_list` (`**/src/data/autopatch.py`), no results
+
+Searched for text `load_db_cache` (`**/src/data/autopatch.py`), no results
+
+Searched for files matching `**/src/data/autopatch.py`, no matches
+
+Searched for text `fix_list`, 20 results
+
+Read [](file:///home/z0050s2b/rag-patching/tests/test_autopatch.py#50-50), lines 50 to 70
+
+Read [](file:///home/z0050s2b/rag-patching/tests/fixtures/agent/scenarios.json#1-1), lines 1 to 60
+
+`{example_anonymized_target_fix_list}` is **a high-level, variable-agnostic fix description** extracted from the retrieved example's `db_entry.json`.
+
+### What it is
+
+- **Source**: Populated from `example_db.get("fix_list", "None")` — a field in the AutoPatch dataset's `db_entry.json` per CVE folder
+- **Format**: Either a list of strings or a single string, e.g.:
+  - `["Add a NULL check before dereferencing the pointer."]`
+  - `["bounds check"]`
+  - `"Validate n before memcpy."`
+
+### Why "anonymized"
+
+The term "anonymized" refers to the fact that the fix description uses **symbolic variable names** (from `{Variable Mapping}` / `{Function Mapping}`) rather than concrete code names. 
+
+**Example**: If the vulnerable example uses variable `ptr` but the target uses `node_ptr`, the fix list will say:
+```
+"Add a NULL check before dereferencing the pointer."
+```
+
+Rather than:
+```
+"Check if ptr is NULL before dereferencing ptr->value"
+```
+
+The LLM is then expected to map the fix pattern to the target's concrete variable names using the provided variable/function mappings.
+
+### Role in the prompt
+
+In the system prompt, it instructs the LLM:
+> *"To patch a vulnerability similar to {example_target_cve_id}, you will mainly focus on the following [Fix-List for {example_target_cve_id}] ... mapping from actual variables to each symbolic variables/functions in [Fix-List] should be provided by user with [Variable Mapping] and [Function Mapping]."*
+
+This enables **domain-independent patch generation**: the LLM learns the fix strategy from the example (abstract level) and adapts it to the target's naming convention (concrete level).
+
 \subsection{CVEfixes}
 % content: CVEfixes dataset (retrieval knowledge base) 
 
