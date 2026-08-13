@@ -596,7 +596,8 @@ The node classification is done via regex on \texttt{CODE} attributes of each no
 
 \section*{FAISS}
 
-As an indexer, we used FAISS flat. It was built using batches of 32 graphs embeddings per index call. The index metric used is the cosine similarity. Because the vectors are L2-normalized, the cosine similarity boils down to the inner product. Give the L2-normalization formula:
+As an indexer, we used FAISS flat. It was built using batches of 32 graphs embeddings per index call. The index metric used is the cosine similarity. Because the vectors are L2-normalized, the cosine similarity boils down to the inner product. 
+The L2-normalization formula:
 $$\mathbf{x}_{\text{norm}} = \frac{\mathbf{x}}{\Vert{}\mathbf{x}\Vert{}_2} = \frac{\mathbf{x}}{\sqrt{\sum_{i=1}^{n} x_i^2}}$$
 And the cosine similarity:
 $$\text{Cosine Similarity} = \cos(\theta) = \frac{\mathbf{a} \cdot \mathbf{b}}{\Vert{}\mathbf{a}\Vert{} \Vert{}\mathbf{b}\Vert{}} = \frac{\sum_{i=1}^{n} a_i b_i}{\sqrt{\sum_{i=1}^{n} a_i^2} \sqrt{\sum_{i=1}^{n} b_i^2}}$$
@@ -605,6 +606,8 @@ Because by definition the $${\Vert{}\mathbf{x}\Vert{}_2}$$ = 1, the cosine formu
 $$\langle \mathbf{a}, \mathbf{b} \rangle = \mathbf{a} \cdot \mathbf{b} = \sum_{i=1}^{n} a_i b_i$$
 
 The PCA-based embedders save the fitted PCA to reuse it on inference time. Each vector indexes the following metadata: CVE identifier number, CWE identifier number, function name, project, variant, number of nodes, plus any extra fields from \texttt{pair.meta}. 
+
+The index is stored as a binary, and the metadata as a JSON file. Each position in the vector index corresponds to an entry in the metadata. At retrieval time, both are loaded, allowing semantic-metadata mapping for operations enrichment.
 
 \section*{Agent Architecture} \label{section:agent-architecture}
 
@@ -1162,4 +1165,3 @@ Paired per-query deltas + a sign/Wilcoxon test — never compare aggregate means
 add discussion section
 - how did i come to these results
 - why i took these decisions
-
