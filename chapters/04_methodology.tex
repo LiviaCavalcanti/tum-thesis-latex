@@ -764,15 +764,15 @@ If the LLM's response includes \texttt{tool\_calls}, the respective tool call wi
 
 The loop terminates when one of the four reasons is met: 
 \begin{enumerate}
-    \item the agent calls \texttt{submit_patch}, exiting the loop with the resconstructed patch;
-    \item the agent returns \texttt{finish_reason="stop"} and no tool calls are made, triggering a fallback code extraction.
-    \item \texttt{finish_reason="length"} on the final iteration, the LLM response extrapolates the token limit, a recovery prompt instructs the model to respond in a shorter fashion. If any iterations remain, the loop continues;
-    \item unexpected \texttt{finish_reason}, ending with failure.
+    \item the agent calls \texttt{submit\_patch}, exiting the loop with the resconstructed patch;
+    \item the agent returns \texttt{finish\_reason=\"stop\"} and no tool calls are made, triggering a fallback code extraction.
+    \item \texttt{finish\_reason=\"length\"} on the final iteration, the LLM response extrapolates the token limit, and a recovery prompt instructs the model to respond in a shorter fashion. If any iterations remain, the loop continues;
+    \item unexpected \texttt{finish\_reason}, ending with failure.
 \end{enumerate}
 
 
 \noindent
-\begin{lightprompt}{title=System Prompt, label={lst:sys-structure-aware}}
+\begin{lightprompt}[title=System Prompt, label={lst:sys-structure-aware}]
 _SYSTEM_PROMPT = """\
 You are an expert C/C++ security engineer specializing in vulnerability patching.
 
@@ -925,6 +925,9 @@ Use one or more Search & Replace blocks — each one replaces an exact code sect
   \end{tikzpicture}
 \end{figure}
 
+\begin{lightprompt}[title=Judge System Prompt, label={lst:judge-prompt}]
+You are a security code reviewer. Given a vulnerability diagnosis and a proposed patch, determine if the patch correctly fixes the root cause. Be strict: the patch must address the actual vulnerability, not just add superficial checks. Respond with VERDICT: CORRECT, INCORRECT, or UNCERTAIN, followed by brief reasoning.
+\end{lightprompt}
 
 The pipeline has the following functions available as tools:
 
@@ -943,13 +946,14 @@ The pipeline has the following functions available as tools:
   \addlinespace
   \texttt{check\_c\_syntax} & Parses the candidate patch with \texttt{tree-sitter-c} when available, falling back to brace-balance heuristics otherwise\\
   \addlinespace
-  \texttt{verify\_fix\_correctness} & Calls a secondary LLM (same Azure deployment by default) as a judge to assess whether the candidate patch addresses the root cause; returns \texttt{CORRECT}, \texttt{INCORRECT}, or \texttt{UNCERTAIN} with justification. This LLM call happens independently of the main flux, which include a different system prompt. Falls back to CWE-specific heuristics if the judge call is unavailable. \\
+  \texttt{verify\_fix\_correctness} & Calls a secondary LLM (same Azure deployment by default) as a judge to assess whether the candidate patch addresses the root cause; returns \texttt{CORRECT}, \texttt{INCORRECT}, or \texttt{UNCERTAIN} with justification. This LLM call happens independently of the main flux, which include a different system prompt (showed on \ref{lst:judge_prompt}).
+   Falls back to CWE-specific heuristics if the judge call is unavailable. \\
   \texttt{submit\_patch} & Records the final \texttt{patch} and its \texttt{reasoning}, and exits the loop \\
 \end{tabularx} 
 \end{table}
 
-\begin{lightprompt}[title=Patch Instructions, label={lst:patch_instructions}]
-"Error: one or more SEARCH blocks were not found verbatim in the target source. Copy the exact lines from the target code (including tabs/whitespace) and call submit_patch again"
+\begin{lightprompt}[title=Patch Instructions, label={lst:patch-instructions}]
+"Error: one or more SEARCH blocks were not found verbatim in the target source. Copy the exact lines from the target code (including tabs/whitespace) and call submit\_patch again"
 \end{lightprompt}
 
 \paragraph{Patch representation and materialization.} The patch output follows a SEARCH\&REPLACE block format. 
@@ -969,7 +973,7 @@ This format has a couple of advantages. First, compared to returning the full co
 The SEARCH\&REPLACE pairs are extracted via regular expression and applied to the target code in sequence using string matching.
 If any SEARCH block does not match the input code verbatim, the submission is rejected with error feedback sent to the model as the tool result. 
 This allows iterative refinement.
-As the next step, the model re-enters the loop to correct the SEARCH block, by using the \ref{lst:patch_instructions} prompt and resubmit it.
+As the next step, the model re-enters the loop to correct the SEARCH block, by using the \ref{lst:patch-instructions} prompt and resubmit it.
 If the match succeeds, the reconstructed patched file is returned as result and the loop ends.
 
 
@@ -1158,3 +1162,4 @@ Paired per-query deltas + a sign/Wilcoxon test — never compare aggregate means
 add discussion section
 - how did i come to these results
 - why i took these decisions
+
