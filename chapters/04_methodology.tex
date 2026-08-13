@@ -606,7 +606,7 @@ $$\langle \mathbf{a}, \mathbf{b} \rangle = \mathbf{a} \cdot \mathbf{b} = \sum_{i
 
 The PCA-based embedders save the fitted PCA to reuse it on inference time. Each vector indexes the following metadata: CVE identifier number, CWE identifier number, function name, project, variant, number of nodes, plus any extra fields from \texttt{pair.meta}. 
 
-\section*{Agent Architecture}
+\section*{Agent Architecture} \label{section:agent-architecture}
 
 The agent receives the retrieved context, if applicable, and the vulnerable code, and is responsible for returning a candidate patch.
 
@@ -930,6 +930,18 @@ Four backend approaches were implemented:
 
 Swapping between backends only requires call \texttt{use\_backend()} context manager, no other code changes are needed.
 
+\subsection*{Batch execution and input assembly}
+
+The system provides an outer loop via \texttt{run\_batch\_inference()}, which is used to evaluate the overall performance using a dataset. 
+This loop starts by building a single agent instance with the selected architecture via the registry, which will be shared across all queries. It receives as part of the config one evaluation dataset over which it iterates, generating the queries and appending each result to an append-only \texttt{results.jsonl} file after processing. This logging approach was adopted to make the run crash-safe and resumable.
+
+For each query, it assembles a \texttt{PatchContext} before the agent runs that includes, besides what was already listed on \ref{section:agent-architecture}.
+
+%TODO: the Oracle vs. Precomputed retriever distinction is methodologically important — Oracle presumably serves as an upper-bound / ablation condition isolating patch-generation quality from retrieval quality. Worth stating this framing explicitly if that's the intent, since it directly supports a "how much does retrieval error contribute to patch failure" analysis in your Results chapter.
+
+Ea
+
+
 % ### Layer 4 — Batch Runner (`src/agents/batch_inference.py`)
 
 % ```
@@ -982,9 +994,7 @@ Swapping between backends only requires call \texttt{use\_backend()} context man
 %                     ▼
 %         python -m src.evaluate → metrics dashboard
 
-\textbf{Agent roles.}
 \textbf{Structure-aware prompt construction.}
-\paragraph{Patching architectures (experimental axis).}
 
 
 \paragraph{Versioned prompts.}
