@@ -604,33 +604,37 @@ $$\text{Cosine Similarity} = \cos(\theta) = \frac{\mathbf{a} \cdot \mathbf{b}}{\
 Because by definition the $${\Vert{}\mathbf{x}\Vert{}_2}$$ = 1, the cosine formula becomes an inner product calculation:
 $$\langle \mathbf{a}, \mathbf{b} \rangle = \mathbf{a} \cdot \mathbf{b} = \sum_{i=1}^{n} a_i b_i$$
 
-The PCA-based embedders save the fitted PCA to reuse them on the inference time. Each vector indexes the following metadata: cve  identifier number, cwe identifier number, function name, project, variant, number of nodes nodes, plus any extra fields from \texttt{pair.meta}. 
+The PCA-based embedders save the fitted PCA to reuse it on inference time. Each vector indexes the following metadata: CVE identifier number, CWE identifier number, function name, project, variant, number of nodes, plus any extra fields from \texttt{pair.meta}. 
 
 \section*{Agent Architecture}
 
-The agent receives the \texttt{retrieved context + vulnerable code} and is responsible for returning a *patch*.
+The agent receives the retrieved context, if applicable, and the vulnerable code, and is responsible for returning a candidate patch.
 
-Just like the retrieval, the generation code is built on top of abstractions that allow easier extention of different implementation for experimentation purposes.
+Just as with retrieval, the generation code is built on top of abstractions that allow easy extension with different implementations for experimentation.
 
 
-We have three dataclasses trough which the flow passes:
+Three data classes carry the flow through the pipeline and standardize the information handling:
 
 \begin{itemize}
-  \item PatchContext — the input packet: \texttt{example\_db} (the retrieved similar CVE's metadata), 
-  \texttt{target\_db} (the CVE to fix), \texttt{target\_code} (vulnerable C source), 
-  and optionally \texttt{graph\_context} $+$ \texttt{query\_pair} (CPG graphs for graph-aware variants).
-  \item AgentResult — the output packet: `parsed` (the `PatchResult` with `cot` + \texttt{vuln\_patch}), `turns` (one `InvocationRecord` per LLM call), 
-  \texttt{tool\_calls} (log of tool executions), \texttt{prompt\_fingerprint}, and token totals.
-  \item Agent (Protocol) — anything with `.name` and `.run(ctx: PatchContext) -> AgentResult`. 
+  \item \textbf{PatchContext}: wraps the input, including the similar CVE's metadata retrieved from a registered database, the CVE identifier, vulnerable C source,  query pair (%TODO verify it
+  and, for graph-aware variants, the CPG graph context.
+  \item \textbf{AgentResult}: wraps the output data consisting of Chain of Thought and the vulnerable code, the patched code, each of the LLM call turns (stored as \texttt{InvocationRecord}, log of tool call executions along with prompt fingerprints, and the total number of tokens.
+\item \textbf{Agent}: base class that works as a Protocol containing the agent name and a run method implementation that receives a \texttt{PatchContext} as input and generates a \texttt{AgentResult} object. With that, it is possible to easily integrate different agent approaches by following the pipeline's interface while maintaining the observability necessary for performance evaluation.  
 \end{itemize}
 
-To allow the easy switch between different agents architecture, there is a \texttt{resgistry.py}
-An architecture is identified by name and selectable via `--architecture` on the CLI or \texttt{config.yaml agents.architecture}:
+To allow easy switching between different agent architectures, implementations are registered in \texttt{resgistry.py} and selected either by name \texttt{--architecture} on the CLI or \texttt{agents.architecture} in \texttt{config.yaml}:
 
-The goal is to keep the architecture as simple as possible, so we are starting with a simple agent called \texttt{single\_turn} (located \text{single\_turn.py})
-It consists of one LLM call, few-shot prompt and, a marker-parsed output.
+The work developed two agent implementations \texttt{Single Turn}, a minimal one-shot baseline, and a \texttt{Tool Calling} agent, which uses ReAct loops with access to coding tools.
+% TODO citation: justify the stragegy of implementation adopted by citing a work 
 
+\subsection*{Single-turn LLM}
 
+The design goal is to keep the baseline architecture as simple as possible.
+It consists of a single LLM call using a few-shot prompt and the output extracted via a marker parsing.
+The input is the vulnerable code and the set of vulnerable classes that can be present in the code.
+ % simple agent called \texttt{single\_turn} (located \text{single\_turn.py})
+
+% recreate or remove the diagram
 \vspace{0.2cm}
 \begin{figure}[h!]
   \caption[Patch pipeline]{Main methods of the patching pipeline with agent}\label{diagram:patch_pipeline}
@@ -730,10 +734,20 @@ It consists of one LLM call, few-shot prompt and, a marker-parsed output.
 % ) and inject them as `{target_graph_context}` in the prompt.
 
 
-\paragraph{Structure-aware tooling.}
+\subsection{Agent with structure-aware tooling.}
 
-ReAct~\cite{react2023google} loop where the LLM reasons and calls tools iteratively until it reaches a submition point and it calls \texttt{submit\_patch}.
-It may also happen that the agent hits the maximum number of iterations, which is set to 6.
+This agent follows a ReAct loop~\cite{react2023google}, in which the LLM reasons and calls tools iteratively until it reaches a submission point and calls \texttt{submit\_patch}, or until it hits the maximum number of iterations, set to 6.
+
+The agent calls follow the OpenAI function-calling format. 
+At each iteration, the agent calls \texttt{backend.complete(model, messages, tools=full\_tools, tool\_choice="auto")} with the five tool schemas. 
+The response is then sent by \texttt{finish\_reason}.
+If the LLM's response includes \texttt{tool\_calls}, the respective tool call will be executed and appended to the conversation as \texttt{assistant} and \texttt{tool} messages.
+
+The loop may terminate for two reasons: 
+\begin{enumerate}
+    \item \texttt{stop}: no tool call was made, and the agent attempts to extract a patch from the free-form response text as a fallback.
+    \item \texttt{length}: the LLM response extrapolates the token limit, a recovery prompt instructs the model to respond in a shorter fashion. If any iterations remain, the loop continues.
+\end{enumerate}
 
 \vspace{0.2cm}
 \begin{figure}[h!]
@@ -855,25 +869,46 @@ The pipeline has the following functions available as tools:
   \toprule
   \textbf{Tool} & \textbf{Functionality} \\
   \midrule
-  \texttt{get\_vulnerability\_context} & Returns CVE description, CWE category, and typical fix patterns from the static knowledge base (\texttt{cwe\_descriptions.py}). It covers CWE-20/190/362/400/416/476/787 \\
+  \texttt{get\_vulnerability\_context} & Returns CVE description, CWE category, and typical fix patterns from the static knowledge base (\texttt{cwe\_descriptions.py}).% It covers CWE-20/190/362/400/416/476/787 
+  \\
   \addlinespace
-  \texttt{analyze\_example\_fix} & Calculate the difference between \texttt{example\_db.original\_code} and \texttt{example\_db.vuln\_patch} and returns a structured unified diff (truncated to a token budget). Also return a record of the fixes (\texttt{fix\_list}) \\
+  \texttt{analyze\_example\_fix} & Calculate the difference between the input code to be patched and example code from the retriever execution, and returns a structured unified diff following a token budget. Also return a record of the fixes (\texttt{fix\_list}) TODO add details about the fix list\\
   \addlinespace
-  \texttt{check\_c\_syntax} & Parses the patch with tree-sitter-c if available, falls back to brace-balance heuristics \\
+  \texttt{check\_c\_syntax} & Parses the candidate patch with \texttt{tree-sitter-c} when available, falling back to brace-balance heuristics otherwise\\
   \addlinespace
-  \texttt{verify\_fix\_correctness}      & Calls a second LLM (same deployment by default) as a judge to check whether the patch addresses the root cause \\
-  \texttt{submit\_patch} & Records the final \texttt{patch} + \texttt{reasoning} and exits the loop \\
+  \texttt{verify\_fix\_correctness} & Calls a second LLM (same deployment by default) as a judge to assess whether the candidate patch addresses the root cause; returns \texttt{CORRECT}, \texttt{INCORRECT}, or \texttt{UNCERTAIN} with justification. Falls back to CWE-specific heuristics if the judge call is unavailable. \\
+  \texttt{submit\_patch} & Records the final \texttt{patch} and its \texttt{reasoning}, and exits the loop \\
 \end{tabularx} 
 \end{table}
 
-agent receives the \texttt{retrieved context + vulnerable code} and is responsible for returning
+\paragraph{Patch representation and materialization.} The patch output follows a SEARCH\&REPLACE block format. 
+Each \texttt{submit\_patch} output contains one or more blocks in the following format:
+
+\begin{verbatim}
+<<<<<<< SEARCH
+[exact verbatim lines from target_code]
+=======
+[replacement lines]
+>>>>>>> REPLACE
+\end{verbatim}
+
+% TODO review
+This format has a couple of advantages. First, compared to returning the full code, which in many cases can be lengthy, it avoids truncation errors, any "generation errors" that change non-vulnerable code, and, ultimately, unnecessary output token costs. Second, compared to standard unified diff, it is required to add to the header the exact lines of change, which can lead to frequent hallucinations and makes it more difficult to reconstruct original code files if only a snippet was passed.  
+
+The SEARCH\&REPLACE pairs are extracted with regular expression and applied to the vulnerable input code in sequence using string matching.
+If any SEARCH block does not match the input code, the submission is rejected and an error message is sent to the model as the tool result. 
+As the next step of the loop, the model might then correct the SEARCH block and resubmit it.
+If the match succeeds, the reconstructed patched file is returned as result and the loop ends.
 
 \paragraph{Backend abstraction.}
-The pipeline has a LLM Transport (\texttt{src\/agents\/backends.py}) abstraction that is defined by a protocol (\texttt{CompletionBackend}) that allows different LLM completion.
-With this we can run part of the pipeline without rerun the whole pipeline. 
-Also, it allows record and mocked responses so we can experiment only part of the pipeline without incurring high costs
-The \texttt{complete()} signature was extended with \texttt{tools=} and \texttt{tool\_choice=} kwargs, so the same backend handles both architectures. 
-Four implementations:
+The pipeline has a LLM Transport abstraction
+% (\texttt{src\/agents\/backends.py})
+, defined by \texttt{CompletionBackend} protocol that allows the underlying LLM to be swapped without changing the calling code.
+This also allows re-running part of the pipeline as needed, without re-executing it fully, and supports recorded and mocked responses so individual pipeline stages can be experimented independently without incurring high costs.
+
+The \texttt{complete()} signature was extended with \texttt{tools=} and \texttt{tool\_choice=} kwargs, so the same backend handles both the Single-turn LLM and Agent with structure aware tooling architectures. 
+
+Four backend approaches were implemented:
 
 \begin{table}[ht]
  \caption[Types of API call Table]{An example for a simple table.}\label{tab:sample}
@@ -883,17 +918,17 @@ Four implementations:
   \toprule
   \textbf{Backend} & \textbf{Function} \\
   \midrule
-  \texttt{LiveBackend} & Azure/litellm call (lazy import) \\
+  \texttt{LiveBackend} & Azure/LiteLLM call (lazily imported). \\
   \addlinespace
-  \texttt{MockBackend} & Deterministic output for unit tests \\
+  \texttt{MockBackend} & Returns deterministic output, useful for unit testing. \\
   \addlinespace
-  \texttt{RecordBackend} & Wraps Live, records to JSONL cassette \\
+  \texttt{RecordBackend} & Wraps \texttt{LiveBackend} and records to JSONL cassette \\
   \addlinespace
-  \texttt{ReplayBackend} & Reads from cassette, zero network  \\
+  \texttt{ReplayBackend} & Reads from a previously recorded cassette, with zero network calls  \\
 \end{tabularx} 
 \end{table}
 
-To swap between backends, it is only necessary to call \texttt{use\_backend()} context manager, no other call change is needed.
+Swapping between backends only requires call \texttt{use\_backend()} context manager, no other code changes are needed.
 
 % ### Layer 4 — Batch Runner (`src/agents/batch_inference.py`)
 
