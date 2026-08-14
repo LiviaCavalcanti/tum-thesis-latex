@@ -1,7 +1,113 @@
 \chapter{Results}\label{chapter:results}
 
 \section{Retriever Experiments}
+
+\subsection{ AutoPatch Dataset Results (n=225)}
+  % \textbf{Goal:} Validate that structural embeddings match CodeBERT performance.
+
+  \vspace{0.3cm}
+  \begin{table}
+    \centering
+    \small
+    \begin{tabular}{lrrrr}
+      \toprule
+      \textbf{Embedder} & \textbf{H@1} & \textbf{H@5} & \textbf{MRR} & \textbf{CWE R.} \\
+      \midrule
+      \multicolumn{5}{c}{\textit{Structure-Only}} \\
+      \midrule
+      \textbf{Combined} & \textbf{0.8904} & \textbf{0.9589} & \textbf{0.9162} & \textbf{0.4978} \\
+      GIN & 0.7260 & 0.8767 & 0.7879 & 0.4427 \\
+      WL & 0.6986 & 0.7945 & 0.7363 & 0.4386 \\
+      \midrule
+      \multicolumn{5}{c}{\textit{CodeBERT pretrained}} \\
+      \midrule
+      CodeBERT (baseline) & 0.1533 & 0.2200 & 0.1826 & 0.2933 \\
+      CodeBERT (seq) & 0.7534 & 0.8630 & 0.7927 & 0.4121 \\
+CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
+    \end{tabular}
+    \\[2pt]
+    {\tiny\textcolor{notecol}{Source: \texttt{experiments/output/checkpoint5/20260505\_141347\_experiment\_f59ab1/results.json}}}
+  \end{table}
+
+  
 PCA and L2 normalization Discussion with experiments
+
+% \centering
+  \vspace{0.2em}
+  {\small
+  \renewcommand{\arraystretch}{1.35}
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{l *{3}{c} c *{3}{c} c *{3}{c}}
+    \toprule
+    & \multicolumn{3}{c}{\textbf{PCA + L2} {\footnotesize(baseline)}}
+    && \multicolumn{3}{c}{\textbf{No PCA, L2 only} {\footnotesize(Abl.\ A)}}
+    && \multicolumn{3}{c}{\textbf{PCA, no L2} {\footnotesize(Abl.\ B)}} \\
+    \cmidrule{2-4} \cmidrule{6-8} \cmidrule{10-12}
+    \textbf{Embedder}
+      & hit@1 & MRR & CWE
+      && hit@1 & MRR & CWE
+      && hit@1 & MRR & CWE \\
+    \midrule
+    \rowcolor{c1!12}
+    Combined
+      & \chit{84.9\%} & \chit{.890} & \chit{.501}
+      && \cwarn{74.0\%} & .780 & .398
+      && \cmiss{1.4\%} & .047 & .071 \\
+    CodeBERT seq
+      & 75.3\% & .793 & .412
+      && 76.7\% & .799 & .402
+      && \cmiss{1.4\%} & .107 & .160 \\
+    GIN
+      & 72.6\% & .788 & .443
+      && 72.6\% & .788 & .443
+      && \cmiss{1.4\%} & .044 & .068 \\
+    CodeBERT pat.
+      & 71.2\% & .768 & .414
+      && 75.3\% & .788 & .394
+      && \cmiss{1.4\%} & .132 & .201 \\
+    WL
+      & 65.8\% & .720 & .423
+      && 67.1\% & .723 & .435
+      && \cmiss{0.0\%} & .045 & .065 \\
+    RGCN
+      & 60.3\% & .676 & .372
+      && \cwarn{67.1\%} & .733 & .390
+      && \cmiss{0.0\%} & .014 & .060 \\
+    \bottomrule
+  \end{tabular}}
+
+  % \scriptsize L2 normalization is \textbf{essential} for the pipeline.
+  %   Removing it causes complete retrieval failure across all 6 embedders.
+  %   PCA matters mainly for multi-stream embedders (Combined: $-$11~pp without it).
+
+   \textbf{Mean pairwise similarity}
+
+  \vspace{0.3em}
+  {\small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{lrr}
+    \toprule
+    \textbf{Embedder} & \textbf{With L2} & \textbf{No L2} \\
+    \midrule
+    Combined      & 0.02   & \cmiss{416{,}081} \\
+    CodeBERT seq  & 0.01   & \cmiss{456} \\
+    GIN           & 0.99   & \cmiss{260{,}029} \\
+    RGCN          & 0.14   & \cmiss{4{,}281} \\
+    \bottomrule
+  \end{tabular}}
+
+    {\small Without L2 normalization, FAISS inner product computes:}
+
+  $$\text{score}(q, d) = \mathbf{q} \cdot \mathbf{d} = \|\mathbf{q}\| \, \|\mathbf{d}\| \cos\theta$$
+
+  {\small The score is dominated by $\|\mathbf{q}\| \, \|\mathbf{d}\|$, not $\cos\theta$.}
+
+
+  \vspace{0.3em}
+  % {\scriptsize\color{black!55}
+  % Without L2, all vectors appear ``close'' — a graph with more nodes
+  % produces a larger vector that dominates inner-product ranking.}
+
 
 \section{Generation Experiments}
 To evaluate prompt sensitivity, two configurations of the agentic pipeline were compared. They share the same parameters: the model (gpt-4o), the retrieved example, the target code, and the dataset split. 
@@ -13,7 +119,7 @@ To evaluate prompt sensitivity, two configurations of the agentic pipeline were 
 
 % The \texttt{run\_meta.json} showed one fingerprint for both only because that field is computed at the run level from the "default" variant name, regardless of what the architecture actually does internally. So they differ in both prompt and control flow.
 
-Comparing these two different fingerprints per record using surface metrics, \texttt{BLEU/ROUGE/Jaccard}, the analysis shows similar results across the two strategies.
+Comparing these two different fingerprints per record using surface metrics, \texttt{BLEU / ROUGE / Jaccard}, the analysis shows similar results across the two strategies.
 However, this similarity is not a consequence of a similar patch quality.
 Rather, this occurs because the metrics get saturated by the outputs dominated by the unchanged code body.
 
