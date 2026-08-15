@@ -183,7 +183,18 @@ On the other hand, most embedders even show a slight improvement without PCA (Co
   \caption{Embedder Retrieval Performance Comparison Across CWE Categories and Overall Metrics}\label{tab:retrieval_embeddings}
 \end{table}
 
-Analyzing the confidence distribution across CWEs for each of the retriever strategies, we see the task difficulty. Each retriever is stronger with a specific CWE. For CodeBERT pattern ~\ref{img:retrieval_pattern}, it is particularly good for the CWE-190, with no overlap between wrong and correct retrievals. CWE-416 and CWE-787 have much more wrong retrievals than the correct ones, with the p25 of the correct cwe-362 meeting the median of the wrong ones. the 416 had a very close confidence between the wrong and the correct ones, with the wrong confidence even being larger. for the cew-787 and the cwe-20 there is an overlap between the correct confidence tail and the wrong ones. different from the others, the cwe-362 and cwe-476 present a disperse confidence distribution for the wrong ones. this shows that is is possible to set a theshold cut for the retrieval and avoiding the model to return a value for something it is not confident about. However the threshold might be different for each CWE class, and some False negatives are expected.
+Analyzing the confidence distribution per retriever, we see that task difficulty varies across CWEs, each retriever having the categories in which it excels. Overall, CodeBERT-based retrievers outperform the Combined embedding model, suggesting that semantic signal matters more than the code structure model in the real scenarios. 
+For CodeBERT pattern, CWE-787, CWE-20, and CWE-476 show no overlap between wrong and correct-matched retrievals, but for CWE-20 the higher ranking scores are wrong retrievals. CWE-362 shows a fuzzier separation, even though the errors lie on the tail of the correct ranking score distribution, with the p25 ranking score of the correct retrievals meeting the median of the wrong ones. The CWE-416 has a close behavior, but here the upper score tail of the wrong retrievals overlap the whole scores distribution of the correct ones, which in practice means that the retriever rank some wrong queries as high as the correct ones. With the p75 of the wrong scores much lower then the end of the distribution of the correct scores, there is no possibility for threshold here. Very similar behavior with 416.
+CodeBERT\_seq presents the same performance, but with lower mean for CWE-190,  overlap for CWE-787, higher scores for the wrong retrievals for the CWE-362. In general, it tends to have higher ranking scores 
+
+Combined presents in general low ranking score. While codebert\_pattern and codebert\_seq score correct matches between 0.6 and 1.0, the combined approach concentrates almost all scores in the 0.2 to 0.5 range.
+For both codebert\_pattern and codebert\_seq, the median ranking score for a "correct match" (green) is consistently higher than for an "error" (red).
+
+The CodeBERT\_pattern model perform well for CWE-190, CWE-20, CWE-416, and CWE-787, as the correct matches are clustered at high scores, often above 0.8, while errors remain lower. This suggests that these vulnerabilities have distinct lexical signatures that CodeBERT is able to capture.
+For the remaining two CWEs, the models struggle to distinguish between safe and unsafe concurrent code. 
+The correct matches and errors heavily overlap. For CWE-476 (NULL Pointer Dereference), the codebert\_seq model median is very close to the correct match median. 
+This indicates it is likely returning a high volume of false positives, perhaps because missing a null check looks textually identical to code where a null check isn't necessary.
+
 FIX CONFIDENCE SCORE TO SIMILARITY SCORE
 \begin{figure}
     \centering
