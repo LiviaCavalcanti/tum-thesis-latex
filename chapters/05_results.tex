@@ -108,6 +108,32 @@ PCA and L2 normalization Discussion with experiments
   % Without L2, all vectors appear ``close'' — a graph with more nodes
   % produces a larger vector that dominates inner-product ranking.}
 
+very nice table structure
+ \begin{tabular}{l *{6}{c} }
+    \toprule
+    & \multicolumn{6}{c}{\textbf{Retrieval}} \\
+    \cmidrule{2-7} 
+    \textbf{Strategy}
+      & hit@1 & hit@5 & hit@10 & MRR & nDCG@10 & MAP@10 \\
+    \midrule
+    \rowcolor{c1!7}
+    \texttt{norm\_concat\_pca}
+      & \chit{80.8\%} & \chit{93.2\%} & \chit{95.9\%} & \chit{.849} & \chit{.645} & \chit{.514} \\
+    \texttt{concat\_pca}
+      & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
+    \texttt{pca\_concat\_pca}
+      & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
+    \texttt{pca\_concat}
+      & \cmiss{64.4\%} & \cmiss{78.1\%} & \cmiss{83.6\%} & \cmiss{.706} & \cmiss{.449} & \cmiss{.334} \\
+    \addlinespace[3pt]
+    \multicolumn{7}{l}{\scriptsize\textit{4-way fusion (+ CodeBERT-pattern)}} \\
+    \addlinespace[1pt]
+    \texttt{4way\_concat\_pca}
+      & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
+    \texttt{4way\_norm\_concat\_pca}
+      & \cwarn{72.6\%} & \cwarn{86.3\%} & \cwarn{87.7\%} & \cwarn{.773} & \cwarn{.569} & \cwarn{.440} \\
+    \bottomrule
+  \end{tabular}}
 
 \section{Generation Experiments}
 To evaluate prompt sensitivity, two configurations of the agentic pipeline were compared. They share the same parameters: the model (gpt-4o), the retrieved example, the target code, and the dataset split. 
@@ -297,7 +323,111 @@ The CodeBERT-based retrievers have a better overall performance compared to the 
 
 Ensembled retrieval \ref{img:retrieval_combined} has a remarkable better performance for the CWE-787 and CWE-20 compared to the semantic embedders, suggesting that these model manage to get the structure information very well for these cases. CWE-416 has a higher confidence for the wrong retrievals. Fors cwe-190, CWE-362 and CWE-476 there is no clear difference between the distribution of the wrong and correct retrieval, making it much harder to set a threshold.
 
-    \subsection{Patching Performance}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{img/retrieval/retriever_comparison.png}
+    \caption{Ranking score distribution by Embedding Strategy}
+    % \label{img:retrieval_combined}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{img/retrieval/retriever_cwe_boxplots.png}
+    \caption{Ranking score distribution by CWE and Embedding statregy}
+    % \label{img:retrieval_combined}
+\end{figure}
+
+\subsection{Patching Performance}
+
+\subsection{Codex-5.3} 
+% \begin{table}[htbp]
+%   \centering
+%   \small
+%   \setlength{\tabcolsep}{4.5pt}
+%   \caption{Evaluation summary comparing Codex-5.3 Baseline against Tool Calling Agent (Without Retrieval) across CWEs.}
+%   \label{tab:codex_vs_tool_calling}
+%   \begin{tabular}{llcccccccc}
+%     \toprule
+%     \thead{Method} & \thead{CWE} & \thead{N} & \thead{Exact} & \thead{BLEU-4} & \thead{BERT\\$\text{F}_1$} & \thead{ROUGE-L\\$\text{F}_1$} & \thead{Hunk\\$\text{F}_1$} & \thead{Token\\Jaccard} & \thead{Char\\Ratio} \\
+%     \midrule
+%     \multicolumn{10}{l}{\textit{Codex-5.3 Baseline}} \\
+%     & CWE-190 & 15 & 0 & 0.2599 & 0.1629 & 0.4016 & 0.6980 & 0.2640 & 0.2621 \\
+%     & CWE-20  & 15 & 0 & 0.1466 & 0.3476 & 0.3416 & 0.8342 & 0.2626 & 0.1488 \\
+%     & CWE-362 & 15 & 0 & 0.2360 & 0.3523 & 0.3793 & 0.9051 & 0.3403 & 0.2559 \\
+%     & CWE-416 & 15 & 0 & 0.0492 & 0.3018 & 0.2350 & 0.8644 & 0.1925 & 0.0580 \\
+%     & CWE-476 & 14 & 0 & 0.0214 & 0.1981 & 0.1695 & 0.8241 & 0.1582 & 0.0377 \\
+%     & CWE-787 & 15 & 0 & 0.0436 & 0.0693 & 0.2158 & 0.0347 & 0.2243 & 0.1210 \\
+%     \cmidrule(lr){2-10}
+%     & \textbf{Overall} & \textbf{89} & \textbf{0} & \textbf{0.1273} & \textbf{0.2391} & \textbf{0.2918} & \textbf{0.6919} & \textbf{0.2412} & \textbf{0.1485} \\
+%     \midrule
+%     \multicolumn{10}{l}{\textit{Tool Calling Agent (Without Retrieval)}} \\
+%     & CWE-190 & 15 & 5 & 0.7505 & 0.6964 & 0.7895 & 0.6071 & 0.7700 & 0.7713 \\
+%     & CWE-20  & 15 & 2 & 0.8478 & 0.9073 & 0.9240 & 0.8634 & 0.6986 & 0.8549 \\
+%     & CWE-362 & 15 & 6 & 0.9817 & 0.9565 & 0.9917 & 0.9975 & 0.9946 & 0.9741 \\
+%     & CWE-416 & 15 & 6 & 0.8958 & 0.8835 & 0.9175 & 0.9071 & 0.9214 & 0.9092 \\
+%     & CWE-476 & 14 & 7 & 0.8900 & 0.9334 & 0.9235 & 0.8436 & 0.9213 & 0.8971 \\
+%     & CWE-787 & 15 & 0 & 0.8694 & 0.5104 & 0.9245 & 0.0000 & 0.7800 & 0.7894 \\
+%     \cmidrule(lr){2-10}
+%     & \textbf{Overall} & \textbf{89} & \textbf{26} & \textbf{0.8723} & \textbf{0.8132} & \textbf{0.9117} & \textbf{0.7015} & \textbf{0.8468} & \textbf{0.8657} \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Comparison of Performance Across Methods by CWE Category.}
+  \label{tab:cwe_comparison_all_methods}
+  \begin{tabular}{llcccc}
+    \toprule
+    \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-190}} 
+      & Codex-5.3 Baseline                & \cmiss{0.1629} & 0.4016 & \chit{0.6980} \\
+      & Tool Calling Agent (w/o Retr.)    & 0.6964 & 0.7895 & 0.6071 \\
+      & CodeBERT Seq                      & 0.6954 & \chit{0.7912} & 0.6164 \\
+      & CodeBERT Pattern                  & 0.6955 & 0.7897 & 0.6148 \\
+      & Combined                          & 0.6943 & 0.7875 & 0.6073 \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-20}} 
+      & Codex-5.3 Baseline                & 0.3476 & 0.3416 & 0.8342 \\
+      & Tool Calling Agent (w/o Retr.)    & 0.9073 & 0.9240 & 0.8634 \\
+      & CodeBERT Seq                      & 0.9108 & 0.9291 & \chit{0.8643} \\
+      & CodeBERT Pattern                  & 0.9108 & 0.9266 & 0.8636 \\
+      & Combined                          & 0.9108 & \chit{0.9282} & 0.8641 \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-362}} 
+      & Codex-5.3 Baseline                & 0.3523 & 0.3793 & 0.9051 \\
+      & Tool Calling Agent (w/o Retr.)    & 0.9565 & 0.9917 & 0.9975 \\
+      & CodeBERT Seq                      & \chit{0.9743} & 0.9942 & \chit{0.9988} \\
+      & CodeBERT Pattern                  & 0.9140 & 0.9369 & 0.9884 \\
+      & Combined                          & 0.9669 & \chit{0.9968} & 0.9981 \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-416}} 
+      & Codex-5.3 Baseline                & 0.3018 & 0.2350 & 0.8644 \\
+      & Tool Calling Agent (w/o Retr.)    & 0.8835 & 0.9175 & 0.9071 \\
+      & CodeBERT Seq                      & \chit{0.9387} & \chit{0.9717} & \chit{0.9337} \\
+      & CodeBERT Pattern                  & 0.9179 & 0.9602 & 0.8990 \\
+      & Combined                          & 0.9369 & 0.9691 & 0.9249 \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-476}} 
+      & Codex-5.3 Baseline                & 0.1981 & 0.1695 & 0.8241 \\
+      & Tool Calling Agent (w/o Retr.)    & 0.9334 & 0.9235 & 0.8436 \\
+      & CodeBERT Seq                      & \chit{0.9283} & \chit{0.9167} & \chit{0.8315} \\
+      & CodeBERT Pattern                  & 0.9153 & 0.8990 & 0.8009 \\
+      & Combined                          & 0.8514 & 0.8432 & 0.8292 \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-787}} 
+      & Codex-5.3 Baseline                & 0.0693 & 0.2158 & 0.0347 \\
+      & Tool Calling Agent (w/o Retr.)    & 0.5104 & 0.9245 & 0.0000 \\
+      & CodeBERT Seq                      & 0.5227 & 0.9350 & 0.1282 \\
+      & CodeBERT Pattern                  & \chit{0.5241} & \chit{0.9370} & \chit{0.1894} \\
+      & Combined                          & 0.5165 & 0.9139 & 0.0000 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+Tool calling agent, Codebert seq, code bert pattern show similar performance. this indicate that a good prompt pipeline with tooling might be enough to get a good performance when using such a powerful model.
+
 % ==========================================================================================
 %   OVERALL RESULTS
 % ==========================================================================================
@@ -381,12 +511,52 @@ Ensembled retrieval \ref{img:retrieval_combined} has a remarkable better perform
     \textbf{Total Errors}     & 9/34 (26.5\%)  & 5/25 (20.0\%)  & 1/25 (4.0\%) \\
     \bottomrule
   \end{tabular}
-  \caption{LLM Judge Validation Performance Across Embedder Approaches}
+  \caption{LLM Judge Validation Performance Across Embedder Approaches (Codex-5.3)}
 \end{table}
-The Length Fallacy: CWE-787 (Out-of-bounds Write) has the highest concentration of small, manageable files ($53.33\%$ are $<500$ lines), yet it yields 0.0\% valid patches across all three LLM Judge evaluations.Complex Logic vs. Context Window: Conversely, CWE-362 (Race Conditions) has 0.0\% files under 500 lines, yet achieves strong retrieval alignment (Hunk F1 $0.9553$) and up to 33.3\% valid patch rates.Conclusion: Patch generation difficulty is strictly bound to semantic vulnerability type, not raw code length.
+Codex-5-3 baseline shows a consistent low performance across all the CWE categories, indicating that only having using a prompt is not enough when patching
+CWE-787 (Out-of-bounds Write), shown to be the hardest class across all the strategies, even though it has the highest amount of small files ($52.41\%$ are $<500$ lines), yet it yields 0.0\% valid patches across all three LLM Judge evaluations.
+% investigate the reason behind High Rouge shows 
+ Conversely, CWE-362 (Race Conditions) has 0.0\% files under 500 lines, yet achieves strong retrieval alignment (Hunk F1 $0.9553$) and up to 33.3\% valid patch rates.
+ This suggests that patch generation difficulty is more related to semantic vulnerability type than to raw code length.
 
+\begin{table}[htbp]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt} % Reduces horizontal padding between columns
+  \caption{Patch generation summary by embedding variant / mode -- by language Codex-5.3}
+  \label{tab:patch_analysis_summary_by_language}
+  \begin{tabular}{llrrrrrrrr}
+    \toprule
+    \textbf{Mode} & \textbf{Lang.} & \textbf{N} & \makecell{\bfseries Succ.(\%)} & \makecell{\bfseries CVE(\%)} & \makecell{\bfseries CWE(\%)} & \makecell{\bfseries Retr.Sim.} & \textbf{BLEU-4} & \makecell{\bfseries BERT F$_1$} & \makecell{\bfseries Hunk F$_1$} \\
+    \midrule
+    \multirow{2}{*}{Codex Baseline} 
+      & C   & 65 & 100.0 & 20.0 & 29.2 & 0.1172 & 0.0519 & 0.3240 & 0.8452 \\
+      & C++ & 24 &  91.7 &  8.3 & 29.2 & 0.1172 & 0.0621 & 0.2104 & 0.3643 \\
+    \midrule
+    \multirow{2}{*}{Tool Calling (No Retr.)} 
+      & C   & 65 & 100.0 & 20.0 & 29.2 & 0.9603 & 0.9068 & 0.9627 & 0.9533 \\
+      & C++ & 24 & 100.0 & 20.0 & 29.2 & 0.9603 & 0.8528 & 0.6539 & 0.3102 \\
+    \midrule
+    \multirow{2}{*}{CodeBERT Pattern} 
+      & C   & 65 &  90.8 & 52.3 & 61.5 & 0.9116 & 0.7696 & 0.8652 & 0.9343 \\
+      & C++ & 24 &  90.8 & 52.3 & 61.5 & 0.9116 & 0.8525 & 0.6539 & 0.3102 \\
+    \midrule
+    \multirow{2}{*}{CodeBERT Seq} 
+      & C   & 65 &  95.4 & 56.9 & 63.1 & 0.9179 & 0.9185 & 0.9770 & 0.9569 \\
+      & C++ & 24 &  95.4 & 56.9 & 63.1 & 0.9179 & 0.8556 & 0.6539 & 0.3102 \\
+    \midrule
+    \multirow{2}{*}{Combined} 
+      & C   & 65 &  98.5 & 20.0 & 29.2 & 0.9298 & 0.9076 & 0.9636 & 0.9580 \\
+      & C++ & 24 &  98.5 & 20.0 & 29.2 & 0.9298 & 0.8328 & 0.6044 & 0.2116 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+ 
+\subsection{GPT-4o}
+
+Using 
 combined
-4o
+
 % ══════════════════════════════════════════════════
 %   LLM JUDGE SUMMARY  (25 records)
 % ══════════════════════════════════════════════════
@@ -538,4 +708,87 @@ Edit Dist     & 0.0839 & 0.0046 & 0.0752 & 0.0019 & 0.0752 & 0.0019 \\
 Hunk F1       & 0.7758 & 0.9957 & 0.8038 & 0.9957 & 0.8038 & 0.9957 \\
 \bottomrule
 \end{tabular}
+\end{table}
+
+GPT-4o
+\begin{table}[t]
+  \centering
+  \caption{Patch generation summary by embedding variant / mode}
+  \label{tab:patch_analysis_summary}
+  \begin{tabular}{lrrrrrrrrrrrrr}
+    \toprule
+    Source & N & Success (\%) & CVE Match (\%) & CWE Match (\%) & Avg. Retrieval Sim. & Avg. Turns & LLM Judge Valid (\%) & BLEU-4 & BERTScore F1 & ROUGE-1 F1 & ROUGE-2 F1 & ROUGE-L F1 & Hunk F1 \\
+    \midrule
+    codebert\_pattern/single\_turn & 89 & 78.7 & 49.4 & 54.0 & 0.161 & 1.00 & 0.0 & 0.146 & 0.342 & 0.416 & 0.254 & 0.310 & 0.661 \\
+    codebert\_pattern/tool\_calling & 89 & 74.2 & 49.4 & 54.0 & 0.641 & 4.18 & 0.0 & 0.920 & 0.854 & 0.953 & 0.944 & 0.948 & 0.755 \\
+    codebert\_seq/single\_turn & 89 & 67.4 & 49.4 & 54.0 & 0.137 & 1.00 & 1.1 & 0.088 & 0.246 & 0.328 & 0.225 & 0.269 & 0.687 \\
+    codebert\_seq/tool\_calling & 89 & 67.4 & 49.4 & 54.0 & 0.572 & 4.45 & 23.6 & 0.809 & 0.910 & 0.873 & 0.835 & 0.872 & 0.903 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \setlength{\tabcolsep}{3pt} % Tighten horizontal column padding
+  \caption{Patch generation summary by embedding variant / mode -- by CWE}
+  \label{tab:patch_analysis_summary_by_cwe}
+  \begin{tabular}{llrrrrrrrrrrr}
+    \toprule
+    \thead{Mode} & \thead{CWE} & \thead{N} & \thead{Succ.\\(\%)} & \thead{Avg.\\Turns} & \thead{Verify\\(\%)} & \thead{Viol.\\(\%)} & \thead{BLEU-4} & \thead{BERT\\F$_1$} & \thead{R-1\\F$_1$} & \thead{R-2\\F$_1$} & \thead{R-L\\F$_1$} & \thead{Hunk\\F$_1$} \\
+    \midrule
+    \multicolumn{13}{l}{\textit{codebert\_pattern}} \\
+    \hspace{1em} Single Turn & CWE-190 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.005 & 0.126 & 0.196 & 0.063 & 0.145 & 0.826 \\
+    \hspace{1em} Single Turn & CWE-20  & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.204 & 0.428 & 0.548 & 0.262 & 0.346 & 0.773 \\
+    \hspace{1em} Single Turn & CWE-362 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.022 & 0.368 & 0.275 & 0.141 & 0.215 & 0.873 \\
+    \hspace{1em} Single Turn & CWE-416 & 15 & 60.0 & 1.00 & 0.0 & 0.0 & 0.075 & 0.307 & 0.374 & 0.172 & 0.239 & 0.874 \\
+    \hspace{1em} Single Turn & CWE-476 & 14 & 50.0 & 1.00 & 0.0 & 0.0 & 0.276 & 0.250 & 0.480 & 0.365 & 0.390 & 0.661 \\
+    \hspace{1em} Single Turn & CWE-787 & 15 & 100.0 & 1.00 & 0.0 & 0.0 & 0.336 & 0.505 & 0.636 & 0.546 & 0.537 & 0.057 \\
+    \hspace{1em} Tool Calling& CWE-190 & 15 & 86.7 & 3.80 & 100.0 & 33.3 & 0.999 & 0.959 & 0.999 & 0.999 & 0.999 & 0.996 \\
+    \hspace{1em} Tool Calling& CWE-20  & 15 & 60.0 & 4.47 & 100.0 & 20.0 & -- & -- & -- & -- & -- & -- \\
+    \hspace{1em} Tool Calling& CWE-362 & 15 & 60.0 & 4.67 & 93.3 & 33.3 & 0.996 & 0.959 & 0.998 & 0.998 & 0.998 & 0.999 \\
+    \hspace{1em} Tool Calling& CWE-416 & 15 & 80.0 & 4.00 & 100.0 & 33.3 & 0.921 & 0.926 & 0.932 & 0.924 & 0.929 & 0.983 \\
+    \hspace{1em} Tool Calling& CWE-476 & 14 & 71.4 & 4.21 & 100.0 & 14.3 & 0.850 & 0.974 & 0.915 & 0.908 & 0.912 & 0.876 \\
+    \hspace{1em} Tool Calling& CWE-787 & 15 & 86.7 & 3.93 & 100.0 & 60.0 & 0.829 & 0.506 & 0.920 & 0.892 & 0.903 & 0.000 \\
+    \midrule
+    \multicolumn{13}{l}{\textit{codebert\_seq}} \\
+    \hspace{1em} Single Turn & CWE-190 & 15 & 73.3 & 1.00 & 0.0 & 0.0 & 0.000 & 0.083 & 0.128 & 0.041 & 0.108 & 0.849 \\
+    \hspace{1em} Single Turn & CWE-20  & 15 & 46.7 & 1.00 & 0.0 & 0.0 & -- & -- & -- & -- & -- & -- \\
+    \hspace{1em} Single Turn & CWE-362 & 15 & 66.7 & 1.00 & 0.0 & 0.0 & 0.012 & 0.373 & 0.252 & 0.136 & 0.202 & 0.871 \\
+    \hspace{1em} Single Turn & CWE-416 & 15 & 60.0 & 1.00 & 0.0 & 0.0 & 0.143 & 0.277 & 0.382 & 0.217 & 0.270 & 0.897 \\
+    \hspace{1em} Single Turn & CWE-476 & 14 & 71.4 & 1.00 & 0.0 & 0.0 & 0.176 & 0.313 & 0.400 & 0.267 & 0.312 & 0.776 \\
+    \hspace{1em} Single Turn & CWE-787 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.136 & 0.226 & 0.499 & 0.464 & 0.460 & 0.125 \\
+    \hspace{1em} Tool Calling& CWE-190 & 15 & 73.3 & 4.20 & 100.0 & 40.0 & -- & -- & -- & -- & -- & -- \\
+    \hspace{1em} Tool Calling& CWE-20  & 15 & 53.3 & 4.93 & 100.0 & 33.3 & 0.737 & 0.951 & 0.878 & 0.769 & 0.878 & 0.818 \\
+    \hspace{1em} Tool Calling& CWE-362 & 15 & 60.0 & 4.53 & 100.0 & 66.7 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+    \hspace{1em} Tool Calling& CWE-416 & 15 & 66.7 & 4.60 & 100.0 & 40.0 & 0.842 & 0.849 & 0.850 & 0.846 & 0.848 & 0.984 \\
+    \hspace{1em} Tool Calling& CWE-476 & 14 & 71.4 & 4.21 & 100.0 & 28.6 & 0.798 & 0.901 & 0.853 & 0.847 & 0.850 & 0.883 \\
+    \hspace{1em} Tool Calling& CWE-787 & 15 & 80.0 & 4.20 & 100.0 & 20.0 & -- & -- & -- & -- & -- & -- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt} % Reduces horizontal padding between columns
+  \caption{Patch generation summary by embedding variant / mode -- by language}
+  \label{tab:patch_analysis_summary_by_language}
+  \begin{tabular}{llrrrrrrrr}
+    \toprule
+    \textbf{Mode} & \textbf{Lang.} & \textbf{N} & \makecell{\bfseries Succ.(\%)} & \makecell{\bfseries CVE(\%)} & \makecell{\bfseries CWE(\%)} & \makecell{\bfseries Retr.Sim.} & \textbf{BLEU-4} & \makecell{\bfseries BERT F$_1$} & \makecell{\bfseries Hunk F$_1$} \\
+    \midrule
+    \multicolumn{10}{l}{\textit{codebert\_pattern}} \\
+    \hspace{1em} Single Turn & C   & 65 & 73.8 & 56.9 & 63.1 & 0.120 & 0.082 & 0.292 & 0.829 \\
+    \hspace{1em} Single Turn & C++ & 24 & 91.7 & 29.2 & 29.2 & 0.273 & 0.309 & 0.466 & 0.235 \\
+    \hspace{1em} Tool Calling& C   & 65 & 70.8 & 56.9 & 63.1 & 0.611 & 0.941 & 0.963 & 0.986 \\
+    \hspace{1em} Tool Calling& C++ & 24 & 83.3 & 29.2 & 29.2 & 0.722 & 0.873 & 0.611 & 0.238 \\
+    \midrule
+    \multicolumn{10}{l}{\textit{codebert\_seq}} \\
+    \hspace{1em} Single Turn & C   & 65 & 66.2 & 56.9 & 63.1 & 0.098 & 0.064 & 0.252 & 0.864 \\
+    \hspace{1em} Single Turn & C++ & 24 & 70.8 & 29.2 & 29.2 & 0.242 & 0.152 & 0.229 & 0.215 \\
+    \hspace{1em} Tool Calling& C   & 65 & 67.7 & 56.9 & 63.1 & 0.565 & 0.796 & 0.904 & 0.925 \\
+    \hspace{1em} Tool Calling& C++ & 24 & 66.7 & 29.2 & 29.2 & 0.591 & 0.879 & 0.942 & 0.779 \\
+    \bottomrule
+  \end{tabular}
 \end{table}
