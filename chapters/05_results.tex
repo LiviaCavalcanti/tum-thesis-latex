@@ -4,10 +4,21 @@
 
 \subsection{ AutoPatch Dataset Results (n=225)}
   % \textbf{Goal:} Validate that structural embeddings match CodeBERT performance.
+In table \ref{tab:retrieval_autopatch}, the Combined embedder achieves the best performance across all metrics, reaching 0.8904 hit@1, surpassing both CodeBERT variants.
+This suggests that the graph-only signal is expressive on this dataset, whereas CodeBERT's semantic signal is less relevant.
+
+The \textbf{CodeBERT (baseline)} row (no fine-tuning, no CPG slicing) collapses to 0.1533 hit@1, barely above random for a small candidate pool. 
+Raw CodeBERT similarity on the full code is not sufficient for the retrieval stage. \textbf{CodeBERT (seq)} and \textbf{CodeBERT (pat)} are close to each other (0.7534 vs.\ 0.7123 hit@1).
+
+
+% the opposite ordering from the CVEfixes CWE-level table, where \texttt{pattern} won overall. 
+% Taken together, this reinforces the point from the earlier discussion: which representation wins is dataset- and CWE-dependent, not a fixed ranking, so a single "best embedder" claim doesn't hold across datasets.
+
 
   \vspace{0.3cm}
   \begin{table}
     \centering
+    \caption{Embedder Retrieval Performance Comparison for AutoPatch Dataset}\label{tab:retrieval_autopatch}
     \small
     \begin{tabular}{lrrrr}
       \toprule
@@ -30,13 +41,26 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
   \end{table}
 
   
-PCA and L2 normalization Discussion with experiments
+\subsection{PCA and L2-normalization Ablation}
+To validate the proposed architecture, an ablation study was performed to understand the importance of L2-normalization and PCA layers.
+Table \ref{tab:pca_l2} shows that dropping \textit{PCA, and L2} is detrimental across every embedder, collapsing hit@1 to 1.4\% or 0.0\%.
+This pipeline failure can be explained by the fact that without L2 normalization, FAISS inner product computes:
 
-% \centering
+  $$\text{score}(q, d) = \mathbf{q} \cdot \mathbf{d} = \|\mathbf{q}\| \, \|\mathbf{d}\| \cos\theta$$
+
+so the score is dominated by the vector norms $\|\mathbf{q}\| \, \|\mathbf{d}\|$, rather than the angular similarity $\cos\theta$ that actually reflects the structural similarity.
+The result of this can be seen in Table \ref{tab:l2_similarity}.
+
+This effect is worse for \textbf{GIN}, since its sum-pooling component means larger graphs produce larger-norm vectors, and removing the normalization, the retriever just ranks by graph size. \textbf{Combined} shows the same failure, since it inherits GIN's unnormalized scale in the concatenation. GIN explodes from 0.99 with L2 to 260{,}029 without. Whereas, Combined reaches 416{,}081
+
+Therefore, L2 normalization is validated as part of the pipeline.
+
   \vspace{0.2em}
   {\small
   \renewcommand{\arraystretch}{1.35}
   \setlength{\tabcolsep}{5pt}
+\begin{table}
+\centering
   \begin{tabular}{l *{3}{c} c *{3}{c} c *{3}{c}}
     \toprule
     & \multicolumn{3}{c}{\textbf{PCA + L2} {\footnotesize(baseline)}}
@@ -74,17 +98,20 @@ PCA and L2 normalization Discussion with experiments
       && \cwarn{67.1\%} & .733 & .390
       && \cmiss{0.0\%} & .014 & .060 \\
     \bottomrule
-  \end{tabular}}
+  \end{tabular}
+  \caption{Embedder Retrieval Ablation Study Performance for L2-Normalization and PCA}\label{tab:pca_l2}
+\end{table}}
 
   % \scriptsize L2 normalization is \textbf{essential} for the pipeline.
   %   Removing it causes complete retrieval failure across all 6 embedders.
   %   PCA matters mainly for multi-stream embedders (Combined: $-$11~pp without it).
 
-   \textbf{Mean pairwise similarity}
+
 
   \vspace{0.3em}
   {\small
   \renewcommand{\arraystretch}{1.25}
+  \begin{table}
   \begin{tabular}{lrr}
     \toprule
     \textbf{Embedder} & \textbf{With L2} & \textbf{No L2} \\
@@ -92,15 +119,11 @@ PCA and L2 normalization Discussion with experiments
     Combined      & 0.02   & \cmiss{416{,}081} \\
     CodeBERT seq  & 0.01   & \cmiss{456} \\
     GIN           & 0.99   & \cmiss{260{,}029} \\
-    RGCN          & 0.14   & \cmiss{4{,}281} \\
     \bottomrule
-  \end{tabular}}
-
-    {\small Without L2 normalization, FAISS inner product computes:}
-
-  $$\text{score}(q, d) = \mathbf{q} \cdot \mathbf{d} = \|\mathbf{q}\| \, \|\mathbf{d}\| \cos\theta$$
-
-  {\small The score is dominated by $\|\mathbf{q}\| \, \|\mathbf{d}\|$, not $\cos\theta$.}
+  \end{tabular}
+  \caption{Mean Pair-wise similarity with and without L2-Normalization }\label{tab:l2_similarity}
+  \end{table}
+  }
 
 
   \vspace{0.3em}
