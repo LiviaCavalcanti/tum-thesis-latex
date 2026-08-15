@@ -125,38 +125,41 @@ Therefore, L2 normalization is validated as part of the pipeline.
   \end{table}
   }
 
+For Combined embedder, PCA is also an important component. Besides reducing dimensionality, it implicitly rebalances the relative contributions of GIN, WL, and NetLSD in the concatenated vector.
+Without it, whichever sembedder has the largest magnitude overweights the overall distance. It can be seen in the pairwise-similarity table with GIN being both the largest-magnitude embedder and the one Combined depends on most.
+On the other hand, most embedders even show a slight improvement without PCA (CodeBERT seq: 75.3\% → 76.7\%; WL: 65.8\% → 67.1\%;).
 
-  \vspace{0.3em}
-  % {\scriptsize\color{black!55}
-  % Without L2, all vectors appear ``close'' — a graph with more nodes
-  % produces a larger vector that dominates inner-product ranking.}
+%   \vspace{0.3em}
+%   % {\scriptsize\color{black!55}
+%   % Without L2, all vectors appear ``close'' — a graph with more nodes
+%   % produces a larger vector that dominates inner-product ranking.}
 
-very nice table structure
- \begin{tabular}{l *{6}{c} }
-    \toprule
-    & \multicolumn{6}{c}{\textbf{Retrieval}} \\
-    \cmidrule{2-7} 
-    \textbf{Strategy}
-      & hit@1 & hit@5 & hit@10 & MRR & nDCG@10 & MAP@10 \\
-    \midrule
-    \rowcolor{c1!7}
-    \texttt{norm\_concat\_pca}
-      & \chit{80.8\%} & \chit{93.2\%} & \chit{95.9\%} & \chit{.849} & \chit{.645} & \chit{.514} \\
-    \texttt{concat\_pca}
-      & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
-    \texttt{pca\_concat\_pca}
-      & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
-    \texttt{pca\_concat}
-      & \cmiss{64.4\%} & \cmiss{78.1\%} & \cmiss{83.6\%} & \cmiss{.706} & \cmiss{.449} & \cmiss{.334} \\
-    \addlinespace[3pt]
-    \multicolumn{7}{l}{\scriptsize\textit{4-way fusion (+ CodeBERT-pattern)}} \\
-    \addlinespace[1pt]
-    \texttt{4way\_concat\_pca}
-      & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
-    \texttt{4way\_norm\_concat\_pca}
-      & \cwarn{72.6\%} & \cwarn{86.3\%} & \cwarn{87.7\%} & \cwarn{.773} & \cwarn{.569} & \cwarn{.440} \\
-    \bottomrule
-  \end{tabular}}
+% very nice table structure
+%  \begin{tabular}{l *{6}{c} }
+%     \toprule
+%     & \multicolumn{6}{c}{\textbf{Retrieval}} \\
+%     \cmidrule{2-7} 
+%     \textbf{Strategy}
+%       & hit@1 & hit@5 & hit@10 & MRR & nDCG@10 & MAP@10 \\
+%     \midrule
+%     \rowcolor{c1!7}
+%     \texttt{norm\_concat\_pca}
+%       & \chit{80.8\%} & \chit{93.2\%} & \chit{95.9\%} & \chit{.849} & \chit{.645} & \chit{.514} \\
+%     \texttt{concat\_pca}
+%       & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
+%     \texttt{pca\_concat\_pca}
+%       & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
+%     \texttt{pca\_concat}
+%       & \cmiss{64.4\%} & \cmiss{78.1\%} & \cmiss{83.6\%} & \cmiss{.706} & \cmiss{.449} & \cmiss{.334} \\
+%     \addlinespace[3pt]
+%     \multicolumn{7}{l}{\scriptsize\textit{4-way fusion (+ CodeBERT-pattern)}} \\
+%     \addlinespace[1pt]
+%     \texttt{4way\_concat\_pca}
+%       & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
+%     \texttt{4way\_norm\_concat\_pca}
+%       & \cwarn{72.6\%} & \cwarn{86.3\%} & \cwarn{87.7\%} & \cwarn{.773} & \cwarn{.569} & \cwarn{.440} \\
+%     \bottomrule
+%   \end{tabular}}
 
 \section{CVEFixes: Embedder Retrieval Performance}
 \begin{table}[h]
