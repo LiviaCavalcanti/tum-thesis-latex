@@ -183,66 +183,39 @@ On the other hand, most embedders even show a slight improvement without PCA (Co
   \caption{Embedder Retrieval Performance Comparison Across CWE Categories and Overall Metrics}\label{tab:retrieval_embeddings}
 \end{table}
 
-Analyzing the confidence distribution per retriever, we see that task difficulty varies across CWEs, each retriever having the categories in which it excels. Overall, CodeBERT-based retrievers outperform the Combined embedding model, suggesting that semantic signal matters more than the code structure model in the real scenarios. 
-For CodeBERT pattern, CWE-787, CWE-20, and CWE-476 show no overlap between wrong and correct-matched retrievals, but for CWE-20 the higher ranking scores are wrong retrievals. CWE-362 shows a fuzzier separation, even though the errors lie on the tail of the correct ranking score distribution, with the p25 ranking score of the correct retrievals meeting the median of the wrong ones. The CWE-416 has a close behavior, but here the upper score tail of the wrong retrievals overlap the whole scores distribution of the correct ones, which in practice means that the retriever rank some wrong queries as high as the correct ones. With the p75 of the wrong scores much lower then the end of the distribution of the correct scores, there is no possibility for threshold here. Very similar behavior with 416.
-CodeBERT\_seq presents the same performance, but with lower mean for CWE-190,  overlap for CWE-787, higher scores for the wrong retrievals for the CWE-362. In general, it tends to have higher ranking scores 
+Analyzing the ranking score distribution per retriever reveals that retrieval difficulty varies significantly across Common Weakness Enumerations (CWEs), with each model demonstrating specific categorical strengths. Overall, the standalone CodeBERT-based retrievers outperform the Combined embedding model. This suggests that for these real-world scenarios, the underlying semantic signal carries more weight than the aggregated code structure representations.
 
-Combined presents in general low ranking score. While codebert\_pattern and codebert\_seq score correct matches between 0.6 and 1.0, the combined approach concentrates almost all scores in the 0.2 to 0.5 range.
-For both codebert\_pattern and codebert\_seq, the median ranking score for a "correct match" (green) is consistently higher than for an "error" (red).
+\paragraph{CodeBERT Pattern Performance}
+For the codebert\_pattern retriever, vulnerability classes such as CWE-190 and CWE-787 exhibit clear, distinct separations with no overlap between the interquartile ranges (IQRs) or whiskers of incorrect and correct matches. However, an anomaly occurs in CWE-20, where the ranking scores for incorrect retrievals are distinctly concentrated at higher values than the correct ones.
 
-The CodeBERT\_pattern model perform well for CWE-190, CWE-20, CWE-416, and CWE-787, as the correct matches are clustered at high scores, often above 0.8, while errors remain lower. This suggests that these vulnerabilities have distinct lexical signatures that CodeBERT is able to capture.
-For the remaining two CWEs, the models struggle to distinguish between safe and unsafe concurrent code. 
-The correct matches and errors heavily overlap. For CWE-476 (NULL Pointer Dereference), the codebert\_seq model median is very close to the correct match median. 
-This indicates it is likely returning a high volume of false positives, perhaps because missing a null check looks textually identical to code where a null check isn't necessary.
+For CWE-476, while correct matches score slightly higher on average, their distributions noticeably overlap, lacking a clean separation. CWE-362 demonstrates a similarly fuzzy boundary: while the IQR for errors primarily resides in the lower half of the correct ranking score distribution, the 25th percentile (p25) of the correct retrievals aligns closely with the median of the incorrect ones.
+
+CWE-416 presents a unique challenge; the incorrect retrievals exhibit a massive IQR, with its upper quartile significantly overlapping the correct score distribution. In practice, this wide variance means the retriever frequently ranks incorrect queries as highly as correct ones. Because the 75th percentile (p75) of the incorrect scores remains lower than the peak of the correct distribution but still bleeds into its range, establishing a reliable classification threshold is virtually impossible here.
+
+\paragraph{CodeBERT Sequence Performance}
+The codebert\_seq model exhibits a similar overarching trend but with notable deviations. For CWE-362, the incorrect retrievals have a wider IQR and a higher median compared to the pattern model. Additionally, the sequence model shows a broader spread for correct matches in CWE-416 and CWE-476. Generally, the sequence model tends to assign higher overall ranking scores across the board, which can inadvertently amplify the scores of false positives. Despite this, for both codebert\_pattern and codebert\_seq, the median ranking score for a correct match remains consistently higher than that of an error for the vast majority of categories.
+
+\paragraph{Combined Model Performance}
+In stark contrast, the `combined` retriever suffers from heavily compressed ranking scores. While codebert\_pattern and codebert\_seq successfully cluster correct matches in the 0.6 to 1.0 range, the combined approach condenses almost all scores—and shrinks their IQRs—into a narrow 0.2 to 0.5 band.
+
+\paragraph{Vulnerability-Specific Challenges}
+The standalone models perform exceptionally well for CWE-190 and CWE-787. In these categories, correct matches cluster tightly at high scores with narrow IQRs, while errors remain isolated as tight, low-scoring distributions. This suggests these specific vulnerabilities possess distinct lexical signatures that CodeBERT captures effectively.
+
+Conversely, the models struggle significantly with other CWEs:
+
+The CWE-362 (Race Conditions) IQR overlap between correct matches and errors indicates the models struggle to differentiate between safe and unsafe concurrent code operations.
+Additionally, the codebert\_seq model exhibits a wide IQR for CWE-476 (NULL Pointer Dereference) errors, and its median sits dangerously close to the correct match median. This high volume of high-ranking false positives likely occurs because a vulnerable missing null check appears textually and sequentially identical to safe code where a null check is genuinely unnecessary.
 
 FIX CONFIDENCE SCORE TO SIMILARITY SCORE
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\linewidth]{img/retrieval/codebert_pattern_cwe_score_distributions.png}
-    \caption{CodeBERT pattern Retrieval Confidence distribution by CWE}
-    \label{img:retrieval_pattern}
-\end{figure}
-
- 
-
-The CodeBERT-based retrievers have a better overall performance compared to the Ensembled model, which suggests that in general the semantics are quite important for the identification, which is lacking in the ensembled model. However we can also see that depending on the type of vulnerability one strategy may be more efficient them the other.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\linewidth]{img/retrieval/codebert_seq_cwe_score_distributions.png}
-    \caption{CodeBERT sequence Retrieval Confidence distribution by CWE}
-    \label{img:retrieval_sequence}
-\end{figure}
-
-
-\ref{img:retrieval_sequence} CWE-20 and CWE-190 has the same behavior as in the pattern. There's an overlap between wrong and correct for cwe-787, so by choosing the threshold as correct median, would retrieve only correct values, and choosing the p25 would retrieve 50\% of the wrong predictions.similarly, for the cwe-362 the wrong retrievals lay within the p25 and p50 of the correct confidence distribution. A similar beahavior as the cwe-416, but in this case, we have an improvement, since at least we dont have the wrong retrievals with a higher confidence. For the cwe-476, the behavior is similar to the codeBERT pattern with p25 of both correct and wrong retrieval lower. 
-
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\linewidth]{img/retrieval/combined_cwe_score_distributions.png}
-    \caption{Ensembled Retrieval Confidence distribution by CWE}
-    \label{img:retrieval_combined}
-\end{figure}
-
-
-Ensembled retrieval \ref{img:retrieval_combined} has a remarkably better performance for the CWE-787 and CWE-20 compared to the semantic embedders, suggesting that these models manage to get the structure information very well for these cases. CWE-416 has a higher confidence for the wrong retrievals. For CWE-190, CWE-362, and CWE-476, there is no clear difference between the distribution of the wrong and correct retrieval, making it much harder to set a threshold.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\linewidth]{img/retrieval/retriever_comparison.png}
-    \caption{Ranking score distribution by Embedding Strategy}
-    % \label{img:retrieval_combined}
-\end{figure}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\linewidth]{img/retrieval/retriever_cwe_boxplots.png}
+    \includegraphics[width=1\linewidth]{img/retrieval/retriever_comparison_by_cwe.png}
     \caption{Ranking score distribution by CWE and Embedding statregy}
     % \label{img:retrieval_combined}
 \end{figure}
 
-CodeBERT Pattern excels both vulnerability retrieval and downstream program repair. 
+CodeBERT Pattern excels in both vulnerability retrieval and downstream program repair. 
 It achieves the highest retrieval accuracy across both CWEs (65.17\%) and CVEs (53.93\%).
 This hybrid architecture likely achieves this strong performance because it captures both localized lexical semantics—such as variable names and types—and program flow control. 
 Explicit graph patterns prove especially critical for resolving memory-safety vulnerabilities. 
@@ -387,7 +360,7 @@ Because the CVE Fixes dataset is built by real-world code, it contains long
 
 \section{CVEFixes: Patching Performance}
 
-\subsection{Codex-5.3} 
+\subsection{Patch Powered by Codex-5.3} 
 % \begin{table}[htbp]
 %   \centering
 %   \small
@@ -556,9 +529,63 @@ Semantic vector alignment suffers a similar degradation.
 
 This performance drop is likely due to C++'s complex abstractions, object-oriented constructs, Resource Acquisition Is Initialization (RAII) patterns, and standard library templates, since they produce fragmented diff hunks compared to idiomatic, procedural C code, making automated patching more challenging. %TODO add reference showing that fragmented hunking task is harder
 This is a structural limitation that needs further investigation. 
-\subsection{GPT-4o}
+\subsection{Patch Powered by GPT-4o}
 
-Using 
+The results on \ref{tab:cwe_comparison_gpt4o}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Comparison of Performance Across Methods by CVEFixes CWE Category GPT-4o.}
+  \label{tab:cwe_comparison_gpt4o}
+  \begin{tabular}{llccc}
+    \toprule
+    \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-190}} 
+      & CodeBERT Seq (Single Turn)      & 0.1303 & 0.3236 & 0.5915 \\
+      & CodeBERT Pattern (Single Turn)  & 0.1568 & 0.3536 & 0.6489 \\
+      & CodeBERT Seq (Tool Calling)     & 0.6378 & 0.7166 & 0.6155 \\
+      & CodeBERT Pattern (Tool Calling) & \chit{0.6852} & \chit{0.7632} & \chit{0.6811} \\
+      & Combined (Tool Calling)         & 0.4245 & 0.5518 & 0.4834 \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-20}} 
+      & CodeBERT Seq (Single Turn)      & 0.2833 & 0.2868 & 0.7714 \\
+      & CodeBERT Pattern (Single Turn)  & 0.3202 & 0.3058 & 0.7748 \\
+      & CodeBERT Seq (Tool Calling)     & \chit{0.7214} & \chit{0.7069} & 0.9048 \\
+      & CodeBERT Pattern (Tool Calling) & 0.6406 & 0.6358 & \chit{0.9147} \\
+      & Combined (Tool Calling)         & 0.6620 & 0.6655 & 0.8825 \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-362}} 
+      & CodeBERT Seq (Single Turn)      & 0.2522 & 0.2081 & 0.8708 \\
+      & CodeBERT Pattern (Single Turn)  & 0.2727 & 0.2469 & 0.8777 \\
+      & CodeBERT Seq (Tool Calling)     & \chit{0.9898} & \chit{0.9969} & \chit{0.9970} \\
+      & CodeBERT Pattern (Tool Calling) & 0.9448 & 0.9944 & 0.9968 \\
+      & Combined (Tool Calling)         & 0.4456 & 0.4349 & 0.9325 \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-416}} 
+      & CodeBERT Seq (Single Turn)      & 0.3910 & 0.3429 & 0.8544 \\
+      & CodeBERT Pattern (Single Turn)  & 0.2329 & 0.1721 & 0.8441 \\
+      & CodeBERT Seq (Tool Calling)     & 0.7165 & 0.7608 & 0.8849 \\
+      & CodeBERT Pattern (Tool Calling) & \chit{0.9138} & \chit{0.9163} & \chit{0.9814} \\
+      & Combined (Tool Calling)         & 0.2671 & 0.3390 & 0.8207 \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-476}} 
+      & CodeBERT Seq (Single Turn)      & 0.3025 & 0.3024 & 0.7808 \\
+      & CodeBERT Pattern (Single Turn)  & 0.3383 & 0.3417 & 0.7352 \\
+      & CodeBERT Seq (Tool Calling)     & 0.8068 & 0.7945 & 0.7660 \\
+      & CodeBERT Pattern (Tool Calling) & \chit{0.9071} & \chit{0.8922} & 0.7827 \\
+      & Combined (Tool Calling)         & 0.6131 & 0.6318 & \chit{0.8496} \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-787}} 
+      & CodeBERT Seq (Single Turn)      & 0.3804 & 0.4449 & \chit{0.0752} \\
+      & CodeBERT Pattern (Single Turn)  & 0.3554 & 0.4136 & 0.0382 \\
+      & CodeBERT Seq (Tool Calling)     & \chit{0.4707} & 0.8448 & 0.0450 \\
+      & CodeBERT Pattern (Tool Calling) & 0.4346 & 0.8025 & 0.0433 \\
+      & Combined (Tool Calling)         & 0.4705 & \chit{0.8489} & 0.0169 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 combined
 
 % ══════════════════════════════════════════════════
@@ -731,46 +758,46 @@ GPT-4o
   \end{tabular}
 \end{table}
 
-\begin{table}[htbp]
-  \centering
-  \small
-  \setlength{\tabcolsep}{3pt} % Tighten horizontal column padding
-  \caption{Patch generation summary by embedding variant / mode -- by CWE}
-  \label{tab:patch_analysis_summary_by_cwe}
-  \begin{tabular}{llrrrrrrrrrrr}
-    \toprule
-    \thead{Mode} & \thead{CWE} & \thead{N} & \thead{Succ.\\(\%)} & \thead{Avg.\\Turns} & \thead{Verify\\(\%)} & \thead{Viol.\\(\%)} & \thead{BLEU-4} & \thead{BERT\\F$_1$} & \thead{R-1\\F$_1$} & \thead{R-2\\F$_1$} & \thead{R-L\\F$_1$} & \thead{Hunk\\F$_1$} \\
-    \midrule
-    \multicolumn{13}{l}{\textit{codebert\_pattern}} \\
-    \hspace{1em} Single Turn & CWE-190 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.005 & 0.126 & 0.196 & 0.063 & 0.145 & 0.826 \\
-    \hspace{1em} Single Turn & CWE-20  & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.204 & 0.428 & 0.548 & 0.262 & 0.346 & 0.773 \\
-    \hspace{1em} Single Turn & CWE-362 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.022 & 0.368 & 0.275 & 0.141 & 0.215 & 0.873 \\
-    \hspace{1em} Single Turn & CWE-416 & 15 & 60.0 & 1.00 & 0.0 & 0.0 & 0.075 & 0.307 & 0.374 & 0.172 & 0.239 & 0.874 \\
-    \hspace{1em} Single Turn & CWE-476 & 14 & 50.0 & 1.00 & 0.0 & 0.0 & 0.276 & 0.250 & 0.480 & 0.365 & 0.390 & 0.661 \\
-    \hspace{1em} Single Turn & CWE-787 & 15 & 100.0 & 1.00 & 0.0 & 0.0 & 0.336 & 0.505 & 0.636 & 0.546 & 0.537 & 0.057 \\
-    \hspace{1em} Tool Calling& CWE-190 & 15 & 86.7 & 3.80 & 100.0 & 33.3 & 0.999 & 0.959 & 0.999 & 0.999 & 0.999 & 0.996 \\
-    \hspace{1em} Tool Calling& CWE-20  & 15 & 60.0 & 4.47 & 100.0 & 20.0 & -- & -- & -- & -- & -- & -- \\
-    \hspace{1em} Tool Calling& CWE-362 & 15 & 60.0 & 4.67 & 93.3 & 33.3 & 0.996 & 0.959 & 0.998 & 0.998 & 0.998 & 0.999 \\
-    \hspace{1em} Tool Calling& CWE-416 & 15 & 80.0 & 4.00 & 100.0 & 33.3 & 0.921 & 0.926 & 0.932 & 0.924 & 0.929 & 0.983 \\
-    \hspace{1em} Tool Calling& CWE-476 & 14 & 71.4 & 4.21 & 100.0 & 14.3 & 0.850 & 0.974 & 0.915 & 0.908 & 0.912 & 0.876 \\
-    \hspace{1em} Tool Calling& CWE-787 & 15 & 86.7 & 3.93 & 100.0 & 60.0 & 0.829 & 0.506 & 0.920 & 0.892 & 0.903 & 0.000 \\
-    \midrule
-    \multicolumn{13}{l}{\textit{codebert\_seq}} \\
-    \hspace{1em} Single Turn & CWE-190 & 15 & 73.3 & 1.00 & 0.0 & 0.0 & 0.000 & 0.083 & 0.128 & 0.041 & 0.108 & 0.849 \\
-    \hspace{1em} Single Turn & CWE-20  & 15 & 46.7 & 1.00 & 0.0 & 0.0 & -- & -- & -- & -- & -- & -- \\
-    \hspace{1em} Single Turn & CWE-362 & 15 & 66.7 & 1.00 & 0.0 & 0.0 & 0.012 & 0.373 & 0.252 & 0.136 & 0.202 & 0.871 \\
-    \hspace{1em} Single Turn & CWE-416 & 15 & 60.0 & 1.00 & 0.0 & 0.0 & 0.143 & 0.277 & 0.382 & 0.217 & 0.270 & 0.897 \\
-    \hspace{1em} Single Turn & CWE-476 & 14 & 71.4 & 1.00 & 0.0 & 0.0 & 0.176 & 0.313 & 0.400 & 0.267 & 0.312 & 0.776 \\
-    \hspace{1em} Single Turn & CWE-787 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.136 & 0.226 & 0.499 & 0.464 & 0.460 & 0.125 \\
-    \hspace{1em} Tool Calling& CWE-190 & 15 & 73.3 & 4.20 & 100.0 & 40.0 & -- & -- & -- & -- & -- & -- \\
-    \hspace{1em} Tool Calling& CWE-20  & 15 & 53.3 & 4.93 & 100.0 & 33.3 & 0.737 & 0.951 & 0.878 & 0.769 & 0.878 & 0.818 \\
-    \hspace{1em} Tool Calling& CWE-362 & 15 & 60.0 & 4.53 & 100.0 & 66.7 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
-    \hspace{1em} Tool Calling& CWE-416 & 15 & 66.7 & 4.60 & 100.0 & 40.0 & 0.842 & 0.849 & 0.850 & 0.846 & 0.848 & 0.984 \\
-    \hspace{1em} Tool Calling& CWE-476 & 14 & 71.4 & 4.21 & 100.0 & 28.6 & 0.798 & 0.901 & 0.853 & 0.847 & 0.850 & 0.883 \\
-    \hspace{1em} Tool Calling& CWE-787 & 15 & 80.0 & 4.20 & 100.0 & 20.0 & -- & -- & -- & -- & -- & -- \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+% \begin{table}[htbp]
+%   \centering
+%   \small
+%   \setlength{\tabcolsep}{3pt} % Tighten horizontal column padding
+%   \caption{Patch generation summary by embedding variant / mode -- by CWE}
+%   \label{tab:patch_analysis_summary_by_cwe}
+%   \begin{tabular}{llrrrrrrrrrrr}
+%     \toprule
+%     \thead{Mode} & \thead{CWE} & \thead{N} & \thead{Succ.\\(\%)} & \thead{Avg.\\Turns} & \thead{Verify\\(\%)} & \thead{Viol.\\(\%)} & \thead{BLEU-4} & \thead{BERT\\F$_1$} & \thead{R-1\\F$_1$} & \thead{R-2\\F$_1$} & \thead{R-L\\F$_1$} & \thead{Hunk\\F$_1$} \\
+%     \midrule
+%     \multicolumn{13}{l}{\textit{codebert\_pattern}} \\
+%     \hspace{1em} Single Turn & CWE-190 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.005 & 0.126 & 0.196 & 0.063 & 0.145 & 0.826 \\
+%     \hspace{1em} Single Turn & CWE-20  & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.204 & 0.428 & 0.548 & 0.262 & 0.346 & 0.773 \\
+%     \hspace{1em} Single Turn & CWE-362 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.022 & 0.368 & 0.275 & 0.141 & 0.215 & 0.873 \\
+%     \hspace{1em} Single Turn & CWE-416 & 15 & 60.0 & 1.00 & 0.0 & 0.0 & 0.075 & 0.307 & 0.374 & 0.172 & 0.239 & 0.874 \\
+%     \hspace{1em} Single Turn & CWE-476 & 14 & 50.0 & 1.00 & 0.0 & 0.0 & 0.276 & 0.250 & 0.480 & 0.365 & 0.390 & 0.661 \\
+%     \hspace{1em} Single Turn & CWE-787 & 15 & 100.0 & 1.00 & 0.0 & 0.0 & 0.336 & 0.505 & 0.636 & 0.546 & 0.537 & 0.057 \\
+%     \hspace{1em} Tool Calling& CWE-190 & 15 & 86.7 & 3.80 & 100.0 & 33.3 & 0.999 & 0.959 & 0.999 & 0.999 & 0.999 & 0.996 \\
+%     \hspace{1em} Tool Calling& CWE-20  & 15 & 60.0 & 4.47 & 100.0 & 20.0 & -- & -- & -- & -- & -- & -- \\
+%     \hspace{1em} Tool Calling& CWE-362 & 15 & 60.0 & 4.67 & 93.3 & 33.3 & 0.996 & 0.959 & 0.998 & 0.998 & 0.998 & 0.999 \\
+%     \hspace{1em} Tool Calling& CWE-416 & 15 & 80.0 & 4.00 & 100.0 & 33.3 & 0.921 & 0.926 & 0.932 & 0.924 & 0.929 & 0.983 \\
+%     \hspace{1em} Tool Calling& CWE-476 & 14 & 71.4 & 4.21 & 100.0 & 14.3 & 0.850 & 0.974 & 0.915 & 0.908 & 0.912 & 0.876 \\
+%     \hspace{1em} Tool Calling& CWE-787 & 15 & 86.7 & 3.93 & 100.0 & 60.0 & 0.829 & 0.506 & 0.920 & 0.892 & 0.903 & 0.000 \\
+%     \midrule
+%     \multicolumn{13}{l}{\textit{codebert\_seq}} \\
+%     \hspace{1em} Single Turn & CWE-190 & 15 & 73.3 & 1.00 & 0.0 & 0.0 & 0.000 & 0.083 & 0.128 & 0.041 & 0.108 & 0.849 \\
+%     \hspace{1em} Single Turn & CWE-20  & 15 & 46.7 & 1.00 & 0.0 & 0.0 & -- & -- & -- & -- & -- & -- \\
+%     \hspace{1em} Single Turn & CWE-362 & 15 & 66.7 & 1.00 & 0.0 & 0.0 & 0.012 & 0.373 & 0.252 & 0.136 & 0.202 & 0.871 \\
+%     \hspace{1em} Single Turn & CWE-416 & 15 & 60.0 & 1.00 & 0.0 & 0.0 & 0.143 & 0.277 & 0.382 & 0.217 & 0.270 & 0.897 \\
+%     \hspace{1em} Single Turn & CWE-476 & 14 & 71.4 & 1.00 & 0.0 & 0.0 & 0.176 & 0.313 & 0.400 & 0.267 & 0.312 & 0.776 \\
+%     \hspace{1em} Single Turn & CWE-787 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.136 & 0.226 & 0.499 & 0.464 & 0.460 & 0.125 \\
+%     \hspace{1em} Tool Calling& CWE-190 & 15 & 73.3 & 4.20 & 100.0 & 40.0 & -- & -- & -- & -- & -- & -- \\
+%     \hspace{1em} Tool Calling& CWE-20  & 15 & 53.3 & 4.93 & 100.0 & 33.3 & 0.737 & 0.951 & 0.878 & 0.769 & 0.878 & 0.818 \\
+%     \hspace{1em} Tool Calling& CWE-362 & 15 & 60.0 & 4.53 & 100.0 & 66.7 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+%     \hspace{1em} Tool Calling& CWE-416 & 15 & 66.7 & 4.60 & 100.0 & 40.0 & 0.842 & 0.849 & 0.850 & 0.846 & 0.848 & 0.984 \\
+%     \hspace{1em} Tool Calling& CWE-476 & 14 & 71.4 & 4.21 & 100.0 & 28.6 & 0.798 & 0.901 & 0.853 & 0.847 & 0.850 & 0.883 \\
+%     \hspace{1em} Tool Calling& CWE-787 & 15 & 80.0 & 4.20 & 100.0 & 20.0 & -- & -- & -- & -- & -- & -- \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
 
 \begin{table}[htbp]
   \centering
@@ -796,3 +823,5 @@ GPT-4o
     \bottomrule
   \end{tabular}
 \end{table}
+
+\subsection{Patch Powered by Codex-5.3} 
