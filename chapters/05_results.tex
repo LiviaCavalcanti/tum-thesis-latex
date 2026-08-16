@@ -398,7 +398,7 @@ Because the CVE Fixes dataset is built by real-world code, it contains long
 \begin{table}[htbp]
   \centering
   \small
-  \caption{Comparison of Performance Across Methods by CWE Category.}
+  \caption{Comparison of Performance Across Methods by CWE Category GPT-5.3-Codex.}
   \label{tab:cwe_comparison_all_methods}
   \begin{tabular}{llcccc}
     \toprule
@@ -529,9 +529,24 @@ Semantic vector alignment suffers a similar degradation.
 
 This performance drop is likely due to C++'s complex abstractions, object-oriented constructs, Resource Acquisition Is Initialization (RAII) patterns, and standard library templates, since they produce fragmented diff hunks compared to idiomatic, procedural C code, making automated patching more challenging. %TODO add reference showing that fragmented hunking task is harder
 This is a structural limitation that needs further investigation. 
+
+
 \subsection{Patch Powered by GPT-4o}
 
-The results on \ref{tab:cwe_comparison_gpt4o}
+The results in Table \ref{tab:cwe_comparison_gpt4o} follow similar patterns to those observed in Table \ref{tab:cwe_comparison_all_methods}.
+
+Tool Calling Agent without retrieval and CodeBERT variations outperformed the GPT-4o baseline, just as seen for Codex-5.3 Baseline. Single Turn BERTScore/ROUGE scores hover in the 0.10–0.35 range, while Tool Calling jumps to 0.60–0.99.
+
+For this CWE-787 vulnerability, BERTScore and ROUGE-L remain stable, but Hunk $\text{F}_1$ collapses to near zero across all methods (0.01–0.18). This confirms that the failure on CWE-787 is not a model-specific issue (Codex vs. GPT-4o), but rather a characteristic of the dataset or the complexity of the patch required for that specific CWE.
+
+Near-Perfect Scores on CWE-362: 
+Models excel at CWE-362 (Race Conditions), the Tool Calling methods also hit ~0.98–0.99.2, similar to scores was seen previously, ~0.97–0.99. On the other hand, while the individual Tool Calling methods perform very similarly in Table \ref{tab:cwe_comparison_gpt4o}, the "Combined" method was consistently top-tier. For example, in CWE-416, it scored a 0.9369 BERTScore and 0.9691 ROUGE-L, with GPT-5.3-Codex, with GPT-4o it falls to a 0.2671 BERTScore and 0.3390 ROUGE-L. It performs worse than the individual CodeBERT Seq/Pattern Tool Calling methods across almost every single category.
+Overall, the raw capability isn't strictly worse, but the aggregation seems to be failing.
+
+GPT-4o presents competitive performance when considering tool calling and CodeBERT seq. For example, in CWE-416, the Tool Calling (without retrieval) achieves a 0.9814 Hunk $\text{F}_1$, which is actually better than the Codex-5.3 table's maximum of 0.9337. 
+Single-Turn performs badly regardless of the model. This suggests that Complex code repair strictly requires iterative tool use. The "Combined" low performance here indicates that the GPT-5.3-Codex recovers from the retrieval errors, whereas the GPT-4o, despite the available tools, actually hurts the performance
+
+Overall, the underlying patterns of the task remain identical. For simplicity, one should prioritize Tool Calling w/o retrieval and avoid Prompting without tools. Might also watch for failures for specific vulnerabilities, such as CWE-787 that breaks hunk alignment. If going for a less powerful model than GPT-5.3-Codex, here examplified by GPT-4o, one might expect some points of drop in performance.
 
 \begin{table}[htbp]
   \centering
@@ -543,45 +558,43 @@ The results on \ref{tab:cwe_comparison_gpt4o}
     \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-190}} 
-      & CodeBERT Seq (Single Turn)      & 0.1303 & 0.3236 & 0.5915 \\
-      & CodeBERT Pattern (Single Turn)  & 0.1568 & 0.3536 & 0.6489 \\
-      & CodeBERT Seq (Tool Calling)     & 0.6378 & 0.7166 & 0.6155 \\
-      & CodeBERT Pattern (Tool Calling) & \chit{0.6852} & \chit{0.7632} & \chit{0.6811} \\
+      & GPT-4o Baseline  & 0.1568 & 0.3536 & 0.6489 \\
+      & Tool Calling (w/o Retrieval) & \chit{0.6852} & \chit{0.7632} & \chit{0.6811} \\
+      & CodeBERT\_seq & 0.5377 &  0.6426 & 0.396 \\
       & Combined (Tool Calling)         & 0.4245 & 0.5518 & 0.4834 \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
-      & CodeBERT Seq (Single Turn)      & 0.2833 & 0.2868 & 0.7714 \\
-      & CodeBERT Pattern (Single Turn)  & 0.3202 & 0.3058 & 0.7748 \\
-      & CodeBERT Seq (Tool Calling)     & \chit{0.7214} & \chit{0.7069} & 0.9048 \\
-      & CodeBERT Pattern (Tool Calling) & 0.6406 & 0.6358 & \chit{0.9147} \\
+      & GPT-4o Baseline  & 0.3202 & 0.3058 & 0.7748 \\
+      & Tool Calling (w/o Retrieval) & 0.6406 & 0.6358 & \chit{0.9147} \\
+      & CodeBERT\_seq & 0.8279 & 0.8132 & 0.8843 \\
       & Combined (Tool Calling)         & 0.6620 & 0.6655 & 0.8825 \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
-      & CodeBERT Seq (Single Turn)      & 0.2522 & 0.2081 & 0.8708 \\
-      & CodeBERT Pattern (Single Turn)  & 0.2727 & 0.2469 & 0.8777 \\
-      & CodeBERT Seq (Tool Calling)     & \chit{0.9898} & \chit{0.9969} & \chit{0.9970} \\
-      & CodeBERT Pattern (Tool Calling) & 0.9448 & 0.9944 & 0.9968 \\
+      & GPT-4o Baseline  & 0.2727 & 0.2469 & 0.8777 \\
+      & Tool Calling (w/o Retrieval) & 0.9448 & 0.9944 & 0.9968 \\
+      & CodeBERT\_seq & 0.9448 & 0.9953 &  0.9973 \\
+      & CodeBERT\_pattern & \\
       & Combined (Tool Calling)         & 0.4456 & 0.4349 & 0.9325 \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
-      & CodeBERT Seq (Single Turn)      & 0.3910 & 0.3429 & 0.8544 \\
-      & CodeBERT Pattern (Single Turn)  & 0.2329 & 0.1721 & 0.8441 \\
-      & CodeBERT Seq (Tool Calling)     & 0.7165 & 0.7608 & 0.8849 \\
-      & CodeBERT Pattern (Tool Calling) & \chit{0.9138} & \chit{0.9163} & \chit{0.9814} \\
+      & GPT-4o Baseline  & 0.2329 & 0.1721 & 0.8441 \\
+      & Tool Calling (w/o Retrieval) & \chit{0.9138} & \chit{0.9163} & \chit{0.9814} \\
+       & CodeBERT\_seq & 0.9254 & 0.967 &   0.9144 \\
+      & CodeBERT\_pattern & \\
       & Combined (Tool Calling)         & 0.2671 & 0.3390 & 0.8207 \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
-      & CodeBERT Seq (Single Turn)      & 0.3025 & 0.3024 & 0.7808 \\
-      & CodeBERT Pattern (Single Turn)  & 0.3383 & 0.3417 & 0.7352 \\
-      & CodeBERT Seq (Tool Calling)     & 0.8068 & 0.7945 & 0.7660 \\
-      & CodeBERT Pattern (Tool Calling) & \chit{0.9071} & \chit{0.8922} & 0.7827 \\
+      & GPT-4o Baseline  & 0.3383 & 0.3417 & 0.7352 \\
+      & Tool Calling (w/o Retrieval) & \chit{0.9071} & \chit{0.8922} & 0.7827 \\
+      & CodeBERT\_seq & 0.8815 &  0.851  &  0.8833  \\
+      & CodeBERT\_pattern & \\
       & Combined (Tool Calling)         & 0.6131 & 0.6318 & \chit{0.8496} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
-      & CodeBERT Seq (Single Turn)      & 0.3804 & 0.4449 & \chit{0.0752} \\
-      & CodeBERT Pattern (Single Turn)  & 0.3554 & 0.4136 & 0.0382 \\
-      & CodeBERT Seq (Tool Calling)     & \chit{0.4707} & 0.8448 & 0.0450 \\
-      & CodeBERT Pattern (Tool Calling) & 0.4346 & 0.8025 & 0.0433 \\
+      & GPT-4o Baseline  & 0.3554 & 0.4136 & 0.0382 \\
+      & Tool Calling (w/o Retrieval) & 0.4346 & 0.8025 & 0.0433 \\
+      & CodeBERT\_seq &  0.5182 & 0.9148  & 0.0434 \\
+      & CodeBERT\_pattern & \\
       & Combined (Tool Calling)         & 0.4705 & \chit{0.8489} & 0.0169 \\
     \bottomrule
   \end{tabular}
@@ -741,7 +754,7 @@ Hunk F1       & 0.7758 & 0.9957 & 0.8038 & 0.9957 & 0.8038 & 0.9957 \\
 \end{tabular}
 \end{table}
 
-GPT-4o
+
 \begin{table}[t]
   \centering
   \caption{Patch generation summary by embedding variant / mode}
@@ -824,4 +837,6 @@ GPT-4o
   \end{tabular}
 \end{table}
 
-\subsection{Patch Powered by Codex-5.3} 
+\subsection{Patch Powered by DeepSeek-4-Flash}
+
+\section{Generation: AutoPatch Dataset}
