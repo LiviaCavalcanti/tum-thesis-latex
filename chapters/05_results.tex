@@ -183,28 +183,32 @@ On the other hand, most embedders even show a slight improvement without PCA (Co
   \caption{Embedder Retrieval Performance Comparison Across CWE Categories and Overall Metrics}\label{tab:retrieval_embeddings}
 \end{table}
 
-Analyzing the ranking score distribution per retriever reveals that retrieval difficulty varies significantly across Common Weakness Enumerations (CWEs), with each model demonstrating specific categorical strengths. Overall, the standalone CodeBERT-based retrievers outperform the Combined embedding model. This suggests that for these real-world scenarios, the underlying semantic signal carries more weight than the aggregated code structure representations.
+Analyzing the ranking score distribution per retriever reveals that retrieval difficulty varies significantly across Common Weakness Enumerations (CWEs), with each model demonstrating specific categorical strengths. Overall, the CodeBERT-based retrievers outperform the Combined embedding model. This suggests that for these real-world scenarios, the underlying semantic signal carries more weight than the aggregated code topological structure representations.
 
 \paragraph{CodeBERT Pattern Performance}
-For the codebert\_pattern retriever, vulnerability classes such as CWE-190 and CWE-787 exhibit clear, distinct separations with no overlap between the interquartile ranges (IQRs) or whiskers of incorrect and correct matches. However, an anomaly occurs in CWE-20, where the ranking scores for incorrect retrievals are distinctly concentrated at higher values than the correct ones.
+For the codebert\_pattern retriever, vulnerability classes such as CWE-190 and CWE-787 exhibit clear, distinct separations with no overlap between the interquartile ranges (IQRs) or whiskers of incorrect and correct matches. However, an exception occurs in CWE-20, where the ranking scores for incorrect retrievals are concentrated at higher values than the correct ones.
 
-For CWE-476, while correct matches score slightly higher on average, their distributions noticeably overlap, lacking a clean separation. CWE-362 demonstrates a similarly fuzzy boundary: while the IQR for errors primarily resides in the lower half of the correct ranking score distribution, the 25th percentile (p25) of the correct retrievals aligns closely with the median of the incorrect ones.
+For CWE-476, while correct matches score slightly higher on average, their distributions noticeably overlap, lacking a clean separation. CWE-362 demonstrates a similarly fuzzy boundary. While the IQR for errors is mainly in the lower half of the correct ranking score distribution, the 25th percentile (p25) of correct retrievals aligns with the median of incorrect ones.
 
-CWE-416 presents a unique challenge; the incorrect retrievals exhibit a massive IQR, with its upper quartile significantly overlapping the correct score distribution. In practice, this wide variance means the retriever frequently ranks incorrect queries as highly as correct ones. Because the 75th percentile (p75) of the incorrect scores remains lower than the peak of the correct distribution but still bleeds into its range, establishing a reliable classification threshold is virtually impossible here.
+CWE-416 presents a challenger scenario. The incorrect retrievals exhibit a higher IQR, with its upper quartile significantly overlapping the correct score distribution. In practice, this wide variance means the retriever frequently ranks incorrect queries as highly as correct ones. Because the 75th percentile (p75) of the incorrect scores remains lower than the peak of the correct distribution but still bleeds into its range, establishing a reliable classification threshold is virtually impossible in this case.
 
 \paragraph{CodeBERT Sequence Performance}
-The codebert\_seq model exhibits a similar overarching trend but with notable deviations. For CWE-362, the incorrect retrievals have a wider IQR and a higher median compared to the pattern model. Additionally, the sequence model shows a broader spread for correct matches in CWE-416 and CWE-476. Generally, the sequence model tends to assign higher overall ranking scores across the board, which can inadvertently amplify the scores of false positives. Despite this, for both codebert\_pattern and codebert\_seq, the median ranking score for a correct match remains consistently higher than that of an error for the vast majority of categories.
+The codebert\_seq model exhibits a similar overarching trend but with some differences. For CWE-362, the incorrect retrievals have a wider IQR and a higher median compared to the pattern model. Additionally, the sequence model shows a broader spread for correct matches in CWE-416 and CWE-476. Generally, the sequence model tends to assign higher overall ranking scores across the board, which can amplify false-positive scores. Despite this, for both codebert\_pattern and codebert\_seq, the median ranking score for a correct match remains consistently higher than that of an error for the majority of categories.
 
 \paragraph{Combined Model Performance}
-In stark contrast, the `combined` retriever suffers from heavily compressed ranking scores. While codebert\_pattern and codebert\_seq successfully cluster correct matches in the 0.6 to 1.0 range, the combined approach condenses almost all scores—and shrinks their IQRs—into a narrow 0.2 to 0.5 band.
+In contrast, the combined retriever suffers from compressed ranking scores.
+While codebert\_pattern and codebert\_seq successfully cluster correct matches in the 0.6 to 1.0 range, the combined approach condenses almost all scores in between 0.2 and 0.5.
 
 \paragraph{Vulnerability-Specific Challenges}
-The standalone models perform exceptionally well for CWE-190 and CWE-787. In these categories, correct matches cluster tightly at high scores with narrow IQRs, while errors remain isolated as tight, low-scoring distributions. This suggests these specific vulnerabilities possess distinct lexical signatures that CodeBERT captures effectively.
+The standalone models perform exceptionally well for CWE-190 and CWE-787. In these categories, correct matches cluster tightly at high scores with narrow IQRs, while errors remain isolated as tight, low-scoring distributions. 
+This suggests these specific vulnerabilities possess distinct lexical signatures that CodeBERT can capture.
 
-Conversely, the models struggle significantly with other CWEs:
-
+Conversely, the models struggle significantly with other CWEs.
 The CWE-362 (Race Conditions) IQR overlap between correct matches and errors indicates the models struggle to differentiate between safe and unsafe concurrent code operations.
-Additionally, the codebert\_seq model exhibits a wide IQR for CWE-476 (NULL Pointer Dereference) errors, and its median sits dangerously close to the correct match median. This high volume of high-ranking false positives likely occurs because a vulnerable missing null check appears textually and sequentially identical to safe code where a null check is genuinely unnecessary.
+Additionally, the codebert\_seq model exhibits a wide IQR for CWE-476 (NULL Pointer Dereference) errors, and its median is close to the correct match median. 
+
+Possibility, check the confusion matrix
+This high volume of high-ranking false positives likely occurs because a vulnerable missing null check appears textually and sequentially identical to safe code, where a null check is genuinely unnecessary.
 
 FIX CONFIDENCE SCORE TO SIMILARITY SCORE
 
@@ -215,28 +219,28 @@ FIX CONFIDENCE SCORE TO SIMILARITY SCORE
     % \label{img:retrieval_combined}
 \end{figure}
 
-CodeBERT Pattern excels in both vulnerability retrieval and downstream program repair. 
+CodeBERT\_pattern excels in both vulnerability retrieval and downstream program repair. 
 It achieves the highest retrieval accuracy across both CWEs (65.17\%) and CVEs (53.93\%).
-This hybrid architecture likely achieves this strong performance because it captures both localized lexical semantics—such as variable names and types—and program flow control. 
-Explicit graph patterns prove especially critical for resolving memory-safety vulnerabilities. 
-For instance, the retrieval accuracy for Out-of-bounds Writes (CWE-787) jumps from 26.67\% using purely sequential embeddings to 73.33\% when structural reachability patterns are introduced. 
-Conversely, pure topological descriptors fail to capture these localized lexical nuances, resulting in a collapse in overall retrieval performance.
+This hybrid architecture likely achieves this strong performance because it captures localized lexical semantics, such as variable names and types, and maximes its signal with encoded program flow control and regex vulnerability searches. 
+Explicit graph patterns improved the identification of memory-safety vulnerabilities. 
+For instance, the retrieval accuracy for Out-of-bounds Writes (CWE-787) goes from 26.67\% using only sequential embeddings to 73.33\% when structural embeddings are used. 
+Conversely, pure topological descriptors fail to capture these localized lexical nuances that differentiate the CWEs, as in a diverse dataset, the code complexity likely creates graphs that require a deeper level of processing by the graph embedders than the approach applied in this work. It results in a collapse in overall retrieval performance.
 % add space stats
 
 \subsection{CVE level analysis}
 
-CodeBERT Pattern achieves good performance in retrieving localized data-flow and bounds-check patterns. For example, CVE-2021-26788 ($0.93$) and CVE-2020-15211 ($0.73$) involve localized input validation and bounds checking (e.g., adding isxdigit() checks or guarding pointers within a single block). The good performance is explained by the match code, which is based on AST/CPG structural syntax. A good performance is also found when it is required to modify an existing AST node (e.g., reordering calls or tweaking conditionals as in CVE-2011-1768).
+CodeBERT Pattern achieves good performance in retrieving localized data-flow and bounds-check patterns. For example, CVE-2021-26788 ($0.93$) and CVE-2020-15211 ($0.73$) involve localized input validation and bounds checking (e.g., adding \texttt{isxdigit()} checks or guarding pointers within a single block). The good performance is explained by the match code, which is based on AST/CPG structural syntax. Good performance is also found when the patch consists of modifying an existing AST node (e.g., reordering calls or tweaking conditionals as in CVE-2011-1768).
 
-On the other hand, non-local semantic bugs have a low performance. For cases where the vulnerability stems from missing synchronization logic rather than existing control-flow nodes (CWE-362), we have the instances:
+On the other hand, non-local semantic bugs have a low performance, as well as for cases where the vulnerability stems from missing synchronization logic rather than existing control-flow nodes (CWE-362), we have the instances:
 \begin{itemize}
     \item CVE-2020-12652 ($\text{MAP}=0.0$, $n=2$): A double-fetch race condition in the Linux kernel (\texttt{\_\_mptctl\_ioctl}).
     \item CVE-2021-32686 ($\text{MAP}=0.0$, $n=1$): A race condition between socket destroy and callback in PJSIP TLS connections.
 \end{itemize}
-These vulnerabilities depend on execution order and synchronization across functions, which AST/graph structural embeddings cannot capture in the current setting. A similar case happens with a Use-After-Free (CWE-416) CVE-2023-38703 ($\text{MAP}=0.0$, $n=2$), in which the issue is caused by a lack of synchronization between high-level SRTP transport and lower-level media transport.
+These vulnerabilities depend on execution order and synchronization across functions, which AST/graph structural embeddings cannot capture in the current setting. A similar case happens with a Use-After-Free (CWE-416) CVE-2023-38703 ($\text{MAP}=0.0$, $n=2$), where the issue is caused by a lack of synchronization between high-level SRTP transport and lower-level media transport.
 
-Another fail case stems from the lack of access to external configuration flags and runtime state invariants, as seen in CVE-2020-10739 ($\text{MAP}=0.0$, $n=3$), in which a Null Pointer Exception in Istio/Envoy triggered under Telemetry v2 configuration.
+Another failure case stems from the lack of access to external configuration flags and runtime state invariants, as seen in CVE-2020-10739 ($\text{MAP}=0.0$, $n=3$), where a Null Pointer Exception in Istio/Envoy was triggered under the Telemetry v2 configuration.
 
-Broad refactoring or multi-file architectural changes, such as locking macros or structural realignment in CVE-2020-35538 and CVE-2012-3552, also show a low performance(MAP<0.5).
+Broad refactoring or multi-file architectural changes, such as locking macros or structural realignment in CVE-2020-35538 and CVE-2012-3552, also show low performance (MAP < 0.5).
 
 
 \begin{figure}
@@ -246,17 +250,17 @@ Broad refactoring or multi-file architectural changes, such as locking macros or
     \label{img:codebert_seq_cve_map}
 \end{figure}
 
-Multi-file changes and configuration-dependent issues perform poorly across all the embedding methods explored. 
+In general, multi-file changes and configuration-dependent issues perform poorly across all the embedding methods explored. 
 
 \texttt{CodeBERT\_seq} Graphic \ref{img:codebert_seq_cve_map}shows a better performance than CodeBERT\_patter on CVE-2012-3552, which is a race condition in Linux kernel IP socket option handling. It happens because CodeBERT\_pattern relies on regular expressions (\texttt{RE\_LOCK} and \textbf{RE\_UNLOCK}), to catch standard locking calls such as \texttt{mutex\_lock, spin\_lock, down\_read/write, and rtnl\_lock}. It fails when the code uses specific domain identifiers. 
-This is the case of CVE-2012-3552 that uses socket‑layer locking \texttt{lock\_sock/release\_sock} methods, which are not included in the regex. Therefore, the regex group that signals a race condition remains empty. 
+This is the case of CVE-2012-3552 that calls \texttt{ip\_setup\_cork()}, which performs an unprotected-thread data manipulation, which is not included in the regex. Therefore, the regex group that signals a race condition remains empty. 
 The remaining feature groups of the pattern embedding are unrelated vulnerability classes (Use-After-Free, Null Pointer Dereference, unchecked returns, array bounds, uninitialized variables, and alloc/free misallocations). As a result, the structural vector becomes near-constant noise. 
-As CodeBERT\_Pattern concatenates the structural pattern vector with the CodeBERT embedding and applies the PCA, the semantic signal gets diluted, resulting  in a wrong retrieval for this embedder.  
+As CodeBERT\_Pattern concatenates the structural pattern vector with the CodeBERT embedding and applies PCA, the semantic signal is diluted, resulting in incorrect retrieval for this embedder.  
 
-Similarly, CVE-2012-3552, an issue in Linux kernel IP socket option handling, uses \texttt{compat\_mpt\_command} / \texttt{mptctl\_gettargetinfo} via internal ioctl mutex handling, consequently, without explicit lock/unlock calls. 
-Because these domain-specific identifiers are absent from the vulnerability flow rules, lock\_nodes and unlock\_nodes remain empty for both vulnerable functions. 
+Similarly, CVE-2021-326862, an issue in the Linux kernel, allows local users to hold an incorrect lock during the ioctl operation and trigger a race condition, and CVE-2020-1265, a race condition in SSL sockets under heavy TLS loads where the IP socket option handling can lead to denial of service of open-source multimedia communication libraries, are not correctly retrieved. It happens because these cases use domain-specific identifiers that are not directly related to kernel locking primitives misuse, and therefore cannot be matched by the vulnerability flow rules. As a consequence, the vectors that flag concurrency vulnerabilities remain empty for both vulnerable evaluated functions. As CodeBERT\_Pattern concatenates the structural pattern vector with the CodeBERT embedding and applies the PCA, the semantic signal gets diluted, resulting  in a wrong retrieval for this embedder.  
 
-On the other hand, semantic shows insufficient for cases like CVE-2016-3841 (Linux IPv6 options UAF), where structural embeddings capture the (missing cleanup node during option passing better than token sequences. As a consequence, the performance gets from ~0.33 (codebert\_seq) to ~0.67 (codebert\_pattern). Another example is CVE-2020-15211, in which structural embeddings isolate the AST sub-graph of the missing bounds check or double indexing pattern in the code of TensorFlow Lite array indexing. With that, the MAP goes from ~0.26 (codebert\_seq) to ~0.73 (codebert\_pattern).
+
+On the other hand, semantic shows insufficient for cases like CVE-2016-3841 (a Linux IPv6 options UAF), where structural embeddings capture the missing cleanup node  better than token sequences. As a consequence, the performance of this CVE retrieval rises from ~0.33 (codebert\_seq) to ~0.67 (codebert\_pattern). Another example is CVE-2020-15211, in which structural embeddings isolate the AST subgraph of the missing bounds check or double-indexing pattern in TensorFlow Lite's array-indexing code. With that, the MAP rises from ~0.26 (codebert\_seq) to ~0.73 (codebert\_pattern).
 
 \begin{figure}
     \centering
@@ -264,7 +268,7 @@ On the other hand, semantic shows insufficient for cases like CVE-2016-3841 (Lin
     \caption{CodeBERT Pattern CVE mAP}
     \label{img:codebert_cve_map}
 \end{figure}
-% Why Some CVEs Failed (MAP = 0.0)1. Inter-Procedural & Concurrency Complexity (CWE-362 / CWE-416)CVE-2020-12652 ($\text{MAP}=0.0$, $n=2$): A double-fetch race condition in the Linux kernel (__mptctl_ioctl).CVE-2021-32686 ($\text{MAP}=0.0$, $n=1$): A race condition between socket destroy and callback in PJSIP TLS connections.CVE-2023-38703 ($\text{MAP}=0.0$, $n=2$): A Use-After-Free (UAF) issue caused by lack of synchronization between high-level SRTP transport and lower-level media transport.Reason: CodeBERT Pattern relies on AST structure and localized code representations (e.g., CPG/topological features). Concurrency and lifetime vulnerabilities depend on temporal execution order and cross-module synchronization across functions, which AST/graph structural embeddings fail to capture in localized context windows.2. Context-Dependent State Invariants (CWE-476)CVE-2020-10739 ($\text{MAP}=0.0$, $n=3$): A Null Pointer Exception in Istio/Envoy triggered under Telemetry v2 configuration.Reason: The vulnerability relies on external configuration flags and runtime state invariants rather than explicit syntactic anomalies in the local code structure.Key Correlations Observed1. Query Count ($n$) vs. Metric Variance (Bimodal Distribution)High-Sample Stability ($n \ge 8$): CVEs with larger query counts (CVE-2021-26788, CVE-2023-36326, CVE-2020-15211, CVE-2012-3552) converge to a consistent MAP range of $0.38 \text{ to } 0.93$, reflecting the model's true average retrieval performance.Low-Sample Extremes ($n \le 3$): Low query counts result in extreme binary outcomes ($1.0$ or $0.0$). For instance, CVE-2019-11487 ($n=5$) and CVE-2012-4508 ($n=3$) achieve $1.0$, while four CVEs with $n \le 3$ score exactly $0.0$.2. Localized Control Flow vs. Multi-File RefactoringHigh Performers ($\text{MAP} \ge 0.70$): CVE-2021-26788 ($0.93$) and CVE-2020-15211 ($0.73$) involve highly localized input validation and bounds checking (e.g., adding isxdigit() checks or guarding pointers within a single block).Low/Mid Performers ($\text{MAP} \le 0.50$): CVEs requiring broad refactoring or multi-file architectural changes (e.g., locking macros or structural realignment in CVE-2020-35538 and CVE-2012-3552) score significantly lower.Core HypothesesHypothesis 1 (Structural Representation Gap): CodeBERT Pattern matches code based on AST/CPG structural syntax. It excels at retrieving localized data-flow and bounds-check patterns, but completely fails on non-local semantic bugs where the vulnerability stems from missing synchronization logic rather than existing control-flow nodes.Hypothesis 2 (New Code Insertion vs. Modification Delta): If a patch requires modifying an existing AST node (e.g., reordering calls or tweaking conditionals as in CVE-2011-1768), similarity remains high. If a fix requires introducing entirely new abstractions (e.g., mutexes, new data structures), the target code representation diverges significantly from the vulnerable query representation.
+
 
 \begin{figure}
     \centering
@@ -273,8 +277,8 @@ On the other hand, semantic shows insufficient for cases like CVE-2016-3841 (Lin
     \label{img:combined_cve_map}
 \end{figure}
 
-Analyzing the cases Combined embedder succeeded with the help of Figure \ref{img:combined_cve_map} shows its potential in vulnerability investigation. 
-Combined embedder succeded in identifying vulnerabilities of Integer overflows in dynamic memory functions (e.g., arithmetic in realloc/malloc calls as seen in CVE-2023-36326). It happens because this code an arithmetic operation node feeding directly into an allocation call without an intervening conditional control-flow branch node. A CPG topology encodes this data-dependency pipeline with  Control control, and optinionally Data Flow Graph, whereas CodeBERT treats it as tokens separated by intermediate code. This pattern was identified in using graph topological kernels that compose the combined model, namely WL and GIN, even with frozen weights and shallow architecture.  or graph spectral methods to detect structural vulnerabilities immediately.
+Analyzing the cases Combined embedder succeeded in Figure \ref{img:combined_cve_map} reveals its potential in vulnerability investigation. 
+Combined embedder succeeded in identifying integer overflow vulnerabilities in dynamic memory functions (e.g., arithmetic in \texttt{realloc}/\texttt{malloc}  calls, as seen in CVE-2023-36326). This happens because the code contains an arithmetic operation node feeding directly into an allocation call without an intervening conditional control-flow branch node. A CPG topology encodes this data-dependency pipeline via Control flow, and, optionally, Data Flow Graph, whereas CodeBERT treats it as tokens separated by intermediate code. This pattern was identified using the graph topological kernels that compose the combined model, namely WL and GIN, even with frozen weights and a shallow architecture.
 
 \section{Generation Experiments}
 To evaluate prompt sensitivity, two configurations of the agentic pipeline were compared. They share the same parameters: the model (gpt-4o), the retrieved example, the target code, and the dataset split. 
