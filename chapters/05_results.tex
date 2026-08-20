@@ -54,8 +54,7 @@ The result of this can be seen in Table \ref{tab:l2_similarity}.
 This effect is worse for \textbf{GIN}, since its sum-pooling component means larger graphs produce larger-norm vectors, and removing the normalization, the retriever just ranks by graph size. \textbf{Combined} shows the same failure, since it inherits GIN's unnormalized scale in the concatenation. GIN explodes from 0.99 with L2 to 260{,}029 without. Whereas, Combined reaches 416{,}081
 
 Therefore, L2 normalization is validated as part of the pipeline.
-
-  \vspace{0.2em}
+\vspace{0.2em}
   {\small
   \renewcommand{\arraystretch}{1.35}
   \setlength{\tabcolsep}{5pt}
@@ -102,6 +101,44 @@ Therefore, L2 normalization is validated as part of the pipeline.
   \caption{Embedder Retrieval Ablation Study Performance for L2-Normalization and PCA}\label{tab:pca_l2}
 \end{table}}
 
+\begin{table}
+\centering
+  \begin{tabular}{l *{2}{c} c *{2}{c} c *{2}{c}}
+    \toprule
+    & \multicolumn{2}{c}{\textbf{PCA + L2} {\footnotesize(baseline)}}
+    && \multicolumn{2}{c}{\textbf{No PCA, L2 only} {\footnotesize(Abl.\ A)}}
+    && \multicolumn{2}{c}{\textbf{PCA, no L2} {\footnotesize(Abl.\ B)}} \\
+    \cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9}
+    \textbf{Embedder}
+      & hit@1 & MRR 
+      && hit@1 & MRR 
+      && hit@1 & MRR \\
+    \midrule
+    \rowcolor{c1!12}
+    Combined
+      & \chit{0.8219} & \chit{0.8597}
+      && \cwarn{0.8082} & 0.8436 
+      && \cmiss{0.136} & 0.060 \\
+    CodeBERT seq
+      & 0.8767 & 0.8992
+      && 0.8767 & 0.8992
+      && \cmiss{0.7397} & 0.7923 \\
+    GIN
+      & 0.6575 & 0.7335
+      && 0.6575 & 0.7289
+      && \cmiss{0.0547} & 0.0482 \\
+    CodeBERT pat.
+      & 0.8630 & 0.8801
+      && 0.8493 & 0.8799
+      && \cmiss{0.7260} & 0.7778 \\
+    WL
+      & 0.8082 & 0.8396
+      && 0.8219 & 0.8449
+      && \cmiss{0.0} & 0.0501 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Embedder Retrieval Ablation Study Performance for L2-Normalization and PCA}\label{tab:pca_l2}
+\end{table}
   % \scriptsize L2 normalization is \textbf{essential} for the pipeline.
   %   Removing it causes complete retrieval failure across all 6 embedders.
   %   PCA matters mainly for multi-stream embedders (Combined: $-$11~pp without it).
@@ -116,7 +153,7 @@ Therefore, L2 normalization is validated as part of the pipeline.
     \toprule
     \textbf{Embedder} & \textbf{With L2} & \textbf{No L2} \\
     \midrule
-    Combined      & 0.02   & \cmiss{416{,}081} \\
+    Combined      & 0.0067   & \cmiss{416{,}081} \\
     CodeBERT seq  & 0.01   & \cmiss{456} \\
     GIN           & 0.99   & \cmiss{260{,}029} \\
     \bottomrule
@@ -289,11 +326,12 @@ Combined embedder succeeded in identifying integer overflow vulnerabilities in d
 Given the patch retrieval performance, an analysis of downstream patch generation is necessary to assess the entire pipeline. To evaluate different LLM-powered architectures, two configurations of the agentic pipeline were compared. They share the same parameters: the model, the retrieved example, the target code, and the dataset split. 
 
 \begin{itemize}
-    \item \texttt{single\_turn}: few-shot marker prompt from the prompt registry (\texttt{single\_turn.py}).
+    \item \texttt{single\_turn}: few-shot prompt from the prompt registry (\texttt{single\_turn.py}).
     \item \texttt{tool\_calling}: ReAct prompt framework (\texttt{\_SYSTEM\_PROMPT}) combined with auxiliary reviewing code tools (\texttt{tool\_calling.py}).
 \end{itemize}
 
-Comparing these two different fingerprints per record using surface metrics, \texttt{BLEU / ROUGE / Jaccard}, the analysis shows similar results across the two strategies.
+% TODO: we probably should remove the 
+Comparing these two fingerprints per record using surface metrics (\texttt{BLEU, ROUGE, Jaccard}), the analysis shows similar results for both strategies.
 However, this is not due to similar patch quality.
 Rather, this occurs because the metrics become saturated by outputs dominated by unchanged code.
 
