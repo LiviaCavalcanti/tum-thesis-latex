@@ -104,21 +104,6 @@
     }
 }
 
-% Where each stage lives:
-% Entry CLI orchestration: main.py
-% Config and active dataset/embedder selection: config.yaml
-% Dataset loading and registry: \_\_init\_\_.py
-% CVEfixes pinned-file dataset variant: cvefixes\_file.py
-% Split logic (including precomputed splits): split.py
-% Index build pipeline: indexing.py
-% FAISS wrapper and metadata persistence: faiss\_index.py
-% Query batch retrieval: query.py
-% Retriever search call: retriever.py
-% Embedders registry: \_\_init\_\_.py
-% Combined embedder + PCA behavior: combined.py
-% Patching experiment runner used by sweep: run\_embedding\_sweep.py
-% Evaluation entrypoint: \_\_main\_\_.py
-
 \chapter{Methodology}\label{chapter:methodology}
 
 One of the goals of this work is to use historical knowledge from previous fixes to generate fixes for new, structurally similar vulnerable code.
@@ -149,7 +134,7 @@ Besides that, the system can be split into offline retrieval-index construction 
   \item uses the retrieved entry's data, notably, the patched code, to prompt an LLM to generate a fix for the query vulnerability.
 \end{itemize}
 
-In the development phase, retrieval and patch can be assessed on a held-out test set using the automated evaluation script described in ~\ref{section:evaluation}. %TODO: add the section
+In the development phase, retrieval and patch can be assessed on a held-out test set using the automated evaluation script described in ~\ref{section:evaluation}.
 
 \section*{Graph Generation}\label{sec:graph-generation}
 
@@ -161,7 +146,7 @@ Then, the compiled graph is exported to GraphML format with the shell command \t
 Each export generates a directory tree where each subdirectory contains an \verb|export.xml| file with a subgraph of the full CPG.
 
 The nodes can have different labels (e.g.\ \verb|CALL|, \verb|IDENTIFIER|, \verb|CONTROL_STRUCTURE|), while the edges can belong to one of the following graph representations layered over the same node set: 
-Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG), and Program Dependency Graph (PDG). % TODO: review the following definitions
+Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG), and Program Dependency Graph (PDG).
 \begin{itemize}
     \item AST: syntactic parse structure of the source code.
     \item CFG: possible execution paths through the code (branches, loops).
@@ -178,7 +163,7 @@ The pipeline generates graphs for both the \textit{vulnerable} and the \textit{p
 
 
 \section*{Graph Loading}
-The exported graph is imported into the pipeline using the NetworkX library as a \verb|MultiDiGraph|. %TODO: explain library 
+The exported graph is imported into the pipeline using the NetworkX library as a \verb|MultiDiGraph|, a directed graph representation that allows multiple parallel edges between the same pair of nodes, which allows the representation of multiple code graph structure since (e.g.\ both an AST and a CFG edge).
 
 All  \verb|export.xml| files are discovered by recursively exploring the export's subdirectories. Each file is read individually with \verb|nx.read_graphml| and merged into a single combined graph iteratively. 
 The NetworkX library represents each graph, node, and edge as dictionaries. Therefore, each merge updates the dictionaries with the loaded graph's entries.
@@ -353,8 +338,8 @@ This vector is then passed through the PCA reduction step.
     The node representation is updated at each layer \texttt{k} by aggregating the representations of its neighbors via a sum aggregator, followed by an MLP:
     $$h_v^{(k)} = \text{MLP}^{(k)}\!\left((1+\epsilon)\cdot h_v^{(k-1)} + \sum_{u \in \mathcal{N}(v)} h_u^{(k-1)}\right)$$
 
-  Where $\epsilon$ is either a learnable parameter or a fixed scalar (TODO: check what is the case here).
-  $h_v^{(0)}$ is initialized from the node features. (TODO: explain network initialization).
+  Where $\epsilon$ is a fixed scalar ($\epsilon = 0$, \texttt{train\_eps=False}) rather than a learned parameter, consistent with the embedder being used untrained.
+  $h_v^{(0)}$ is initialized  from the node features, i.e.\ the 11-dimensional one-hot CPG node-type encoding described above.
   The number of layers is equivalent to the number of neighbor hops that will be encoded by each node.
   This choice is a trade-off between the amount of local structural pattern and the global one.  
   Therefore, it learns to embed the subtree in a low-dimensional space, not only discriminating different structures but also mapping similar embeddings for similar structures and capturing dependencies between graph structures.
@@ -619,7 +604,7 @@ Just as with retrieval, the generation code is built on top of abstractions that
 Three data classes carry the flow through the pipeline and standardize the information handling:
 
 \begin{itemize}
-  \item \textbf{PatchContext}: wraps the input, including the similar CVE's metadata retrieved from a registered database, the CVE identifier, vulnerable C source,  query pair (%TODO verify it
+  \item \textbf{PatchContext}: wraps what is required to generate a patch and, therefore, that will be used as the input for the agent. It includes the retrieved example's metadata and CVE identifier, the vulnerable C source to patch,  
   and, for graph-aware variants, the CPG graph context.
   \item \textbf{AgentResult}: wraps the output data consisting of Chain of Thought and the vulnerable code, the patched code, each of the LLM call turns ( \texttt{InvocationRecord} format), log of tool call executions along with prompt fingerprints, and the total number of tokens.
 \item \textbf{Agent}: base class that works as a Protocol containing the agent name and a run method implementation that receives a \texttt{PatchContext} as input and generates a \texttt{AgentResult} object. With that, it is possible to easily integrate different agent approaches by following the pipeline's interface while maintaining the observability necessary for performance evaluation.  
@@ -756,7 +741,7 @@ In this version, the system prompt also contains an explicit sub-step: \texttt{"
 % ) and inject them as `{target_graph_context}` in the prompt.
 
 
-\subsection{Agent with structure-aware tooling.}
+\subsection*{Agent with structure-aware tooling}
 
 This agent follows a ReAct loop~\cite{react2023google}, in which the LLM reasons and calls tools iteratively until it reaches a submission point and calls \texttt{submit\_patch}, or until it hits the maximum number of iterations, set to 6.
 
@@ -970,7 +955,6 @@ Each \texttt{submit\_patch} output contains one or more blocks in the following 
 >>>>>>> REPLACE
 \end{verbatim}
 
-% TODO review
 This format has a couple of advantages. First, compared to returning the full code, which in many cases can be lengthy, it avoids truncation errors, any "generation errors" that change non-vulnerable code, and, ultimately, unnecessary output token costs. Second, compared to standard unified diff, it is required to add to the header the exact lines of change, which can lead to frequent hallucinations and makes it more difficult to reconstruct original code files if only a snippet was passed.  
 
 The SEARCH\&REPLACE pairs are extracted via regular expression and applied to the target code in sequence using string matching.
@@ -1015,11 +999,11 @@ Swapping between backends only requires call \texttt{use\_backend()} context man
 The system provides an outer loop via \texttt{run\_batch\_inference()}, which is used to evaluate the overall performance using a dataset. 
 This loop starts by building a single agent instance with the selected architecture via the registry, which will be shared across all queries. It receives as part of the config one evaluation dataset over which it iterates, generating the queries and appending each result to an append-only \texttt{results.jsonl} file after processing. This logging approach was adopted to make the run crash-safe and resumable.
 
-For each query, it assembles a \texttt{PatchContext} before the agent runs that includes, besides what was already listed on \ref{section:agent-architecture}.
+For each query, it assembles a \texttt{PatchContext} using the fields already listed in Section~\ref{section:agent-architecture}, resolved from the retriever's output and the query pair's database entry.
 
-%TODO: the Oracle vs. Precomputed retriever distinction is methodologically important — Oracle presumably serves as an upper-bound / ablation condition isolating patch-generation quality from retrieval quality. Worth stating this framing explicitly if that's the intent, since it directly supports a "how much does retrieval error contribute to patch failure" analysis in your Results chapter.
+% Two retriever modes support this outer loop besides the embedding-based FAISS/HNSW lookup: \texttt{OracleRetriever}, which returns the perfect same-CVE match by direct lookup and serves as an upper bound that isolates patch-generation quality from retrieval quality; and \texttt{PrecomputedRetriever}, which replays cached results from a prior \texttt{--mode query} run so the same retrieval output can be reused across multiple patching experiments without recomputing embeddings.
 
-\subsection{Baseline No-Retrieval Variant}
+\subsection*{Baseline No-Retrieval Variant}
 Uses an identical system prompt as the Structure tooling aware agent, but without any retrieval tool call: \texttt{"You have NO access to similar vulnerability examples — use CWE knowledge and verification only."} 
 For that, the \texttt{analyze\_example\_fix} tool is excluded from the tool list, so the model has no mechanism to inspect a retrieved example. This serves as the ablation baseline. Nevertheless, to make it fair, the prompt lists what are the CWEs that may be present in the code snippet.
 
@@ -1080,7 +1064,7 @@ For that, the \texttt{analyze\_example\_fix} tool is excluded from the tool list
 
 % \paragraph{Reproducibility and cost tracking.}
 
-\subsection*{Evaluation}
+\subsection*{Evaluation}\label{section:evaluation}
 We evaluate the system across three axes: \textit{retrieval metrics}, assess whether the corresponding historical vulnerability is returned given an unseen vulnerability query; \textit{patching metrics}, which assess the quality and correctness of the generated patch; and \textit{system metrics}, which assess the cost and viability of the pipeline as a whole.
 
 % content: merge the two overlapping metric lists into one
@@ -1096,18 +1080,18 @@ We evaluate the system across three axes: \textit{retrieval metrics}, assess whe
 % Cost: prompt/completion tokens and latency — multi-agent multiplies calls, so define a budget and report quality-per-token.
 % Functional signal: the LLM-judge and human-label pipelines already exist (src/evaluate/llm_evaluation.py, llm_vulnerability_eval.jsonl, human_labels.jsonl) — a reviewer agent should be judged on whether it moves the verdict, not text overlap.
 % Pre-register a win condition, e.g. "+X hunk_f1 at ≤ current parse-error rate and $≤ N×$ tokens."
-\subsection{Retrieval}
+\subsection*{Retrieval}
 \textbf{CWE hit@1} measures whether the top-1 retrieved example shares the same CWE category as the queried vulnerability.
 
 \textbf{CVE hit@1} is a stricter version of the CWE hit@1. It measures whether the top-1 retrieved example corresponds to the same underlying CVE (or CVE-fix pair) as the query, rather than merely the same vulnerability class.
-%TODO: compare CVE hit@1  — same CVE ID vs. same fix-commit lineage?
+It is implemented as an exact CVE identifier match rather than fix-commit lineage, so every entry filed under the same CVE (e.g.\ multiple affected functions from the same fix) counts as a hit.
 
 \textbf{Confidence Score} is the similarity score assigned by the retriever to its top-1 match, used to measure the ranking signal quality. It can also be used as a threshold to reject low-confidence retrievals rather than return wrong CVEs examples (see Section~\ref{img:retrieval_pattern}).
 
 \textbf{Effective dimensionality} of the embedding space is used to characterize how much of the embedding's nominal dimensionality is actually used to separate examples.
 
 
-\subsection{Patching Metrics}
+\subsection*{Patching Metrics}
 
 \textbf{LLM-as-a-judge.} following the evaluator design of ~\cite{google2026llmjudge}.
 The evaluator receives the bug context (e.g., bug description) and the candidate patch. The LLM judge is instructed to output its validity assessment, which consists of a “thought” section capturing its thinking steps, a binary label (“VALID” or “INVALID”), and a concise justification. 
@@ -1155,7 +1139,7 @@ L = \{\text{norm}(l) : l \in \text{lines}, l \neq \emptyset\}
 \textbf{BERTScore} Measure Patch quality via embeddings, complementing the overlap lines evaluation. It consists of the F1-score metric, considering the contextual embedding precision and recall. 
 
 \[
-\text{BERTScore} = \frac{2 \cdot P \cdot R}{P + R}
+\text{BERTScore} = \frac{2 \cdot Precision \cdot Recall}{Precision + Recall}
 \]
 
 With this, patches that are semantically equivalent but with different phrasing not to be penalized, but rather have a high score.
@@ -1168,6 +1152,12 @@ With this, patches that are semantically equivalent but with different phrasing 
 Paired per-query deltas + a sign/Wilcoxon test — never compare aggregate means over different evaluated subsets (that was the original trap)
 
 
+
+11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz (2.50 GHz)
+ NVIDIA RTX A2000 Laptop GPU, memory  4096MiB
+
+ Azure Foundry API, default deployment:
+ start 09/08/2024 end
 add discussion section
 - how did i come to these results
 - why i took these decisions
