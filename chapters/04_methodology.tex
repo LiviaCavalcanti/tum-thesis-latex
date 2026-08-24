@@ -213,94 +213,194 @@ Besides the labelling, the $G_\mathrm{vuln}$ nodes also received weights.
 \end{tabular}
 \end{center}
 
-These weights are directly proportional to the relation of the node to the vulnerability and will be integrated to the embedders for further prunning.
+These weights are directly proportional to the relation of the node to the vulnerability and will be integrated into the embedders for further pruning.
 
-\begin{tikzpicture}[node distance=0.8cm and 2.2cm]
+% \begin{tikzpicture}[node distance=0.8cm and 2.2cm]
 
-    % ===== TOP GROUP: CODE PARSING & ANALYSIS =====
-    \begin{scope}[local bounding box=analysis_group]
+%     % ===== TOP GROUP: CODE PARSING & ANALYSIS =====
+%     \begin{scope}[local bounding box=analysis_group]
         
-        % Vulnerable input
-        \node[inputbox] (vuln_code) {Vulnerable\\Code};
+%         % Vulnerable input
+%         \node[inputbox] (vuln_code) {Vulnerable\\Code};
         
-        % Joern Parse
-        \node[processbox, right=of vuln_code] (joern) {Joern Parse};
+%         % Joern Parse
+%         \node[processbox, right=of vuln_code] (joern) {Joern Parse};
         
-        % GraphML Export
-        \node[processbox, right=of joern] (export) {GraphML\\Export};
+%         % GraphML Export
+%         \node[processbox, right=of joern] (export) {GraphML\\Export};
         
-    \end{scope}
+%     \end{scope}
 
-    \begin{scope}[local bounding box=analysis_group_patched, yshift=-2.3cm]
+%     \begin{scope}[local bounding box=analysis_group_patched, yshift=-2.3cm]
         
-        % Patched input
-        \node[inputbox] (patched_code) {Patched\\Code};
+%         % Patched input
+%         \node[inputbox] (patched_code) {Patched\\Code};
         
-        % Joern Parse
-        \node[processbox, right=of patched_code] (joern2) {Joern Parse};
+%         % Joern Parse
+%         \node[processbox, right=of patched_code] (joern2) {Joern Parse};
         
-        % GraphML Export
-        \node[processbox, right=of joern2] (export2) {GraphML\\Export};
+%         % GraphML Export
+%         \node[processbox, right=of joern2] (export2) {GraphML\\Export};
         
-    \end{scope}
+%     \end{scope}
     
-    % Graph DB - centered above the middle section
-    \node[cylinder, right=3cm of export, yshift=-1.15cm] (graphdb) {};
+%     % Graph DB - centered above the middle section
+%     \node[cylinder, right=3cm of export, yshift=-1.15cm] (graphdb) {};
     
-    % Dashed box around analysis (encompasses both scopes equally)
-    \node[groupbox, fit=(analysis_group) (analysis_group_patched), label={[anchor=north, yshift=-2pt]\textbf{CODE ANALYSIS}}] {};
+%     % Dashed box around analysis (encompasses both scopes equally)
+%     \node[groupbox, fit=(analysis_group) (analysis_group_patched), label={[anchor=north, yshift=-2pt]\textbf{CODE ANALYSIS}}] {};
     
-    % ===== MIDDLE GROUP: GRAPH PROCESSING =====
-    \begin{scope}[local bounding box=processing_group, yshift=-5.5cm]
+%     % ===== MIDDLE GROUP: GRAPH PROCESSING =====
+%     \begin{scope}[local bounding box=processing_group, yshift=-5.5cm]
         
-        % Graph Loading (aligned with the left of export)
-        \node[processbox] (load) {Graph Loading\\Merge XML,\\Filter Nodes};
+%         % Graph Loading (aligned with the left of export)
+%         \node[processbox] (load) {Graph Loading\\Merge XML,\\Filter Nodes};
         
-        % Semantic Diff
-        \node[processbox, right=of load] (diff) {Semantic Diff\\Fingerprint\\Matching};
+%         % Semantic Diff
+%         \node[processbox, right=of load] (diff) {Semantic Diff\\Fingerprint\\Matching};
         
-        % Graph Sampling
-        \node[processbox, right=of diff] (sampling) {Graph Sampling\\Extract\\Vulnerability};
+%         % Graph Sampling
+%         \node[processbox, right=of diff] (sampling) {Graph Sampling\\Extract\\Vulnerability};
         
-    \end{scope}
+%     \end{scope}
     
-    % Dashed box around processing
-    \node[groupbox, fit=(processing_group), label={[anchor=north, yshift=-2pt]\textbf{GRAPH PROCESSING}}] {};
+%     % Dashed box around processing
+%     \node[groupbox, fit=(processing_group), label={[anchor=north, yshift=-2pt]\textbf{GRAPH PROCESSING}}] {};
     
-    % ===== BOTTOM: OUTPUT (centered below sampling) =====
-    \node[outputbox, below=1.2cm of sampling] (output) {Vulnerability\\Subgraph\\with diff\_weight};
+%     % ===== BOTTOM: OUTPUT (centered below sampling) =====
+%     \node[outputbox, below=1.2cm of sampling] (output) {Vulnerability\\Subgraph\\with diff\_weight};
     
-    % ===== ARROWS =====
+%     % ===== ARROWS =====
     
-    % Vulnerable group arrows
-    \draw[arrow] (vuln_code) -- (joern);
-    \draw[arrow] (joern) -- (export);
+%     % Vulnerable group arrows
+%     \draw[arrow] (vuln_code) -- (joern);
+%     \draw[arrow] (joern) -- (export);
     
-    % Perpendicular arrow from export to graphdb
-    \draw[arrow] (export.east) -- ++(1.1,0) |- (graphdb.west);
+%     % Perpendicular arrow from export to graphdb
+%     \draw[arrow] (export.east) -- ++(1.1,0) |- (graphdb.west);
 
-    % Patched group arrows
-    \draw[arrow] (patched_code) -- (joern2);
-    \draw[arrow] (joern2) -- (export2);
+%     % Patched group arrows
+%     \draw[arrow] (patched_code) -- (joern2);
+%     \draw[arrow] (joern2) -- (export2);
     
-    % Perpendicular arrow from export2 to graphdb
-    \draw[arrow] (export2.east) -- ++(1.1,0) |- (graphdb.west);
+%     % Perpendicular arrow from export2 to graphdb
+%     \draw[arrow] (export2.east) -- ++(1.1,0) |- (graphdb.west);
     
-    % From graph DB to loading (routed cleanly)
-    \draw[arrow] (graphdb.south) -- ++(0,-1.6) -| (load.north);
+%     % From graph DB to loading (routed cleanly)
+%     \draw[arrow] (graphdb.south) -- ++(0,-1.6) -| (load.north);
     
-    % Processing arrows
-    \draw[arrow] (load) -- (diff);
-    \draw[arrow] (diff) -- (sampling);
+%     % Processing arrows
+%     \draw[arrow] (load) -- (diff);
+%     \draw[arrow] (diff) -- (sampling);
     
-    % To output
-    \draw[arrow] (sampling) -- (output);
+%     % To output
+%     \draw[arrow] (sampling) -- (output);
     
-    % ===== LABELS =====
-    \node[left=0.6cm of vuln_code, yshift=-11pt, font=\small\bfseries] {INPUT};
-    \node[below=0.6cm of output, font=\small\bfseries] {OUTPUT};
+%     % ===== LABELS =====
+%     \node[left=0.6cm of vuln_code, yshift=-11pt, font=\small\bfseries] {INPUT};
+%     \node[below=0.6cm of output, font=\small\bfseries] {OUTPUT};
+
+% \end{tikzpicture}
+
+\vspace{1cm}
+\usetikzlibrary{shapes.geometric, positioning, fit, arrows.meta, backgrounds}
+
+% ---- Colors ----
+\definecolor{tealFill}{HTML}{E1F5EE}
+\definecolor{tealBorder}{HTML}{0F6E56}
+\definecolor{tealText}{HTML}{085041}
+
+\definecolor{grayFill}{HTML}{F1EFE8}
+\definecolor{grayBorder}{HTML}{5F5E5A}
+\definecolor{grayText}{HTML}{444441}
+
+\definecolor{purpleFill}{HTML}{EEEDFE}
+\definecolor{purpleBorder}{HTML}{534AB7}
+\definecolor{purpleText}{HTML}{3C3489}
+
+\definecolor{coralFill}{HTML}{FAECE7}
+\definecolor{coralBorder}{HTML}{993C1D}
+\definecolor{coralText}{HTML}{712B13}
+
+% ---- Styles ----
+\tikzset{
+  teal/.style={rectangle, rounded corners=4pt, draw=tealBorder, fill=tealFill,
+    text=tealText, minimum height=1cm, align=center, font=\small, inner sep=6pt},
+  purple/.style={rectangle, rounded corners=4pt, draw=purpleBorder, fill=purpleFill,
+    text=purpleText, minimum height=1.1cm, align=center, font=\small, inner sep=6pt},
+  coral/.style={rectangle, rounded corners=4pt, draw=coralBorder, fill=coralFill,
+    text=coralText, minimum height=1.1cm, align=center, font=\small, inner sep=6pt},
+  db/.style={cylinder, shape border rotate=90, aspect=0.25, draw=grayBorder,
+    fill=grayFill, text=grayText, minimum height=1.4cm, minimum width=1.6cm,
+    font=\small, align=center},
+  groupbox/.style={rectangle, rounded corners=8pt, draw=black!35, dashed,
+    inner sep=14pt, label position=north west},
+  arrow/.style={-{Stealth[length=2.2mm]}, line width=0.5pt, draw=black!55}
+}
+
+\vspace{0.2cm}
+\begin{figure}[h!]
+  \caption[Graph processing pipeline]{Online and Offline code analysis and graph processing of the retrieval pipeline }
+\label{diagram:graphprocessing_pipeline}
+  
+\begin{tikzpicture}[node distance=0.4cm and 1.2cm, font=\small]
+
+
+  % ===== CODE ANALYSIS GROUP =====
+  \node[teal] (vuln)    {Vulnerable code};
+  \node[teal, right=of vuln]   (joern1) {Joern parse};
+  \node[teal, right=of joern1] (export1) {GraphML export};
+
+  \node[teal, below=1.0cm of vuln]    (patched) {Patched code};
+  \node[teal, right=of patched] (joern2) {Joern parse};
+  \node[teal, right=of joern2]  (export2) {GraphML export};
+
+  \node[db, right=1.8cm of export1, yshift=-0.8cm] (graphdb) {Graph DB};
+
+  % Fit box with explicit padding and a clean overlaid title
+  \begin{scope}[on background layer]
+    \node[groupbox, fit=(vuln)(export1)(patched)(export2)(graphdb), inner sep=12pt] (box1) {};
+  \end{scope}
+  % Title node resting cleanly on top-left of the border (with white fill to cut the line)
+  \node[font=\small\bfseries, fill=white, inner sep=2pt, anchor=west] 
+    at ([xshift=10pt]box1.north west) {Code analysis};
+
+
+  % ===== GRAPH PROCESSING GROUP =====
+  \node[purple, below=1.8cm of patched.south west, anchor=north west] (load) {Graph loading\\[2pt] \small Merge \& filter};
+  \node[purple, right=of load]  (diff)     {Semantic diff\\[2pt] \small Fingerprint match};
+  \node[purple, right=of diff]  (sampling) {Graph sampling\\[2pt] \small Extract subgraph};
+
+  \begin{scope}[on background layer]
+    \node[groupbox, fit=(load)(diff)(sampling), inner sep=12pt] (box2) {};
+  \end{scope}
+  \node[font=\small\bfseries, fill=white, inner sep=2pt, anchor=west] 
+    at ([xshift=10pt]box2.north west) {Graph processing};
+
+
+  % ===== OUTPUT =====
+  \node[coral, below=1.2cm of sampling] (output)
+    {Vulnerable subgraph\\[2pt] \small with diff\_weight};
+
+
+  % ===== ARROWS =====
+  \draw[arrow] (vuln) -- (joern1);
+  \draw[arrow] (joern1) -- (export1);
+  \draw[arrow] (patched) -- (joern2);
+  \draw[arrow] (joern2) -- (export2);
+
+  \draw[arrow] (export1.east) -| ++(0.4,-0.5) |- (graphdb.west);
+  \draw[arrow] (export2.east) -| ++(0.62,0.5)  |- (graphdb.west);
+
+  % Cleanly routed arrow avoiding box overlap (drops down the right side and enters load)
+  \draw[arrow] (graphdb.south) -- ++(0,-1.8) -| ([xshift=-0.6cm]load.west) -- (load.west);
+
+  \draw[arrow] (load) -- (diff);
+  \draw[arrow] (diff) -- (sampling);
+  \draw[arrow] (sampling) -- (output);
 
 \end{tikzpicture}
+\end{figure}
 
 \subsection*{Embedders}
 % content ONLY: your config choices --
@@ -604,8 +704,7 @@ Just as with retrieval, the generation code is built on top of abstractions that
 Three data classes carry the flow through the pipeline and standardize the information handling:
 
 \begin{itemize}
-  \item \textbf{PatchContext}: wraps what is required to generate a patch and, therefore, that will be used as the input for the agent. It includes the retrieved example's metadata and CVE identifier, the vulnerable C source to patch,  
-  and, for graph-aware variants, the CPG graph context.
+  \item \textbf{PatchContext}: wraps what is required to generate a patch and, therefore, will be used as the input for the agent. It includes the retrieved example's metadata and CVE identifier, the vulnerable C source to patch,  and, for graph-aware variants, the CPG graph context.
   \item \textbf{AgentResult}: wraps the output data consisting of Chain of Thought and the vulnerable code, the patched code, each of the LLM call turns ( \texttt{InvocationRecord} format), log of tool call executions along with prompt fingerprints, and the total number of tokens.
 \item \textbf{Agent}: base class that works as a Protocol containing the agent name and a run method implementation that receives a \texttt{PatchContext} as input and generates a \texttt{AgentResult} object. With that, it is possible to easily integrate different agent approaches by following the pipeline's interface while maintaining the observability necessary for performance evaluation.  
 \end{itemize}
@@ -1090,6 +1189,7 @@ It is implemented as an exact CVE identifier match rather than fix-commit lineag
 
 \textbf{Effective dimensionality} of the embedding space is used to characterize how much of the embedding's nominal dimensionality is actually used to separate examples.
 
+\textbf{MAP}
 
 \subsection*{Patching Metrics}
 
@@ -1161,3 +1261,310 @@ Paired per-query deltas + a sign/Wilcoxon test — never compare aggregate means
 add discussion section
 - how did i come to these results
 - why i took these decisions
+
+
+% I’ll trace the confidence-score implementation from the CLI entry point through metric aggregation and plotting, then inspect the current output schema and tests. I’ll document the exact formulas, filtering rules, statistical assumptions, and reproducibility parameters so the method can be revised without ambiguity.
+
+% There are two different concepts named “confidence” in this repository: retrieval confidence (a top-1 similarity threshold) and statistical confidence intervals for patch metrics. Your recent command uses the latter, so I’m focusing on `compute_confidence_stats.py` and the plotting implementation, while noting the distinction explicitly.
+
+% No matches found. Your search pattern might be excluded completely by either the search.exclude settings or .*ignore files.
+% If you believe that it should have results, you can check into the .*ignore files and the exclude setting (here are some excluded patterns for reference:[**/node_modules,**/bower_components,**/*.code-search]).
+% Then if you want to include those files you can call the tool again by setting "includeIgnoredFiles" to true.
+
+
+% The implementation has an important reproducibility detail: the standalone statistics command uses an explicit Student’s $t$ interval, but the plotting command delegates error bars to Seaborn’s `errorbar=("ci", level)`, which is a bootstrap interval by default. I’m verifying the metric-record construction and dependency versions so the explanation does not conflate these two procedures.
+
+% Ran terminal command:  uv run python -c 'import scipy,seaborn,pandas,matplotlib; print("scipy",scipy.__version__); print("seaborn",seaborn.__version__); print("pandas",pandas.__version__); print("matplotlib",matplotlib.__version__)'; git status --short
+
+% Searched for regex `metrics_vs_function_body|eval_status|status.*evaluated` (`**/src/evaluate/**`), 40 results
+
+% No matches found. Your search pattern might be excluded completely by either the search.exclude settings or .*ignore files.
+% If you believe that it should have results, you can check into the .*ignore files and the exclude setting (here are some excluded patterns for reference:[**/node_modules,**/bower_components,**/*.code-search]).
+% Then if you want to include those files you can call the tool again by setting "includeIgnoredFiles" to true.
+
+% **Terminology**
+
+% The repository uses “confidence” for two different procedures:
+
+% 1. **Patch-metric confidence intervals**, used by your recent `plot_confidence_intervals` command.
+% 2. **Retrieval confidence**, defined separately as whether the top-1 retrieval score exceeds a threshold.
+
+% Your command uses procedure 1. It does not assign a confidence probability to an individual patch. It estimates uncertainty around the **mean metric score** for a group of patches.
+
+% **1. Input filtering**
+
+% The evaluation file is JSONL. Only records with:
+
+% ```python
+% record["eval_status"] == "evaluated"
+% ```
+
+% are included. Records marked `skipped`, including `reason: "missing_patch"`, and records with other statuses are excluded.
+
+% For each metric, the implementation then collects only numeric values from:
+
+% ```python
+% record["metrics_vs_function_body"][metric_name]
+% ```
+
+% Therefore, the sample size can differ by metric. A group may have 75 evaluated records overall but fewer than 75 observations for a particular metric if that metric is missing.
+
+% The metrics are computed earlier by comparing:
+
+% ```text
+% generated patch function body
+% versus
+% ground-truth patched function body
+% ```
+
+% The generated and reference code are normalized to function-body granularity when they appear to be full files. Metric values are rounded to four decimal places before being written to `evaluation.jsonl`.
+
+% See `evaluate_patches.py:89-202` and `compute_confidence_stats.py:61-66`.
+
+% **2. Grouping**
+
+% Without `--group-by`, all evaluated records form one group.
+
+% With:
+
+% ```bash
+% --group-by query_cwe
+% ```
+
+% records are partitioned by the string value of `query_cwe`. Missing values are assigned to the group `"unknown"`.
+
+% For each CWE and metric, the algorithm independently computes a mean, standard deviation, and confidence interval. The same patch can therefore contribute to multiple metric-specific estimates, but each metric is summarized separately.
+
+% **3. Mean and standard deviation**
+
+% For a metric with observations $x_1, x_2, \ldots, x_n$, the sample mean is:
+
+% $$
+% \bar{x} = \frac{1}{n}\sum_{i=1}^{n} x_i
+% $$
+
+% The reported standard deviation is the sample standard deviation with `ddof=1`:
+
+% $$
+% s =
+% \sqrt{
+% \frac{1}{n-1}
+% \sum_{i=1}^{n}(x_i-\bar{x})^2
+% }
+% $$
+
+% The displayed string:
+
+% ```text
+% mean ± std
+% ```
+
+% describes variability among observed patches. It is **not** a confidence interval.
+
+% Implementation: `compute_confidence_stats.py:68-89`.
+
+% **4. Student’s $t$ confidence interval**
+
+% For the requested significance level $\alpha$, the default is:
+
+% ```text
+% alpha = 0.05
+% confidence level = 1 - alpha = 0.95
+% ```
+
+% The interval is calculated as:
+
+% $$
+% \bar{x}
+% \pm
+% t_{1-\alpha/2,\ n-1}
+% \frac{s}{\sqrt{n}}
+% $$
+
+% where:
+
+% - $n$ is the number of numeric metric observations,
+% - $\bar{x}$ is the sample mean,
+% - $s$ is the sample standard deviation,
+% - $t_{1-\alpha/2,\ n-1}$ is the Student’s $t$ critical value,
+% - $n-1$ is the degrees of freedom.
+
+% The confidence-interval half-width is:
+
+% $$
+% h =
+% t_{1-\alpha/2,\ n-1}
+% \frac{s}{\sqrt{n}}
+% $$
+
+% and the bounds are:
+
+% $$
+% \text{CI}_{low} = \bar{x} - h
+% $$
+
+% $$
+% \text{CI}_{high} = \bar{x} + h
+% $$
+
+% For $n < 2$, the code reports the mean but does not report a standard deviation or confidence interval.
+
+% The exact implementation is `compute_confidence_stats.py:68-89`.
+
+% **5. “Affordable confidence”**
+
+% The `affordable_confidence` value is a heuristic derived from a fixed candidate set:
+
+% ```python
+% [0.80, 0.85, 0.90, 0.95, 0.99]
+% ```
+
+% For each candidate confidence level $c$, the code computes:
+
+% $$
+% \alpha = 1-c
+% $$
+
+% It then calculates the corresponding $t$ interval. A candidate is accepted if:
+
+% $$
+% h_c \leq \text{margin_threshold}
+% $$
+
+% The default margin threshold is:
+
+% ```text
+% 0.05
+% ```
+
+% The reported affordable confidence is the **largest candidate confidence level** satisfying that condition.
+
+% For example:
+
+% | Confidence level | CI half-width |
+% |---:|---:|
+% | 80% | 0.031 |
+% | 85% | 0.037 |
+% | 90% | 0.044 |
+% | 95% | 0.057 |
+% | 99% | 0.083 |
+
+% With a threshold of `0.05`, the result would be `90%`.
+
+% This value should be interpreted as:
+
+% > Among the tested confidence levels, the largest level whose estimated interval half-width is no greater than the selected precision threshold.
+
+% It is not a statistically optimized confidence level, and it is not a calibrated probability that the result is correct.
+
+% Implementation: `compute_confidence_stats.py:91-103`.
+
+% **6. The plotting command uses a different algorithm**
+
+% This is the most important reproducibility distinction.
+
+% `compute_confidence_stats.py` explicitly uses the Student’s $t$ formula above.
+
+% However, `plot_confidence_intervals.py` passes this to Seaborn:
+
+% ```python
+% errorbar=("ci", int((1 - alpha) * 100))
+% ```
+
+% In Seaborn 0.13.2, this requests a bootstrap confidence interval around the mean. It is not the same as the explicit Student’s $t$ interval.
+
+% The plotting procedure is therefore approximately:
+
+% 1. Select the records in a group.
+% 2. Resample those records with replacement.
+% 3. Compute the mean for each bootstrap resample.
+% 4. Use the bootstrap distribution of means to construct the confidence interval.
+% 5. Plot the mean with the resulting error bar.
+
+% Seaborn’s default bootstrap count is 1,000, and no explicit random seed is passed by this script. Consequently, plotted intervals may vary slightly between executions unless the random state is controlled externally.
+
+% The relevant plotting code is `plot_confidence_intervals.py:280-317`, `plot_confidence_intervals.py:390-440`, and `plot_confidence_intervals.py:455-493`.
+
+% **7. Additional plotting filters**
+
+% The plot does not necessarily show every CWE:
+
+% ```text
+% --min-group-size 3
+% ```
+
+% is the default. CWEs with fewer than three records are excluded from the plot.
+
+% The default is also:
+
+% ```text
+% --max-plots 6
+% ```
+
+% so only the largest eligible groups are shown.
+
+% This means an apparently absent CWE in the figure does not imply that its evaluation results are empty. It may simply have fewer than three records or fall outside the top six groups.
+
+% For your command with `--group-by query_cwe`, the plotting groups are based on evaluated records, not skipped records.
+
+% **Statistical assumptions and limitations**
+
+% The Student’s $t$ interval assumes that:
+
+% - observations are independent,
+% - observations are identically distributed within each group,
+% - the sample mean is an appropriate summary,
+% - the sampling distribution of the mean is approximately normal,
+% - the observations represent a meaningful sample from a larger population.
+
+% These assumptions are questionable if multiple rows come from the same CVE, variant, or duplicated vulnerability. For example, several records may share the same `query_cve` and differ only by model-generated variant. Treating all rows as independent can make the interval appear narrower than justified.
+
+% The current implementation also does not:
+
+% - cluster or bootstrap by CVE,
+% - account for repeated measures,
+% - correct for multiple metrics or multiple CWEs,
+% - clip intervals to the valid metric range $[0,1]$,
+% - report the number of unique CVEs,
+% - use a fixed random seed for plotted bootstrap intervals,
+% - distinguish exploratory intervals from confirmatory statistical tests.
+
+% **Reproducible reporting protocol**
+
+% For each reported result, record:
+
+% ```text
+% evaluation file path
+% number of raw JSONL records
+% number of evaluated records
+% grouping field
+% group name
+% metric name
+% metric-specific n
+% mean
+% sample standard deviation, ddof=1
+% alpha
+% confidence level
+% degrees of freedom
+% t critical value, if using compute_confidence_stats.py
+% CI half-width
+% CI lower and upper bounds
+% margin threshold
+% affordable confidence candidate set
+% Python/environment package versions
+% ```
+
+% For the explicit statistical summary, a reproducible command is:
+
+% ```bash
+% uv run python -m src.evaluate.compute_confidence_stats \
+%   path/to/evaluation.jsonl \
+%   --group-by query_cwe \
+%   --alpha 0.05 \
+%   --margin-threshold 0.05 \
+%   --out confidence_stats.json
+% ```
+
+% For scientific consistency, the plotting script should ideally be changed to use the same explicit Student’s $t$ calculation as `compute_confidence_stats.py`, or the paper should clearly label the plots as bootstrap intervals and record the bootstrap seed and number of resamples. At present, the command-line summary and the plotted intervals are based on different confidence-interval algorithms.
+
+% Starting: *Identify missing judge entry in combined tool-calling* (5/6)
