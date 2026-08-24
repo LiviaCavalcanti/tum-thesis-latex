@@ -509,59 +509,59 @@ Consequently, even though the agent workflow verifies the correctness of the ret
 % \end{table}
 
 
-\begin{table}[htbp]
-  \centering
-  \small
-  \caption{Comparison of Performance Across Methods by CWE Category GPT-5.3-Codex.}
-  \label{tab:cwe_comparison_all_methods}
-  \begin{tabular}{llcccc}
-    \toprule
-    \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-190}} 
-      & Codex-5.3 Baseline                & \cmiss{0.1629} & 0.4016 & \chit{0.6980} \\
-      & Tool Calling Agent (w/o Retr.)    & 0.6964 & 0.7895 & 0.6071 \\
-      & CodeBERT Seq                      & 0.6954 & \chit{0.7912} & 0.6164 \\
-      & CodeBERT Pattern                  & 0.6955 & 0.7897 & 0.6148 \\
-      & Topological Structure                         & 0.6943 & 0.7875 & 0.6073 \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-20}} 
-      & Codex-5.3 Baseline                & 0.3476 & 0.3416 & 0.8342 \\
-      & Tool Calling Agent (w/o Retr.)    & 0.9073 & 0.9240 & 0.8634 \\
-      & CodeBERT Seq                      & 0.9108 & 0.9291 & \chit{0.8643} \\
-      & CodeBERT Pattern                  & 0.9108 & 0.9266 & 0.8636 \\
-      & Topological Structure                         & 0.9108 & \chit{0.9282} & 0.8641 \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-362}} 
-      & Codex-5.3 Baseline                & 0.3523 & 0.3793 & 0.9051 \\
-      & Tool Calling Agent (w/o Retr.)    & 0.9565 & 0.9917 & 0.9975 \\
-      & CodeBERT Seq                      & \chit{0.9743} & 0.9942 & \chit{0.9988} \\
-      & CodeBERT Pattern                  & 0.9140 & 0.9369 & 0.9884 \\
-      & Topological Structure                         & 0.9669 & \chit{0.9968} & 0.9981 \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-416}} 
-      & Codex-5.3 Baseline                & 0.3018 & 0.2350 & 0.8644 \\
-      & Tool Calling Agent (w/o Retr.)    & 0.8835 & 0.9175 & 0.9071 \\
-      & CodeBERT Seq                      & \chit{0.9387} & \chit{0.9717} & \chit{0.9337} \\
-      & CodeBERT Pattern                  & 0.9179 & 0.9602 & 0.8990 \\
-      & Topological Structure                         & 0.9369 & 0.9691 & 0.9249 \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-476}} 
-      & Codex-5.3 Baseline                & 0.1981 & 0.1695 & 0.8241 \\
-      & Tool Calling Agent (w/o Retr.)    & 0.9334 & 0.9235 & 0.8436 \\
-      & CodeBERT Seq                      & \chit{0.9283} & \chit{0.9167} & \chit{0.8315} \\
-      & CodeBERT Pattern                  & 0.9153 & 0.8990 & 0.8009 \\
-      & Topological Structure                         & 0.8514 & 0.8432 & 0.8292 \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-787}} 
-      & Codex-5.3 Baseline                & 0.0693 & 0.2158 & 0.0347 \\
-      & Tool Calling Agent (w/o Retr.)    & 0.5104 & 0.9245 & 0.0000 \\
-      & CodeBERT Seq                      & 0.5227 & 0.9350 & 0.1282 \\
-      & CodeBERT Pattern                  & \chit{0.5241} & \chit{0.9370} & \chit{0.1894} \\
-      & Topological Structure                         & 0.5165 & 0.9139 & 0.0000 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+% \begin{table}[htbp]
+%   \centering
+%   \small
+%   \caption{Comparison of Performance Across Methods by CWE Category GPT-5.3-Codex.}
+%   \label{tab:cwe_comparison_all_methods}
+%   \begin{tabular}{llcccc}
+%     \toprule
+%     \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
+%     \midrule
+%     \multirow{5}{*}{\textbf{CWE-190}} 
+%       & Codex-5.3 Baseline                & \cmiss{0.1629} & 0.4016 & \chit{0.6980} \\
+%       & Tool Calling Agent (w/o Retr.)    & 0.6964 & 0.7895 & 0.6071 \\
+%       & CodeBERT Seq                      & 0.6954 & \chit{0.7912} & 0.6164 \\
+%       & CodeBERT Pattern                  & 0.6955 & 0.7897 & 0.6148 \\
+%       & Topological Structure                         & 0.6943 & 0.7875 & 0.6073 \\
+%     \midrule
+%     \multirow{5}{*}{\textbf{CWE-20}} 
+%       & Codex-5.3 Baseline                & 0.3476 & 0.3416 & 0.8342 \\
+%       & Tool Calling Agent (w/o Retr.)    & 0.9073 & 0.9240 & 0.8634 \\
+%       & CodeBERT Seq                      & 0.9108 & 0.9291 & \chit{0.8643} \\
+%       & CodeBERT Pattern                  & 0.9108 & 0.9266 & 0.8636 \\
+%       & Topological Structure                         & 0.9108 & \chit{0.9282} & 0.8641 \\
+%     \midrule
+%     \multirow{5}{*}{\textbf{CWE-362}} 
+%       & Codex-5.3 Baseline                & 0.3523 & 0.3793 & 0.9051 \\
+%       & Tool Calling Agent (w/o Retr.)    & 0.9565 & 0.9917 & 0.9975 \\
+%       & CodeBERT Seq                      & \chit{0.9743} & 0.9942 & \chit{0.9988} \\
+%       & CodeBERT Pattern                  & 0.9140 & 0.9369 & 0.9884 \\
+%       & Topological Structure                         & 0.9669 & \chit{0.9968} & 0.9981 \\
+%     \midrule
+%     \multirow{5}{*}{\textbf{CWE-416}} 
+%       & Codex-5.3 Baseline                & 0.3018 & 0.2350 & 0.8644 \\
+%       & Tool Calling Agent (w/o Retr.)    & 0.8835 & 0.9175 & 0.9071 \\
+%       & CodeBERT Seq                      & \chit{0.9387} & \chit{0.9717} & \chit{0.9337} \\
+%       & CodeBERT Pattern                  & 0.9179 & 0.9602 & 0.8990 \\
+%       & Topological Structure                         & 0.9369 & 0.9691 & 0.9249 \\
+%     \midrule
+%     \multirow{5}{*}{\textbf{CWE-476}} 
+%       & Codex-5.3 Baseline                & 0.1981 & 0.1695 & 0.8241 \\
+%       & Tool Calling Agent (w/o Retr.)    & 0.9334 & 0.9235 & 0.8436 \\
+%       & CodeBERT Seq                      & \chit{0.9283} & \chit{0.9167} & \chit{0.8315} \\
+%       & CodeBERT Pattern                  & 0.9153 & 0.8990 & 0.8009 \\
+%       & Topological Structure                         & 0.8514 & 0.8432 & 0.8292 \\
+%     \midrule
+%     \multirow{5}{*}{\textbf{CWE-787}} 
+%       & Codex-5.3 Baseline                & 0.0693 & 0.2158 & 0.0347 \\
+%       & Tool Calling Agent (w/o Retr.)    & 0.5104 & 0.9245 & 0.0000 \\
+%       & CodeBERT Seq                      & 0.5227 & 0.9350 & 0.1282 \\
+%       & CodeBERT Pattern                  & \chit{0.5241} & \chit{0.9370} & \chit{0.1894} \\
+%       & Topological Structure                         & 0.5165 & 0.9139 & 0.0000 \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
 
 \begin{table}[htbp]
   \centering
@@ -618,9 +618,10 @@ Consequently, even though the agent workflow verifies the correctness of the ret
   \vspace{1ex}
   \raggedright
   \scriptsize
-  \item[\dag] \textbf{Confidence & Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$. Each CWE category evaluates $n = 15$ records (except CWE-476 where $n = 14$), out of $N = 89$ total evaluated records. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
+  \dag\ \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$. Each CWE category evaluates $n = 15$ records (except CWE-476, where $n = 14$), out of $N = 89$ total evaluated records. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
   \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
 \end{table}
+
 \begin{table}[h]
   \centering
   \small
@@ -1070,7 +1071,7 @@ For one case where the Semantic + Structure retriever classified a snippet as CW
 % ```
 
 It shows that even though the retriever supplies the patcher agent with a similar CVE's code, a vulnerability patch, vulnerability metadata (TODO: correctly describe fix list), a patch CoT, and the root cause (patch-analysis memory), the model can still ignore it and patch another vulnerability. 
-A similar behavior was found with (\#78) where the CVE and CWE were correctly retrieved according to the dataset, but the actual fix generated by the LLM consisted of replacing \texttt{GetInput}, \texttt{GetOutput}, and \texttt{GetVariableInput} with their \texttt{*Safe} equivalents and guarding them with \texttt{TF\_LITE\_ENSURE\_OK}, even correctly identifying that \texttt{bw\_output} retrieval based on the \texttt{merge\_outputs} flag. However, this pattern is related to CVE-2021-29532 a Null Pointer Dereference (CWE-476) resulting in a segmentation fault and a Denial of Service (DoS) crash, in case \texttt{GetInput} returns a \texttt{nullpt} and it's dereferenced. Nevertheless, when submitting its reasoning the model states: 
+A similar behavior was found with (\#78), where the CVE and CWE were correctly retrieved according to the dataset, but the actual fix generated by the LLM consisted of replacing \texttt{GetInput}, \texttt{GetOutput}, and \texttt{GetVariableInput} with their \texttt{*Safe} equivalents and guarding them with \texttt{TF\_LITE\_ENSURE\_OK}, even correctly identifying that \texttt{bw\_output} retrieval based on the \texttt{merge\_outputs} flag. However, this pattern is related to CVE-2021-29532, a Null Pointer Dereference (CWE-476) that results in a segmentation fault and a Denial of Service (DoS) crash when \texttt{GetInput} returns a \texttt{nullpt} and it's dereferenced. Nevertheless, when submitting its reasoning, the model states: 
 
 "Applied the CVE-2020-15211 fix pattern by replacing unchecked tensor accessors with safe accessors that validate index/range and return status, preventing invalid tensor pointer dereference and subsequent out-of-bounds memory writes. Specifically: in Prepare and Eval, replaced GetInput/GetOutput/GetVariableInput with GetInputSafe/GetOutputSafe/GetVariableInputSafe plus TF\_LITE\_ENSURE\_OK checks, and guarded optional bw\_output retrieval when merge\_outputs is false. This is a minimal targeted hardening consistent with the known upstream fix style for this CVE/CWE class."
 
@@ -1433,26 +1434,26 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
 
 % The hardest class is **multi-path concurrency bugs (CWE-362)**: only 2/6 valid across both runs. Single-file lifetime fixes (CWE-416) and NULL-deref fixes (CWE-476) succeed only when the vulnerable site is directly in the retrieved context file.
 
-\begin{table}[htbp]
-\centering
-\caption{CVEFixes: Patch Analysis Metrics (89 records) GPT-4o}
-\begin{tabular}{lcccccc}
-\toprule
-\multirow{2}{*}{\textbf{Metric}} & \multicolumn{2}{c}{\textbf{Combined}} & \multicolumn{2}{c}{\textbf{CodeBERT Seq}} & \multicolumn{2}{c}{\textbf{CodeBERT Pattern}} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
-& \textbf{Mean} & \textbf{Median} & \textbf{Mean} & \textbf{Median} & \textbf{Mean} & \textbf{Median} \\
-\midrule
-BLEU-4        & 0.8893 & 0.9960 & 0.9036 & 0.9985 & 0.9036 & 0.9985 \\
-BERTScore F1  & 0.8759 & 0.9588 & 0.8878 & 0.9588 & 0.8878 & 0.9588 \\
-ROUGE-1 F1    & 0.9412 & 0.9976 & 0.9529 & 0.9994 & 0.9529 & 0.9994 \\
-ROUGE-2 F1    & 0.9164 & 0.9967 & 0.9275 & 0.9988 & 0.9275 & 0.9988 \\
-ROUGE-L F1    & 0.9387 & 0.9976 & 0.9490 & 0.9994 & 0.9490 & 0.9994 \\
-Token Jaccard & 0.8219 & 0.9789 & 0.8322 & 0.9789 & 0.8322 & 0.9789 \\
-Edit Dist     & 0.0839 & 0.0046 & 0.0752 & 0.0019 & 0.0752 & 0.0019 \\
-Hunk F1       & 0.7758 & 0.9957 & 0.8038 & 0.9957 & 0.8038 & 0.9957 \\
-\bottomrule
-\end{tabular}
-\end{table}
+% \begin{table}[htbp]
+% \centering
+% \caption{CVEFixes: Patch Analysis Metrics (89 records) GPT-4o}
+% \begin{tabular}{lcccccc}
+% \toprule
+% \multirow{2}{*}{\textbf{Metric}} & \multicolumn{2}{c}{\textbf{Combined}} & \multicolumn{2}{c}{\textbf{CodeBERT Seq}} & \multicolumn{2}{c}{\textbf{CodeBERT Pattern}} \\
+% \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+% & \textbf{Mean} & \textbf{Median} & \textbf{Mean} & \textbf{Median} & \textbf{Mean} & \textbf{Median} \\
+% \midrule
+% BLEU-4        & 0.8893 & 0.9960 & 0.9036 & 0.9985 & 0.9036 & 0.9985 \\
+% BERTScore F1  & 0.8759 & 0.9588 & 0.8878 & 0.9588 & 0.8878 & 0.9588 \\
+% ROUGE-1 F1    & 0.9412 & 0.9976 & 0.9529 & 0.9994 & 0.9529 & 0.9994 \\
+% ROUGE-2 F1    & 0.9164 & 0.9967 & 0.9275 & 0.9988 & 0.9275 & 0.9988 \\
+% ROUGE-L F1    & 0.9387 & 0.9976 & 0.9490 & 0.9994 & 0.9490 & 0.9994 \\
+% Token Jaccard & 0.8219 & 0.9789 & 0.8322 & 0.9789 & 0.8322 & 0.9789 \\
+% Edit Dist     & 0.0839 & 0.0046 & 0.0752 & 0.0019 & 0.0752 & 0.0019 \\
+% Hunk F1       & 0.7758 & 0.9957 & 0.8038 & 0.9957 & 0.8038 & 0.9957 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
 
 
 \begin{table}[t]
@@ -1695,5 +1696,240 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
   \end{tabular}
 \end{table}
 
-
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Comparison of Performance Across Methods by CWE Category (GPT-5.3-Codex).\tnote{\dag}}
+  \label{tab:cwe_generation_comparison_deepseek}
+  \begin{tabular}{llcccc}
+    \toprule
+    \textbf{CWE Category} & \textbf{Method} & \textbf{Support ($n$)} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-190}} 
+      & Codex-5.3 Baseline                & -- & \cmiss{$0.1629 \pm 0.1965^*$} & 0.4016 & \chit{$0.6980 \pm 0.2507^*$} \\
+      & Tool Calling Baseline             & 3  & $0.7343 \pm 0.4307^*$ & $0.9285 \pm 0.1150^*$ & $0.6894 \pm 0.5132^*$ \\
+      & CodeBERT Seq                      & 2  & $0.6150 \pm 0.5346^*$ & $0.8930 \pm 0.1441^*$ & $0.5328 \pm 0.6607^*$ \\
+      & CodeBERT Pattern                  & 4  & $0.6240 \pm 0.4203^*$ & $0.8084 \pm 0.2532^*$ & $0.5594 \pm 0.4945^*$ \\
+      & Topological Structure             & -- & $0.6943 \pm 0.3693$ & 0.7875 & $0.6073 \pm 0.4887$ \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-20}} 
+      & Codex-5.3 Baseline                & -- & $0.3476 \pm 0.2416^*$ & 0.3416 & $0.8342 \pm 0.0803^{\ddagger}$ \\
+      & Tool Calling Baseline             & 5  & $0.7998 \pm 0.2465^*$ & $0.8938 \pm 0.0967^*$ & $0.7549 \pm 0.3655^*$ \\
+      & CodeBERT Seq                      & 4  & \chit{$0.9072 \pm 0.0680^*$} & \chit{$0.9445 \pm 0.0454^{\dagger}$} & \chit{$0.9342 \pm 0.0670^*$} \\
+      & CodeBERT Pattern                  & 4  & $0.7803 \pm 0.2761^*$ & $0.9294 \pm 0.1190^*$ & $0.7752 \pm 0.4372^*$ \\
+      & Topological Structure             & -- & $0.9108 \pm 0.1564$ & 0.9282 & $0.8641 \pm 0.2339$ \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-362}} 
+      & Codex-5.3 Baseline                & -- & $0.3523 \pm 0.2340^*$ & 0.3793 & $0.9051 \pm 0.0645^{\S}$ \\
+      & Tool Calling Baseline             & 9  & $0.9724 \pm 0.0828^{\dagger}$ & $0.9971 \pm 0.0048^{\S}$ & $0.9979 \pm 0.0032^{\S}$ \\
+      & CodeBERT Seq                      & 7  & $0.9645 \pm 0.0939^*$ & $0.9958 \pm 0.0063^{\S}$ & \chit{$0.9978 \pm 0.0036^{\S}$} \\
+      & CodeBERT Pattern                  & 5  & \chit{$1.0000 \pm 0.0000^{\S}$} & \chit{$0.9998 \pm 0.0004^{\S}$} & $0.9994 \pm 0.0014^{\S}$ \\
+      & Topological Structure             & -- & $0.9669 \pm 0.0874$ & 0.9968 & $0.9981 \pm 0.0031$ \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-416}} 
+      & Codex-5.3 Baseline                & -- & $0.3018 \pm 0.2103^*$ & 0.2350 & $0.8644 \pm 0.1075^{\mathparagraph}$ \\
+      & Tool Calling Baseline             & 7  & $0.8738 \pm 0.2916^*$ & $0.9413 \pm 0.1228^*$ & $0.8502 \pm 0.3751^*$ \\
+      & CodeBERT Seq                      & 7  & \chit{$0.8823 \pm 0.2952^*$} & \chit{$0.9478 \pm 0.1178^*$} & \chit{$0.8692 \pm 0.3387^*$} \\
+      & CodeBERT Pattern                  & 5  & $0.7230 \pm 0.3850^*$ & $0.7683 \pm 0.3464^*$ & $0.7799 \pm 0.4376^*$ \\
+      & Topological Structure             & -- & $0.9369 \pm 0.2086$ & 0.9691 & $0.9249 \pm 0.2641$ \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-476}} 
+      & Codex-5.3 Baseline                & -- & $0.1981 \pm 0.1525^*$ & 0.1695 & $0.8241 \pm 0.2303^*$ \\
+      & Tool Calling Baseline             & 9  & $0.8982 \pm 0.2249^*$ & $0.9320 \pm 0.1890^*$ & $0.7776 \pm 0.4409^*$ \\
+      & CodeBERT Seq                      & 9  & $0.8264 \pm 0.3502^*$ & $0.8354 \pm 0.3374^*$ & \chit{$0.8790 \pm 0.3307^*$} \\
+      & CodeBERT Pattern                  & 7  & \chit{$0.9627 \pm 0.0986^*$} & \chit{$0.9921 \pm 0.0171^{\S}$} & $0.8558 \pm 0.3774^*$ \\
+      & Topological Structure             & -- & $0.8514 \pm 0.3177$ & 0.8432 & $0.8292 \pm 0.3713$ \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-787}} 
+      & Codex-5.3 Baseline                & -- & $0.0693 \pm 0.0749^{\ddagger}$ & 0.2158 & $0.0347 \pm 0.0365^{\S}$ \\
+      & Tool Calling Baseline             & 8  & $0.4367 \pm 0.1788^*$ & $0.7961 \pm 0.3124^*$ & $0.0034 \pm 0.0096^{\S}$ \\
+      & CodeBERT Seq                      & 8  & \chit{$0.5311 \pm 0.0589^{\ddagger}$} & $0.9254 \pm 0.0388^{\S}$ & $0.1455 \pm 0.2699^*$ \\
+      & CodeBERT Pattern                  & 11 & $0.4664 \pm 0.1555^*$ & $0.8437 \pm 0.2742^*$ & \chit{$0.1953 \pm 0.2697^*$} \\
+      & Topological Structure             & -- & $0.5165 \pm 0.0522$ & 0.9139 & $0.0000 \pm 0.0000$ \\
+    \bottomrule
+  \end{tabular}
+  \vspace{1ex}
+  \raggedright
+  \scriptsize
+  \dag\ \textbf{Confidence \& Support Notes:} Values represent $\text{Mean} \pm \text{SD}$. Total evaluated records per method: $N = 41$ for Tool Calling Baseline, $N = 37$ for CodeBERT Seq, and $N = 36$ for CodeBERT Pattern. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
+  \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^{\dagger}$ Fair Confidence ($80\%-85\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
+\end{table}
 \section{Generation: AutoPatch Dataset}
+
+\subsection{GPT 4o}
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Performance Evaluation Metrics by CWE Category (CodeBERT Pattern vs. Combined Model).}
+  \label{tab:codebert_pattern_results}
+  \begin{tabular}{llcccc}
+    \toprule
+    \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
+    \midrule
+    \multirow{2}{*}{\textbf{CWE-190}} 
+      & CodeBERT Pattern  & $0.7155 \pm 0.4454^*$ & -- & $0.7771 \pm 0.4022^*$ \\
+      & Combined Model    & $0.4385 \pm 0.0767^*$ & $0.8316 \pm 0.0998^*$ & $0.0778 \pm 0.1290^*$ \\
+    \midrule
+    \multirow{2}{*}{\textbf{CWE-20}} 
+      & CodeBERT Pattern  & $0.8767 \pm 0.1965^*$ & -- & $0.8444 \pm 0.3019^*$ \\
+      & Combined Model    & -- & -- & -- \\
+    \midrule
+    \multirow{2}{*}{\textbf{CWE-362}} 
+      & CodeBERT Pattern  & $0.9689 \pm 0.0878^*$ & -- & $0.9988 \pm 0.0030^{\S}$ \\
+      & Combined Model    & -- & -- & -- \\
+    \midrule
+    \multirow{2}{*}{\textbf{CWE-416}} 
+      & CodeBERT Pattern  & $1.0000 \pm 0.0000^{\S}$ & -- & $0.9968 \pm 0.0042^{\S}$ \\
+      & Combined Model    & $0.4991 \pm 0.0838^*$ & $0.9107 \pm 0.0258^{\S}$ & $0.0000 \pm 0.0000^{\S}$ \\
+    \midrule
+    \multirow{2}{*}{\textbf{CWE-476}} 
+      & CodeBERT Pattern  & $0.9146 \pm 0.2171^*$ & -- & $0.8892 \pm 0.3291^*$ \\
+      & Combined Model    & $0.6378 \pm 0.1154^*$ & $0.8794 \pm 0.0811^*$ & $0.0159 \pm 0.0420^{\ddagger}$ \\
+    \midrule
+    \multirow{2}{*}{\textbf{CWE-667}} 
+      & CodeBERT Pattern  & -- & -- & -- \\
+      & Combined Model    & $0.5560 \pm 0.1263^{\mathparagraph}$ & $0.9376 \pm 0.0676^{\S}$ & $0.0102 \pm 0.0491^{\S}$ \\
+    \midrule
+    \multirow{2}{*}{\textbf{CWE-787}} 
+      & CodeBERT Pattern  & $0.4569 \pm 0.1306^*$ & -- & $0.0146 \pm 0.0402^{\S}$ \\
+      & Combined Model    & -- & -- & -- \\
+    \bottomrule
+  \end{tabular}
+  \vspace{1ex}
+  \raggedright
+  \scriptsize
+  \dag\ \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$. Sample sizes per category: 
+  \textit{CodeBERT Pattern} ($N=46$): CWE-362 ($n=8$), CWE-476 ($n=9$), CWE-416 ($n=3$), CWE-20 ($n=9$), CWE-190 ($n=6$), and CWE-787 ($n=11$). 
+  \textit{Combined Model} ($N=58$): CWE-667 ($n=23$), CWE-190 ($n=8$), CWE-476 ($n=7$), CWE-416 ($n=6$), CWE-253 ($n=2$), CWE-672 ($n=2$), CWE-825 ($n=2$), and single-instance categories ($n=1$ each: CWE-362, CWE-391, CWE-562, CWE-587, CWE-833, CWE-191, CWE-401, CWE-704). Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
+  \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Evaluation metrics across vulnerability categories for \textbf{CodeBERT Seq} ($n = 55$ overall, 95\% CI).}
+\label{tab:codebert_seq_eval}
+\small
+\begin{tabular}{l c l c c c}
+\toprule
+\textbf{Vulnerability Category} & \textbf{Sample ($n$)} & \textbf{Metric} & \textbf{Mean $\pm$ Std} & \textbf{95\% CI} & \textbf{Affordable Conf.} \\
+\midrule
+\multirow{4}{*}{\textbf{Integer Overflow or Wraparound}} & \multirow{4}{*}{8} 
+  & BERTScore F1 & $0.4861 \pm 0.0853$ & $[0.4148, 0.5575]$ & 85\% \\
+  & & ROUGE-L F1 & $0.8452 \pm 0.0910$ & $[0.7691, 0.9213]$ & 80\% \\
+  & & Hunk F1 & $0.0417 \pm 0.1178$ & $[-0.0569, 0.1402]$ & -- \\
+  & & Hunk Token Jaccard & $0.2576 \pm 0.1538$ & $[0.1290, 0.3862]$ & -- \\
+\midrule
+\multirow{4}{*}{\textbf{Use After Free}} & \multirow{4}{*}{7} 
+  & BERTScore F1 & $0.5060 \pm 0.0853$ & $[0.4271, 0.5848]$ & 80\% \\
+  & & ROUGE-L F1 & $0.9066 \pm 0.0333$ & $[0.8758, 0.9373]$ & 99\% \\
+  & & Hunk F1 & $0.0000 \pm 0.0000$ & $[0.0000, 0.0000]$ & 99\% \\
+  & & Hunk Token Jaccard & $0.1864 \pm 0.0659$ & $[0.1254, 0.2474]$ & 90\% \\
+\midrule
+\multirow{4}{*}{\textbf{NULL Pointer Dereference}} & \multirow{4}{*}{7} 
+  & BERTScore F1 & $0.6424 \pm 0.1154$ & $[0.5356, 0.7491]$ & -- \\
+  & & ROUGE-L F1 & $0.9210 \pm 0.0948$ & $[0.8334, 1.0087]$ & -- \\
+  & & Hunk F1 & $0.0220 \pm 0.0581$ & $[-0.0318, 0.0757]$ & 90\% \\
+  & & Hunk Token Jaccard & $0.2324 \pm 0.1079$ & $[0.1325, 0.3322]$ & -- \\
+\midrule
+\multirow{4}{*}{\textbf{Incorrect Check of Function Return}} & \multirow{4}{*}{2} 
+  & BERTScore F1 & $0.5304 \pm 0.0216$ & $[0.3367, 0.7242]$ & 80\% \\
+  & & ROUGE-L F1 & $0.8973 \pm 0.0018$ & $[0.8808, 0.9138]$ & 95\% \\
+  & & Hunk F1 & $0.0000 \pm 0.0000$ & $[0.0000, 0.0000]$ & 99\% \\
+  & & Hunk Token Jaccard & $0.1875 \pm 0.0631$ & $[-0.3792, 0.7542]$ & -- \\
+\midrule
+\multirow{4}{*}{\textbf{Resource Operation Post-Expiration}} & \multirow{4}{*}{2} 
+  & BERTScore F1 & $0.6655 \pm 0.1208$ & $[-0.4196, 1.7506]$ & -- \\
+  & & ROUGE-L F1 & $0.8964 \pm 0.0017$ & $[0.8812, 0.9116]$ & 95\% \\
+  & & Hunk F1 & $0.0000 \pm 0.0000$ & $[0.0000, 0.0000]$ & 99\% \\
+  & & Hunk Token Jaccard & $0.0000 \pm 0.0000$ & $[0.0000, 0.0000]$ & 99\% \\
+\midrule
+\multirow{4}{*}{\textbf{Improper Locking}} & \multirow{4}{*}{21} 
+  & BERTScore F1 & $0.5644 \pm 0.1775$ & $[0.4837, 0.6452]$ & -- \\
+  & & ROUGE-L F1 & $0.9027 \pm 0.1697$ & $[0.8254, 0.9799]$ & 80\% \\
+  & & Hunk F1 & $0.0231 \pm 0.0730$ & $[-0.0101, 0.0563]$ & 99\% \\
+  & & Hunk Token Jaccard & $0.1348 \pm 0.0867$ & $[0.0954, 0.1743]$ & 95\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Performance Evaluation Metrics by CWE Category across Evaluated Models.}
+  \label{tab:codebert_comparison_results}
+  \begin{tabular}{llcccc}
+    \toprule
+    \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
+    \midrule
+    \multirow{4}{*}{\textbf{CWE-190}} 
+      & CodeBERT Pattern      & $0.7155 \pm 0.4454^*$ & -- & $0.7771 \pm 0.4022^*$ \\
+      & Combined Model        & $0.4385 \pm 0.0767^*$ & $0.8316 \pm 0.0998^*$ & $0.0778 \pm 0.1290^*$ \\
+      & CodeBERT Seq          & $0.4861 \pm 0.0853^*$ & $0.8452 \pm 0.0910^*$ & $0.0417 \pm 0.1178^*$ \\
+      & Tool Calling (w/o R.) & $0.4409 \pm 0.1006^*$ & $0.8349 \pm 0.0857^*$ & $0.0000 \pm 0.0000^{\S}$ \\
+    \midrule
+    \multirow{4}{*}{\textbf{CWE-20}} 
+      & CodeBERT Pattern      & $0.8767 \pm 0.1965^*$ & -- & $0.8444 \pm 0.3019^*$ \\
+      & Combined Model        & -- & -- & -- \\
+      & CodeBERT Seq          & -- & -- & -- \\
+      & Tool Calling (w/o R.) & -- & -- & -- \\
+    \midrule
+    \multirow{4}{*}{\textbf{CWE-253}} 
+      & CodeBERT Pattern      & -- & -- & -- \\
+      & Combined Model        & -- & -- & -- \\
+      & CodeBERT Seq          & $0.5304 \pm 0.0216^*$ & $0.8973 \pm 0.0018^{\ddagger}$ & $0.0000 \pm 0.0000^{\S}$ \\
+      & Tool Calling (w/o R.) & -- & -- & -- \\
+    \midrule
+    \multirow{4}{*}{\textbf{CWE-362}} 
+      & CodeBERT Pattern      & $0.9689 \pm 0.0878^*$ & -- & $0.9988 \pm 0.0030^{\S}$ \\
+      & Combined Model        & -- & -- & -- \\
+      & CodeBERT Seq          & -- & -- & -- \\
+      & Tool Calling (w/o R.) & -- & -- & -- \\
+    \midrule
+    \multirow{4}{*}{\textbf{CWE-416}} 
+      & CodeBERT Pattern      & $1.0000 \pm 0.0000^{\S}$ & -- & $0.9968 \pm 0.0042^{\S}$ \\
+      & Combined Model        & $0.4991 \pm 0.0838^*$ & $0.9107 \pm 0.0258^{\S}$ & $0.0000 \pm 0.0000^{\S}$ \\
+      & CodeBERT Seq          & $0.5060 \pm 0.0853^*$ & $0.9066 \pm 0.0333^{\S}$ & $0.0000 \pm 0.0000^{\S}$ \\
+      & Tool Calling (w/o R.) & $0.4882 \pm 0.0243^*$ & $0.8896 \pm 0.0805^*$ & $0.0000 \pm 0.0000^{\S}$ \\
+    \midrule
+    \multirow{4}{*}{\textbf{CWE-476}} 
+      & CodeBERT Pattern      & $0.9146 \pm 0.2171^*$ & -- & $0.8892 \pm 0.3291^*$ \\
+      & Combined Model        & $0.6378 \pm 0.1154^*$ & $0.8794 \pm 0.0811^*$ & $0.0159 \pm 0.0420^{\ddagger}$ \\
+      & CodeBERT Seq          & $0.6424 \pm 0.1154^*$ & $0.9210 \pm 0.0948^*$ & $0.0220 \pm 0.0581^{\mathparagraph}$ \\
+      & Tool Calling (w/o R.) & -- & -- & -- \\
+    \midrule
+    \multirow{4}{*}{\textbf{CWE-667}} 
+      & CodeBERT Pattern      & -- & -- & -- \\
+      & Combined Model        & $0.5560 \pm 0.1263^{\mathparagraph}$ & $0.9376 \pm 0.0676^{\S}$ & $0.0102 \pm 0.0491^{\S}$ \\
+      & CodeBERT Seq          & $0.5644 \pm 0.1775^*$ & $0.9027 \pm 0.1697^*$ & $0.0231 \pm 0.0730^{\S}$ \\
+      & Tool Calling (w/o R.) & $0.5328 \pm 0.1493^*$ & $0.9185 \pm 0.1178^*$ & $0.0000 \pm 0.0000^{\S}$ \\
+    \midrule
+    \multirow{4}{*}{\textbf{CWE-672}} 
+      & CodeBERT Pattern      & -- & -- & -- \\
+      & Combined Model        & -- & -- & -- \\
+      & CodeBERT Seq          & $0.6655 \pm 0.1208^*$ & $0.8964 \pm 0.0017^{\ddagger}$ & $0.0000 \pm 0.0000^{\S}$ \\
+      & Tool Calling (w/o R.) & -- & -- & -- \\
+    \midrule
+    \multirow{4}{*}{\textbf{CWE-787}} 
+      & CodeBERT Pattern      & $0.4569 \pm 0.1306^*$ & -- & $0.0146 \pm 0.0402^{\S}$ \\
+      & Combined Model        & -- & -- & -- \\
+      & CodeBERT Seq          & -- & -- & -- \\
+      & Tool Calling (w/o R.) & -- & -- & -- \\
+    \bottomrule
+  \end{tabular}
+  \vspace{1ex}
+  \raggedright
+  \scriptsize
+  \dag\ \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$. Sample sizes per category: 
+  \textit{CodeBERT Pattern} ($N=46$): CWE-362 ($n=8$), CWE-476 ($n=9$), CWE-416 ($n=3$), CWE-20 ($n=9$), CWE-190 ($n=6$), and CWE-787 ($n=11$). 
+  \textit{Combined Model} ($N=58$): CWE-667 ($n=23$), CWE-190 ($n=8$), CWE-476 ($n=7$), CWE-416 ($n=6$), CWE-253 ($n=2$), CWE-672 ($n=2$), CWE-825 ($n=2$), and single-instance categories ($n=1$ each). 
+  \textit{CodeBERT Seq} ($N=55$): CWE-667 ($n=21$), CWE-190 ($n=8$), CWE-416 ($n=7$), CWE-476 ($n=7$), CWE-253 ($n=2$), and CWE-672 ($n=2$). 
+  \textit{Tool Calling w/o Retrieval} ($N=16$): CWE-667 ($n=4$), CWE-190 ($n=2$), CWE-416 ($n=2$), and single-instance categories ($n=1$ each). Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
+  \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
+\end{table}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{img/patching/ci_gpt4_bertscore.png}
+    \caption{CodeBERT Pattern CVE mAP}
+    \label{img:codebert_cve_map}
+\end{figure}
