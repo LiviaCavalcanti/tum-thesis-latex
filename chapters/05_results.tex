@@ -1540,17 +1540,6 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
 \end{table}
 
 \subsection{Patch Powered by DeepSeek-4-Flash}
-
-Tables \ref{tab:patch_analysis_summary_deepseek} and \ref{tab:patch_analysis_summary_by_cwe_deepseek} show the patching performance of the DeepSeek-4-Flash model. As previously remarked, they reinforce the need for agentic multi-turn workflows for automated program repair. 
-
-Prompt-only generation fails to produce functionally valid code. Despite achieving token-based evaluation success rates of 28.1\% to 33.7\%, the prompt-only LLM Judge Valid rates hover between 0.0\% and 1.1\%. On the other hand, the multi-turn Tool Calling pipeline powered by  DeepSeek shows higher functional validity. The \textit{CodeBERT Pattern} and \textit{CodeBERT Sequence} retrieval methods achieve valid rates of 27.0\% and 25.8\%, respectively, outperforming baseline Tool Calling without retrieval (21.3\%). This demonstrates that for pipelines powered by less powerful models, such as DeepSeek, enriching the context with the semantic and structural root causes of vulnerabilities via RAG can increase performance. Whereas relying on the model generation capacity may result in syntactically plausible edits being predicted. Nevertheless, it is notable that performance is lower than that of proprietary OpenAI models from previous subsections. Therefore, it reinforces the need for compensation in engineering effort when the pipeline uses open-weight models.  
-
-% Additionally, DeepSeek exhibits a higher iteration overhead compared to Codex and GPT-4o. The model averages 5.2 to 5.5 turns per patch generation, suggesting a more exploratory and error-prone reasoning process before converging on a final solution. 
-
-Furthermore, the \textit{Combined} retrieval strategy has the LLM Judge functional validity of 6.7\%. Repeating the behavior observed in GPT-4o, DeepSeek struggles to recover the vulnerability identification errors of the retriever, which composes with the errors of the model itself.
-
-Vulnerability-specific patterns are also reproduced under the DeepSeek experiment. As seen in Table \ref{tab:patch_analysis_summary_by_cwe_deepseek}, Tool Calling with Pattern retrieval achieves 73.3\% syntax success and a 93.3\% verify rate on CWE-787. Yet, high performance does not translate to LLM as a Judge's functional validity for out-of-bounds writes. DeepSeek's performance confirms the overall evaluation that reliable automated vulnerability patching demands agentic, iterative tool use coupled with isolated, targeted retrieval, even though further exploration on the agentic workflow is required to meet reliable performance for production code.
-
 \begin{table}[H]
   \centering
   \small
@@ -1577,6 +1566,17 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
     \bottomrule
   \end{tabular}
 \end{table}
+
+Tables \ref{tab:patch_analysis_summary_deepseek} and \ref{tab:patch_analysis_summary_by_cwe_deepseek} show the patching performance of the DeepSeek-4-Flash model. As previously remarked, they reinforce the need for agentic multi-turn workflows for automated program repair. 
+
+Prompt-only generation fails to produce functionally valid code. Despite achieving token-based evaluation success rates of 28.1\% to 33.7\%, the prompt-only LLM Judge Valid rates hover between 0.0\% and 1.1\%. On the other hand, the multi-turn Tool Calling pipeline powered by  DeepSeek shows higher functional validity. The \textit{CodeBERT Pattern} and \textit{CodeBERT Sequence} retrieval methods achieve valid rates of 27.0\% and 25.8\%, respectively, outperforming baseline Tool Calling without retrieval (21.3\%). This demonstrates that for pipelines powered by less powerful models, such as DeepSeek, enriching the context with the semantic and structural root causes of vulnerabilities via RAG can increase performance. Whereas relying on the model generation capacity may result in syntactically plausible edits being predicted. Nevertheless, it is notable that performance is lower than that of proprietary OpenAI models from previous subsections. Therefore, it reinforces the need for compensation in engineering effort when the pipeline uses open-weight models.  
+
+% Additionally, DeepSeek exhibits a higher iteration overhead compared to Codex and GPT-4o. The model averages 5.2 to 5.5 turns per patch generation, suggesting a more exploratory and error-prone reasoning process before converging on a final solution. 
+
+Furthermore, the \textit{Combined} retrieval strategy has the LLM Judge functional validity of 6.7\%. Repeating the behavior observed in GPT-4o, DeepSeek struggles to recover the vulnerability identification errors of the retriever, which composes with the errors of the model itself.
+
+Vulnerability-specific patterns are also reproduced under the DeepSeek experiment. As seen in Table \ref{tab:patch_analysis_summary_by_cwe_deepseek}, Tool Calling with Pattern retrieval achieves 73.3\% syntax success and a 93.3\% verify rate on CWE-787. Yet, high performance does not translate to LLM as a Judge's functional validity for out-of-bounds writes. DeepSeek's performance confirms the overall evaluation that reliable automated vulnerability patching demands agentic, iterative tool use coupled with isolated, targeted retrieval, even though further exploration on the agentic workflow is required to meet reliable performance for production code.
+
 
 %Need to be finished, but first verify relevance
 % \begin{table}[htbp]
@@ -1966,94 +1966,69 @@ This roughly 20--25x improvement from single-turn to tool-calling is evidence th
 gpt-5.3-codex
 \begin{table}[H]
   \centering
-  \caption{Overall pipeline performance on the autopatch dataset}
-  \label{tab:autopatch_overall_pipeline_performance}
-  \begin{tabular}{lrrrrrrr}
+  \caption{GPT-5.3-Codex: Overall pipeline performance on the autopatch dataset}
+  \label{tab:autopatch_overall_pipeline_performance_gpt_codex}
+  \begin{tabular}{lrrrrrr}
     \toprule
-    Source & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
+    Source & N & \makecell{Completion \\ \%} & BLEU-4 & BERTScore F1 & ROUGE-L F1 & \makecell{LLM\\ Judge\\ Valid} \\
     \midrule
-    CodeBERT Pattern & 75 & 0.828 & 0.525 & 0.900 \\
-    CodeBERT Seq & 75 & 0.827 & 0.527 & 0.900 \\
-    Combined & 75 & 0.829 & 0.521 & 0.898 \\
+    CodeBERT Pattern & 75 & 88.0 & 0.828 $\pm$ 0.000 & 0.525 $\pm$ 0.127 & 0.900 $\pm$ 0.106 & 70.3 \\
+    CodeBERT Seq & 75 & 96.0 & 0.827 $\pm$ 0.000 & 0.527 $\pm$ 0.124 & 0.900 $\pm$ 0.100 & 82.7 \\
+    Combined & 75 & 100.0 & 0.829 $\pm$ 0.000 & 0.521 $\pm$ 0.126 & 0.898 $\pm$ 0.100 & 85.3 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \begin{table}[H]
   \centering
-  \caption{Pipeline performance by CWE on the autopatch dataset}
-  \label{tab:autopatch_pipeline_by_cwe}
-  \begin{tabular}{llrrrrr}
+  \caption{GPT-5.3-Codex: Pipeline performance by CWE category on the autopatch dataset}
+  \label{tab:autopatch_pipeline_by_cwe_category_gpt_codex}
+  \begin{tabular}{llrrrr}
     \toprule
-    Source & CWE & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
+    Source & Category & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
     \midrule
-    \multirow{19}{*}{CodeBERT Pattern} & Assignment of a Fixed Address to a Pointer & 1 & 0.976 & 0.663 & 0.993 & 0.000 \\
-    & Deadlock & 2 & 0.882 & 0.507 & 0.887 & 0.000 \\
-    & Expired Pointer Dereference & 4 & 0.894 & 0.570 & 0.948 & 0.000 \\
-    & Improper Control of a Resource Through Its Lifetime & 1 & 0.946 & 0.539 & 0.951 & 0.000 \\
-    & Improper Locking & 23 & 0.865 & 0.549 & 0.934 & 0.010 \\
-    & Incorrect Check of Function Return Value & 2 & 0.881 & 0.539 & 0.939 & 0.000 \\
-    & Incorrect Type Conversion or Cast & 1 & 0.951 & 0.209 & 0.982 & 0.000 \\
-    & Integer Overflow or Wraparound & 8 & 0.732 & 0.416 & 0.807 & 0.043 \\
-    & Integer Underflow & 1 & 0.912 & 0.316 & 0.942 & 0.000 \\
-    & Memory Leak & 1 & 0.888 & 0.488 & 0.887 & 0.000 \\
-    & NULL Pointer Dereference & 9 & 0.883 & 0.627 & 0.941 & 0.037 \\
-    & Operation on a Resource after Expiration or Release & 2 & 0.810 & 0.627 & 0.896 & 0.000 \\
-    & Out-of-bounds Write & 1 & 0.421 & 0.385 & 0.678 & 0.000 \\
-    & Race Condition & 3 & 0.649 & 0.497 & 0.779 & 0.039 \\
-    & Return of Stack Variable Address After Scope & 1 & 0.976 & 0.527 & 0.989 & 0.000 \\
-    & Unchecked Return Value & 1 & 0.186 & 0.394 & 0.480 & 0.191 \\
-    & Uncontrolled Resource Consumption ('Resource Exhaustion') & 1 & 0.555 & 0.337 & 0.719 & 0.000 \\
-    & Use After Free & 5 & 0.811 & 0.479 & 0.901 & 0.000 \\
-    & Use of Uninitialized Variable & 1 & 0.931 & 0.521 & 0.967 & 0.500 \\
+    \multirow{4}{*}{CodeBERT Pattern} & Memory Safety & 22 & 0.842 & 0.539 & 0.917 \\\\
+    & Concurrency & 28 & 0.799 & 0.518 & 0.867 \\
+    & Numeric/Type & 10 & 0.865 & 0.314 & 0.911 \\
+    & Resource Mgmt & 8 & 0.711 & 0.487 & 0.812 \\
     \midrule
-    \multirow{17}{*}{CodeBERT Seq} & Assignment of a Fixed Address to a Pointer & 1 & 0.976 & 0.663 & 0.993 & 0.000 \\
-    & Deadlock & 2 & 0.882 & 0.504 & 0.887 & 0.000 \\
-    & Expired Pointer Dereference & 4 & 0.860 & 0.572 & 0.925 & 0.060 \\
-    & Improper Control of a Resource Through Its Lifetime & 1 & 0.946 & 0.539 & 0.951 & 0.000 \\
-    & Improper Locking & 25 & 0.849 & 0.551 & 0.924 & 0.009 \\
-    & Incorrect Check of Function Return Value & 2 & 0.887 & 0.538 & 0.941 & 0.000 \\
-    & Incorrect Type Conversion or Cast & 1 & 0.951 & 0.209 & 0.982 & 0.000 \\
-    & Integer Overflow or Wraparound & 8 & 0.741 & 0.433 & 0.829 & 0.038 \\
-    & Integer Underflow & 1 & 0.913 & 0.308 & 0.944 & 0.000 \\
-    & Memory Leak & 1 & 0.888 & 0.486 & 0.887 & 0.000 \\
-    & NULL Pointer Dereference & 10 & 0.874 & 0.641 & 0.936 & 0.020 \\
-    & Operation on a Resource after Expiration or Release & 2 & 0.810 & 0.616 & 0.896 & 0.000 \\
-    & Out-of-bounds Write & 1 & 0.431 & 0.370 & 0.674 & 0.000 \\
-    & Race Condition & 3 & 0.645 & 0.490 & 0.776 & 0.039 \\
-    & Return of Stack Variable Address After Scope & 1 & 0.976 & 0.527 & 0.989 & 0.000 \\
-    & Unchecked Return Value & 1 & 0.186 & 0.394 & 0.480 & 0.191 \\
-    & Use After Free & 8 & 0.854 & 0.462 & 0.918 & 0.028 \\
+    \multirow{4}{*}{CodeBERT Seq} & Memory Safety & 25 & 0.828 & 0.539 & 0.906 \\\\
+    & Concurrency & 30 & 0.792 & 0.515 & 0.862 \\
+    & Numeric/Type & 10 & 0.868 & 0.317 & 0.918 \\
+    & Resource Mgmt & 7 & 0.743 & 0.515 & 0.831 \\
     \midrule
-    \multirow{17}{*}{Combined} & Assignment of a Fixed Address to a Pointer & 1 & 0.976 & 0.663 & 0.993 & 0.000 \\
-    & Deadlock & 2 & 0.882 & 0.504 & 0.887 & 0.000 \\
-    & Expired Pointer Dereference & 4 & 0.894 & 0.570 & 0.948 & 0.000 \\
-    & Improper Control of a Resource Through Its Lifetime & 1 & 0.946 & 0.539 & 0.951 & 0.000 \\
-    & Improper Locking & 26 & 0.851 & 0.540 & 0.926 & 0.009 \\
-    & Incorrect Check of Function Return Value & 2 & 0.887 & 0.538 & 0.941 & 0.000 \\
-    & Incorrect Type Conversion or Cast & 1 & 0.951 & 0.209 & 0.982 & 0.000 \\
-    & Integer Overflow or Wraparound & 9 & 0.749 & 0.418 & 0.824 & 0.061 \\
-    & Integer Underflow & 1 & 0.969 & 0.317 & 0.987 & 0.000 \\
-    & Memory Leak & 1 & 0.888 & 0.488 & 0.887 & 0.000 \\
-    & NULL Pointer Dereference & 11 & 0.873 & 0.636 & 0.928 & 0.062 \\
-    & Operation on a Resource after Expiration or Release & 2 & 0.810 & 0.616 & 0.896 & 0.000 \\
-    & Out-of-bounds Write & 1 & 0.439 & 0.363 & 0.671 & 0.000 \\
-    & Race Condition & 3 & 0.680 & 0.498 & 0.807 & 0.048 \\
-    & Return of Stack Variable Address After Scope & 1 & 0.976 & 0.527 & 0.989 & 0.000 \\
-    & Unchecked Return Value & 1 & 0.186 & 0.394 & 0.480 & 0.191 \\
-    & Use After Free & 8 & 0.820 & 0.464 & 0.886 & 0.028 \\
+    \multirow{4}{*}{Combined} & Memory Safety & 26 & 0.830 & 0.537 & 0.902 \\\\
+    & Concurrency & 31 & 0.804 & 0.514 & 0.873 \\
+    & Numeric/Type & 11 & 0.889 & 0.315 & 0.931 \\
+    & Resource Mgmt & 7 & 0.743 & 0.515 & 0.831 \\
     \midrule
     \bottomrule
   \end{tabular}
 \end{table}
 
+\begin{table}[H]
+  \centering
+  \caption{GPT-5.3-Codex: Generation cost summary by run}
+  \label{tab:generation_cost_summary_by_run}
+  \begin{tabular}{llrrrrrrr}
+    \toprule
+    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & Cost (USD) & Avg Cost/Entry (USD) \\
+    \midrule
+    codebert\_pattern / tool\_calling & gpt-5.3-codex & 75 & 377422 & 50856 & 428278 & \$1.3725 & \$0.018300 \\
+    % codebert\_pattern / tool\_calling / & gpt-4o & 20 & 140323 & 10423 & 150746 & \$0.6826 & \$0.034128 \\
+    codebert\_seq / tool\_calling & gpt-5.3-codex & 75 & 397471 & 54562 & 452033 & \$1.4594 & \$0.019459 \\
+    combined / tool\_calling & gpt-5.3-codex & 75 & 398051 & 55285 & 453336 & \$1.4706 & \$0.019608 \\
+    % single\_turn\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 3699287 & 341326 & 4040613 & \$0.8769 & \$0.009853 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \subsection{GPT-4o}
 
 \begin{table}[H]
   \centering
-  \caption{Overall pipeline performance on the autopatch dataset}
-  \label{tab:autopatch_overall_pipeline_performance}
+  \caption{GPT-4o:Overall pipeline performance on the autopatch dataset}
+  \label{tab:autopatch_overall_pipeline_performance_gpt4o}
   \begin{tabular}{lrrrrrr}
     \toprule
     Source & N & \makecell{Completion\\ \%} & BLEU-4 & BERTScore F1 & ROUGE-L F1 & \makecell{LLM \\Judge \\ Valid} \\
@@ -2069,7 +2044,7 @@ gpt-5.3-codex
 \begin{table}[H]
   \centering
   \caption{Pipeline performance by CWE category on the autopatch dataset}
-  \label{tab:autopatch_pipeline_by_cwe_category}
+  \label{tab:autopatch_pipeline_by_cwe_category_gpt_codex}
   \begin{tabular}{llrrrr}
     \toprule
     Source & Category & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
@@ -2099,3 +2074,45 @@ gpt-5.3-codex
 \end{table}
 
 % uv run python3 utils/aggregate_autopatch_summary.py cvefixes_experiments/output/autopatch/20260816_080855_autopatch_retrieval_patching_5d203b_gpt4/ --out cvefixes_experiments/output/autopatch/20260816_080855_autopatch_retrieval_patching_5d203b_gpt4/autopatch_summary.tex
+\begin{table}[H]
+  \centering
+  \caption{GPT-4o: Generation cost summary by run}
+  \label{tab:generation_cost_summary_by_run_gpt4o}
+  \begin{tabular}{llrrrrrrr}
+    \toprule
+    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+    \midrule
+    codebert\_pattern / single\_turn & gpt-4o & 75 & 384527 & 69479 & 454006 & \$2.4842 & \$0.033122 \\
+    codebert\_pattern / tool\_calling & gpt-4o & 75 & 558624 & 57310 & 615934 & \$2.9545 & \$0.039393 \\
+    codebert\_seq / single\_turn & gpt-4o & 75 & 405989 & 76320 & 482309 & \$2.6673 & \$0.035563 \\
+    codebert\_seq / tool\_calling & gpt-4o & 75 & 625030 & 55592 & 680622 & \$3.1777 & \$0.042370 \\
+    combined / single\_turn & gpt-4o & 75 & 425738 & 78016 & 503754 & \$2.7668 & \$0.036890 \\
+    combined / tool\_calling & gpt-4o & 75 & 637081 & 63424 & 700505 & \$3.3404 & \$0.044539 \\
+    tool\_calling\_no\_retrieval & gpt-4o & 20 & 113308 & 16570 & 129878 & \$0.6735 & \$0.033673 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+
+% ## Summary
+
+% **Confirmed: DeepSeek did NOT adapt to the tool-calling pipeline.**
+
+% From the analysis of results.jsonl and evaluation.jsonl:
+
+% | Metric | Single-Turn | Tool-Calling |
+% |--------|------------|--------------|
+% | **Generated patches** | 0/75 (0%) | 0/75 (0%) |
+% | **Parse errors** | status=error | status=parse_error (100%) |
+% | **DeepSeek variants** | 15 re_impl_deepseek + 10 re_impl_deepseek-r1 = 25 failures | 25 failures |
+
+% **Key Evidence:**
+% - ✗ `generated_patch` field is empty in all results.jsonl records
+% - ✗ `agent_output` field is missing from all records  
+% - ✗ 100% of DeepSeek queries produced `parse_error` in tool-calling mode
+% - ✗ 100% of queries with 0 successful patches
+
+% **Broader Finding:**
+% Notably, **all model variants failed in this run** (not just DeepSeek), suggesting a systemic issue with the pipeline configuration rather than model-specific problems. The distinction is that single-turn produced no output (error status) while tool-calling produced malformed output (parse_error status).
+
