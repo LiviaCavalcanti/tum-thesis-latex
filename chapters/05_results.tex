@@ -1106,65 +1106,106 @@ This performance drop is likely due to C++'s complex abstractions, object-orient
 These features lead to the production of fragmented diff hunks compared to idiomatic, procedural C code, making automated patching more challenging. %TODO add reference showing that fragmented hunking task is harder
 This is a structural limitation that needs further investigation. 
 
+% \begin{table}[H]
+%   \centering
+%   \caption{Generation cost summary by run}
+%   \label{tab:generation_cost_summary_by_run}
+%   \begin{tabular}{llrrrrrrr}
+%     \toprule
+%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+%     \midrule
+%     codebert\_pattern / tool\_calling& gpt-5.3-codex & 89 & 3728553 & 91794 & 3820347 & \$7.8101 & \$0.087754 \\
+%     codebert\_pattern / tool\_calling& gpt-5.3-codex & 89 & 3268884 & 87212 & 3356096 & \$6.9415 & \$0.077995 \\
+%     codebert\_seq / tool\_calling & gpt-5.3-codex & 89 & 4228325 & 99957 & 4328282 & \$8.7990 & \$0.098865 \\
+%     codebert\_seq / tool\_calling & gpt-4o & 89 & 6026143 & 95784 & 6121927 & \$24.0348 & \$0.270054 \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+% \begin{table}[H]
+%   \centering
+%   \caption{Generation cost summary by run}
+%   \label{tab:generation_cost_summary_by_run}
+%   \begin{tabular}{llrrrrrrr}
+%     \toprule
+%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+%     \midrule
+%     model baseline & gpt-4o & 82 & 872501 & 72631 & 945132 & \$4.3613 & \$0.053187 \\
+%      tool\_calling\_no\_retrieval & gpt-4o & 82 & 4566188 & 83311 & 4649499 & \$18.3729 & \$0.224059 \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+% \begin{table}[H]
+%   \centering
+%   \caption{Generation cost summary by run}
+%   \label{tab:generation_cost_summary_by_run}
+%   \begin{tabular}{llrrrrrrr}
+%     \toprule
+%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+%     \midrule
+%     codex\_baseline & DeepSeek-V4-Flash & 89 & 1123266 & 98096 & 1221362 & \$0.2635 & \$0.002960 \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+% \begin{table}[H]
+%   \centering
+%   \caption{Generation cost summary by run}
+%   \label{tab:generation_cost_summary_by_run}
+%   \begin{tabular}{llrrrrrrr}
+%     \toprule
+%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+%     \midrule
+%     codex\_baseline & DeepSeek-V4-Flash & 89 & 1123266 & 98096 & 1221362 & \$0.2635 & \$0.002960 \\
+%     codebert\_pattern / single\_turn & DeepSeek-V4-Flash & 89 & 3390339 & 300208 & 3690547 & \$0.7973 & \$0.008958 \\
+%     codebert\_pattern / tool\_calling & DeepSeek-V4-Flash & 89 & 8412003 & 724886 & 9136889 & \$1.9680 & \$0.022112 \\
+%     codebert\_seq / tool\_calling & DeepSeek-V4-Flash & 89 & 9183403 & 762795 & 9946198 & \$2.1339 & \$0.023976 \\
+%     combined / single\_turn  & DeepSeek-V4-Flash & 89 & 3998683 & 324862 & 4323545 & \$0.9254 & \$0.010398 \\
+%     combined / tool\_calling & DeepSeek-V4-Flash & 89 & 8840671 & 660618 & 9501289 & \$2.0166 & \$0.022659 \\
+
+%     tool\_calling\_no\_retrieval & DeepSeek-V4-Flash & 89 & 7951770 & 726503 & 8678273 & \$1.8814 & \$0.021139 \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}\begin{table}[H]
+%   \centering
+%   \caption{GPT-5.3-Codex: Generation cost summary by run}
+%   \label{tab:generation_cost_summary_by_run}
+%   \begin{tabular}{llrrrrrrr}
+%     \toprule
+%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & Cost (USD) & Avg Cost/Entry (USD) \\
+%     \midrule
+%     codebert\_pattern / tool\_calling & gpt-5.3-codex & 75 & 377422 & 50856 & 428278 & \$1.3725 & \$0.018300 \\
+%     % codebert\_pattern / tool\_calling / & gpt-4o & 20 & 140323 & 10423 & 150746 & \$0.6826 & \$0.034128 \\
+%     codebert\_seq / tool\_calling & gpt-5.3-codex & 75 & 397471 & 54562 & 452033 & \$1.4594 & \$0.019459 \\
+%     combined / tool\_calling & gpt-5.3-codex & 75 & 398051 & 55285 & 453336 & \$1.4706 & \$0.019608 \\
+%     % single\_turn\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 3699287 & 341326 & 4040613 & \$0.8769 & \$0.009853 \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
 \begin{table}[H]
   \centering
-  \caption{Generation cost summary by run}
-  \label{tab:generation_cost_summary_by_run}
-  \begin{tabular}{llrrrrrrr}
+  \caption{Condensed Generation Cost Summary Across All Experiments}
+  \label{tab:generation_cost_summary_condensed}
+  \begin{tabular}{llrrrrrr}
     \toprule
-    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg Cost/Entry\\(USD)} \\
     \midrule
-    codebert\_pattern / tool\_calling& gpt-5.3-codex & 89 & 3728553 & 91794 & 3820347 & \$7.8101 & \$0.087754 \\
-    codebert\_pattern / tool\_calling& gpt-5.3-codex & 89 & 3268884 & 87212 & 3356096 & \$6.9415 & \$0.077995 \\
-    codebert\_seq / tool\_calling & gpt-5.3-codex & 89 & 4228325 & 99957 & 4328282 & \$8.7990 & \$0.098865 \\
-    codebert\_seq / tool\_calling & gpt-4o & 89 & 6026143 & 95784 & 6121927 & \$24.0348 & \$0.270054 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[H]
-  \centering
-  \caption{Generation cost summary by run}
-  \label{tab:generation_cost_summary_by_run}
-  \begin{tabular}{llrrrrrrr}
-    \toprule
-    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+    Sem.+Struc - Tool & codex & 89 & 3.7M & 91.8K & 3.8M & \$7.81 & \$0.088 \\
+    % codebert\_pattern / tool\_calling & gpt-5.3-codex & 89 & 3.3M & 87.2K & 3.4M & \$6.94 & \$0.078 \\
+    Semantic - Tool & codex & 89 & 4.2M & 100.0K & 4.3M & \$8.80 & \$0.099 \\
     \midrule
-    model baseline & gpt-4o & 82 & 872501 & 72631 & 945132 & \$4.3613 & \$0.053187 \\
-     tool\_calling\_no\_retrieval & gpt-4o & 82 & 4566188 & 83311 & 4649499 & \$18.3729 & \$0.224059 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[H]
-  \centering
-  \caption{Generation cost summary by run}
-  \label{tab:generation_cost_summary_by_run}
-  \begin{tabular}{llrrrrrrr}
-    \toprule
-    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+    Sem.+Struc - Tool & gpt-4o & 89 & 6.0M & 95.8K & 6.1M & \$24.03 & \$0.270 \\
+    Model baseline & gpt-4o & 82 & 872.5K & 72.6K & 945.1K & \$4.36 & \$0.053 \\
+    Tool w/o retrieval & gpt-4o & 82 & 4.6M & 83.3K & 4.6M & \$18.37 & \$0.224 \\
     \midrule
-    codex\_baseline & DeepSeek-V4-Flash & 89 & 1123266 & 98096 & 1221362 & \$0.2635 & \$0.002960 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[H]
-  \centering
-  \caption{Generation cost summary by run}
-  \label{tab:generation_cost_summary_by_run}
-  \begin{tabular}{llrrrrrrr}
-    \toprule
-    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
-    \midrule
-    codex\_baseline & DeepSeek-V4-Flash & 89 & 1123266 & 98096 & 1221362 & \$0.2635 & \$0.002960 \\
-    codebert\_pattern / single\_turn & DeepSeek-V4-Flash & 89 & 3390339 & 300208 & 3690547 & \$0.7973 & \$0.008958 \\
-    codebert\_pattern / tool\_calling & DeepSeek-V4-Flash & 89 & 8412003 & 724886 & 9136889 & \$1.9680 & \$0.022112 \\
-    codebert\_seq / tool\_calling & DeepSeek-V4-Flash & 89 & 9183403 & 762795 & 9946198 & \$2.1339 & \$0.023976 \\
-    combined / single\_turn  & DeepSeek-V4-Flash & 89 & 3998683 & 324862 & 4323545 & \$0.9254 & \$0.010398 \\
-    combined / tool\_calling & DeepSeek-V4-Flash & 89 & 8840671 & 660618 & 9501289 & \$2.0166 & \$0.022659 \\
-
-    tool\_calling\_no\_retrieval & DeepSeek-V4-Flash & 89 & 7951770 & 726503 & 8678273 & \$1.8814 & \$0.021139 \\
+    Model baseline & DeepSeek & 89 & 1.1M & 98.1K & 1.2M & \$0.26 & \$0.003 \\
+    Sem.+Struc - prompt & DeepSeek & 89 & 3.4M & 300.2K & 3.7M & \$0.80 & \$0.009 \\
+    Sem.+Struc - Tool & DeepSeek & 89 & 8.4M & 724.9K & 9.1M & \$1.97 & \$0.022 \\
+    Semantic - Tool & DeepSeek & 89 & 9.2M & 762.8K & 9.9M & \$2.13 & \$0.024 \\
+    Topology - prompt & DeepSeek & 89 & 4.0M & 324.9K & 4.3M & \$0.93 & \$0.010 \\
+    Topology - Tool & DeepSeek & 89 & 8.8M & 660.6K & 9.5M & \$2.02 & \$0.023 \\
+    Tool w/o retrieval & DeepSeek & 89 & 8.0M & 726.5K & 8.7M & \$1.88 & \$0.021 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1642,97 +1683,97 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
 
 
 %Need to be finished, but first verify relevance
-\begin{table}[htbp]
-  \centering
-  \small
-  \setlength{\tabcolsep}{5pt}
-  \caption{Patch Generation Summary by CWE for DeepSeek-4-Flash}
-  \label{tab:patch_analysis_summary_by_cwe_deepseek}
-  \begin{tabular}{llccccc}
-    \toprule
-    \textbf{Mode} & \textbf{CWE} & \textbf{N} & \makecell{\bfseries Success\\\bfseries(\%)} & \makecell{\bfseries Avg.\\\bfseries Turns} & \makecell{\bfseries Verify\\\bfseries Rate (\%)} & \makecell{\bfseries Violation\\\bfseries Rate (\%)} \\
-    \midrule
-    \multicolumn{7}{l}{\textit{CodeBERT Pattern}} \\
-    \hspace{1em} Single Turn & CWE-190 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
-    \hspace{1em} Single Turn & CWE-20  & 15 & 13.3 & 1.00 & 0.0 & 0.0 \\
-    \hspace{1em} Single Turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
-    \hspace{1em} Single Turn & CWE-416 & 15 & 36.4 & 1.00 & 0.0 & 0.0 \\
-    \hspace{1em} Single Turn & CWE-476 & 14 & 41.7 & 1.00 & 0.0 & 0.0 \\
-    \hspace{1em} Single Turn & CWE-787 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
-    \cmidrule{2-7}
-    \hspace{1em} Tool Calling & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
-    \hspace{1em} Tool Calling & CWE-20  & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
-    \hspace{1em} Tool Calling & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
-    \hspace{1em} Tool Calling & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
-    \hspace{1em} Tool Calling & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
-    \hspace{1em} Tool Calling & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
-    \midrule
-    \multicolumn{7}{l}{\textit{CodeBERT Sequence}} \\
-    \hspace{1em} Single Turn & CWE-190 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
-    \hspace{1em} Single Turn & CWE-20  & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
-    \hspace{1em} Single Turn & CWE-362 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
-    \hspace{1em} Single Turn & CWE-416 & 15 & 6.7  & 1.00 & 0.0 & 0.0 \\
-    \hspace{1em} Single Turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
-    \hspace{1em} Single Turn & CWE-787 & 15 & \multicolumn{4}{c}{\textit{[... continue CWE-787 data ...]}} \\
-    % NOTE: You can continue adding the remaining CodeBERT Seq and Topological Structure rows here following the same indentation pattern.
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-
-% \begin{table}[t]
+% \begin{table}[htbp]
 %   \centering
-%   \caption{CVEFixes: Patch generation summary by embedding variant / mode -- by CWE DeepSeek-4V-Flash}
+%   \small
+%   \setlength{\tabcolsep}{5pt}
+%   \caption{Patch Generation Summary by CWE for DeepSeek-4-Flash}
 %   \label{tab:patch_analysis_summary_by_cwe_deepseek}
-%   \begin{tabular}{llrrrrr}
+%   \begin{tabular}{llccccc}
 %     \toprule
-%     Source & CWE & N & Success (\%) & Avg. Turns & Verify Rate (\%) & Violation Rate (\%) \\
+%     \textbf{Mode} & \textbf{CWE} & \textbf{N} & \makecell{\bfseries Success\\\bfseries(\%)} & \makecell{\bfseries Avg.\\\bfseries Turns} & \makecell{\bfseries Verify\\\bfseries Rate (\%)} & \makecell{\bfseries Violation\\\bfseries Rate (\%)} \\
 %     \midrule
-%     codebert\_pattern/single\_turn & CWE-190 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_pattern/single\_turn & CWE-20 & 15 & 13.3 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_pattern/single\_turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_pattern/single\_turn & CWE-416 & 15 & 36.4 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_pattern/single\_turn & CWE-476 & 14 & 41.7 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_pattern/single\_turn & CWE-787 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_pattern/tool\_calling & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
-%     codebert\_pattern/tool\_calling & CWE-20 & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
-%     codebert\_pattern/tool\_calling & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
-%     codebert\_pattern/tool\_calling & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
-%     codebert\_pattern/tool\_calling & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
-%     codebert\_pattern/tool\_calling & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
-%     codebert\_seq/single\_turn & CWE-190 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_seq/single\_turn & CWE-20 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_seq/single\_turn & CWE-362 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_seq/single\_turn & CWE-416 & 15 & 6.7 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_seq/single\_turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_seq/single\_turn & CWE-787 & 15 & 46.7 & 1.00 & 0.0 & 0.0 \\
-%     codebert\_seq/tool\_calling & CWE-190 & 15 & 13.3 & 6.00 & 80.0 & 6.7 \\
-%     codebert\_seq/tool\_calling & CWE-20 & 15 & 26.7 & 5.73 & 93.3 & 0.0 \\
-%     codebert\_seq/tool\_calling & CWE-362 & 15 & 46.7 & 5.53 & 93.3 & 6.7 \\
-%     codebert\_seq/tool\_calling & CWE-416 & 15 & 46.7 & 5.33 & 86.7 & 13.3 \\
-%     codebert\_seq/tool\_calling & CWE-476 & 14 & 64.3 & 5.21 & 85.7 & 0.0 \\
-%     codebert\_seq/tool\_calling & CWE-787 & 15 & 53.3 & 5.47 & 100.0 & 6.7 \\
-%     combined/single\_turn & CWE-190 & 15 & 33.3 & 1.00 & 0.0 & 0.0 \\
-%     combined/single\_turn & CWE-20 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
-%     combined/single\_turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
-%     combined/single\_turn & CWE-416 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
-%     combined/single\_turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
-%     combined/single\_turn & CWE-787 & 15 & 46.7 & 1.00 & 0.0 & 0.0 \\
-%     combined/tool\_calling & CWE-190 & 15 & 20.0 & 5.80 & 86.7 & 0.0 \\
-%     combined/tool\_calling & CWE-20 & 15 & 33.3 & 5.53 & 100.0 & 0.0 \\
-%     combined/tool\_calling & CWE-362 & 15 & 60.0 & 5.07 & 93.3 & 20.0 \\
-%     combined/tool\_calling & CWE-416 & 15 & 46.7 & 5.47 & 93.3 & 0.0 \\
-%     combined/tool\_calling & CWE-476 & 14 & 64.3 & 5.00 & 100.0 & 0.0 \\
-%     combined/tool\_calling & CWE-787 & 15 & 53.3 & 5.27 & 100.0 & 6.7 \\
-%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-190 & 15 & 53.3 & 5.40 & 93.3 & 0.0 \\
-%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-20 & 15 & 60.0 & 4.87 & 100.0 & 0.0 \\
-%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-362 & 15 & 33.3 & 5.20 & 100.0 & 0.0 \\
-%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-416 & 15 & 27.3 & 5.64 & 100.0 & 0.0 \\
-%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-476 & 14 & 50.0 & 5.08 & 100.0 & 8.3 \\
-%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-787 & 15 & 46.7 & 5.20 & 100.0 & 0.0 \\
+%     \multicolumn{7}{l}{\textit{CodeBERT Pattern}} \\
+%     \hspace{1em} Single Turn & CWE-190 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
+%     \hspace{1em} Single Turn & CWE-20  & 15 & 13.3 & 1.00 & 0.0 & 0.0 \\
+%     \hspace{1em} Single Turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
+%     \hspace{1em} Single Turn & CWE-416 & 15 & 36.4 & 1.00 & 0.0 & 0.0 \\
+%     \hspace{1em} Single Turn & CWE-476 & 14 & 41.7 & 1.00 & 0.0 & 0.0 \\
+%     \hspace{1em} Single Turn & CWE-787 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
+%     \cmidrule{2-7}
+%     \hspace{1em} Tool Calling & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
+%     \hspace{1em} Tool Calling & CWE-20  & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
+%     \hspace{1em} Tool Calling & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
+%     \hspace{1em} Tool Calling & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
+%     \hspace{1em} Tool Calling & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
+%     \hspace{1em} Tool Calling & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
+%     \midrule
+%     \multicolumn{7}{l}{\textit{CodeBERT Sequence}} \\
+%     \hspace{1em} Single Turn & CWE-190 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
+%     \hspace{1em} Single Turn & CWE-20  & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
+%     \hspace{1em} Single Turn & CWE-362 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
+%     \hspace{1em} Single Turn & CWE-416 & 15 & 6.7  & 1.00 & 0.0 & 0.0 \\
+%     \hspace{1em} Single Turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
+%     \hspace{1em} Single Turn & CWE-787 & 15 & \multicolumn{4}{c}{\textit{[... continue CWE-787 data ...]}} \\
+%     % NOTE: You can continue adding the remaining CodeBERT Seq and Topological Structure rows here following the same indentation pattern.
 %     \bottomrule
 %   \end{tabular}
 % \end{table}
+
+
+\begin{table}[t]
+  \centering
+  \caption{CVEFixes: Patch generation summary by embedding variant / mode -- by CWE DeepSeek-4V-Flash}
+  \label{tab:patch_analysis_summary_by_cwe_deepseek}
+  \begin{tabular}{llrrrrr}
+    \toprule
+    Source & CWE & N & Success (\%) & Avg. Turns & Verify Rate (\%) & Violation Rate (\%) \\
+    \midrule
+    codebert\_pattern/single\_turn & CWE-190 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
+    codebert\_pattern/single\_turn & CWE-20 & 15 & 13.3 & 1.00 & 0.0 & 0.0 \\
+    codebert\_pattern/single\_turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
+    codebert\_pattern/single\_turn & CWE-416 & 15 & 36.4 & 1.00 & 0.0 & 0.0 \\
+    codebert\_pattern/single\_turn & CWE-476 & 14 & 41.7 & 1.00 & 0.0 & 0.0 \\
+    codebert\_pattern/single\_turn & CWE-787 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
+    codebert\_pattern/tool\_calling & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
+    codebert\_pattern/tool\_calling & CWE-20 & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
+    codebert\_pattern/tool\_calling & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
+    codebert\_pattern/tool\_calling & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
+    codebert\_pattern/tool\_calling & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
+    codebert\_pattern/tool\_calling & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
+    codebert\_seq/single\_turn & CWE-190 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
+    codebert\_seq/single\_turn & CWE-20 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
+    codebert\_seq/single\_turn & CWE-362 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
+    codebert\_seq/single\_turn & CWE-416 & 15 & 6.7 & 1.00 & 0.0 & 0.0 \\
+    codebert\_seq/single\_turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
+    codebert\_seq/single\_turn & CWE-787 & 15 & 46.7 & 1.00 & 0.0 & 0.0 \\
+    codebert\_seq/tool\_calling & CWE-190 & 15 & 13.3 & 6.00 & 80.0 & 6.7 \\
+    codebert\_seq/tool\_calling & CWE-20 & 15 & 26.7 & 5.73 & 93.3 & 0.0 \\
+    codebert\_seq/tool\_calling & CWE-362 & 15 & 46.7 & 5.53 & 93.3 & 6.7 \\
+    codebert\_seq/tool\_calling & CWE-416 & 15 & 46.7 & 5.33 & 86.7 & 13.3 \\
+    codebert\_seq/tool\_calling & CWE-476 & 14 & 64.3 & 5.21 & 85.7 & 0.0 \\
+    codebert\_seq/tool\_calling & CWE-787 & 15 & 53.3 & 5.47 & 100.0 & 6.7 \\
+    combined/single\_turn & CWE-190 & 15 & 33.3 & 1.00 & 0.0 & 0.0 \\
+    combined/single\_turn & CWE-20 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
+    combined/single\_turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
+    combined/single\_turn & CWE-416 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
+    combined/single\_turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
+    combined/single\_turn & CWE-787 & 15 & 46.7 & 1.00 & 0.0 & 0.0 \\
+    combined/tool\_calling & CWE-190 & 15 & 20.0 & 5.80 & 86.7 & 0.0 \\
+    combined/tool\_calling & CWE-20 & 15 & 33.3 & 5.53 & 100.0 & 0.0 \\
+    combined/tool\_calling & CWE-362 & 15 & 60.0 & 5.07 & 93.3 & 20.0 \\
+    combined/tool\_calling & CWE-416 & 15 & 46.7 & 5.47 & 93.3 & 0.0 \\
+    combined/tool\_calling & CWE-476 & 14 & 64.3 & 5.00 & 100.0 & 0.0 \\
+    combined/tool\_calling & CWE-787 & 15 & 53.3 & 5.27 & 100.0 & 6.7 \\
+    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-190 & 15 & 53.3 & 5.40 & 93.3 & 0.0 \\
+    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-20 & 15 & 60.0 & 4.87 & 100.0 & 0.0 \\
+    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-362 & 15 & 33.3 & 5.20 & 100.0 & 0.0 \\
+    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-416 & 15 & 27.3 & 5.64 & 100.0 & 0.0 \\
+    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-476 & 14 & 50.0 & 5.08 & 100.0 & 8.3 \\
+    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-787 & 15 & 46.7 & 5.20 & 100.0 & 0.0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{table}[t]
   \centering
@@ -2069,22 +2110,6 @@ gpt-5.3-codex
   \end{tabular}
 \end{table}
 
-\begin{table}[H]
-  \centering
-  \caption{GPT-5.3-Codex: Generation cost summary by run}
-  \label{tab:generation_cost_summary_by_run}
-  \begin{tabular}{llrrrrrrr}
-    \toprule
-    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & Cost (USD) & Avg Cost/Entry (USD) \\
-    \midrule
-    codebert\_pattern / tool\_calling & gpt-5.3-codex & 75 & 377422 & 50856 & 428278 & \$1.3725 & \$0.018300 \\
-    % codebert\_pattern / tool\_calling / & gpt-4o & 20 & 140323 & 10423 & 150746 & \$0.6826 & \$0.034128 \\
-    codebert\_seq / tool\_calling & gpt-5.3-codex & 75 & 397471 & 54562 & 452033 & \$1.4594 & \$0.019459 \\
-    combined / tool\_calling & gpt-5.3-codex & 75 & 398051 & 55285 & 453336 & \$1.4706 & \$0.019608 \\
-    % single\_turn\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 3699287 & 341326 & 4040613 & \$0.8769 & \$0.009853 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
 
 \subsection{GPT-4o}
 
