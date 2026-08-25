@@ -1106,6 +1106,69 @@ This performance drop is likely due to C++'s complex abstractions, object-orient
 These features lead to the production of fragmented diff hunks compared to idiomatic, procedural C code, making automated patching more challenging. %TODO add reference showing that fragmented hunking task is harder
 This is a structural limitation that needs further investigation. 
 
+\begin{table}[H]
+  \centering
+  \caption{Generation cost summary by run}
+  \label{tab:generation_cost_summary_by_run}
+  \begin{tabular}{llrrrrrrr}
+    \toprule
+    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+    \midrule
+    codebert\_pattern / tool\_calling& gpt-5.3-codex & 89 & 3728553 & 91794 & 3820347 & \$7.8101 & \$0.087754 \\
+    codebert\_pattern / tool\_calling& gpt-5.3-codex & 89 & 3268884 & 87212 & 3356096 & \$6.9415 & \$0.077995 \\
+    codebert\_seq / tool\_calling & gpt-5.3-codex & 89 & 4228325 & 99957 & 4328282 & \$8.7990 & \$0.098865 \\
+    codebert\_seq / tool\_calling & gpt-4o & 89 & 6026143 & 95784 & 6121927 & \$24.0348 & \$0.270054 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Generation cost summary by run}
+  \label{tab:generation_cost_summary_by_run}
+  \begin{tabular}{llrrrrrrr}
+    \toprule
+    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+    \midrule
+    model baseline & gpt-4o & 82 & 872501 & 72631 & 945132 & \$4.3613 & \$0.053187 \\
+     tool\_calling\_no\_retrieval & gpt-4o & 82 & 4566188 & 83311 & 4649499 & \$18.3729 & \$0.224059 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Generation cost summary by run}
+  \label{tab:generation_cost_summary_by_run}
+  \begin{tabular}{llrrrrrrr}
+    \toprule
+    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+    \midrule
+    codex\_baseline & DeepSeek-V4-Flash & 89 & 1123266 & 98096 & 1221362 & \$0.2635 & \$0.002960 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Generation cost summary by run}
+  \label{tab:generation_cost_summary_by_run}
+  \begin{tabular}{llrrrrrrr}
+    \toprule
+    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+    \midrule
+    codex\_baseline & DeepSeek-V4-Flash & 89 & 1123266 & 98096 & 1221362 & \$0.2635 & \$0.002960 \\
+    codebert\_pattern / single\_turn & DeepSeek-V4-Flash & 89 & 3390339 & 300208 & 3690547 & \$0.7973 & \$0.008958 \\
+    codebert\_pattern / tool\_calling & DeepSeek-V4-Flash & 89 & 8412003 & 724886 & 9136889 & \$1.9680 & \$0.022112 \\
+    codebert\_seq / tool\_calling & DeepSeek-V4-Flash & 89 & 9183403 & 762795 & 9946198 & \$2.1339 & \$0.023976 \\
+    combined / single\_turn  & DeepSeek-V4-Flash & 89 & 3998683 & 324862 & 4323545 & \$0.9254 & \$0.010398 \\
+    combined / tool\_calling & DeepSeek-V4-Flash & 89 & 8840671 & 660618 & 9501289 & \$2.0166 & \$0.022659 \\
+
+    tool\_calling\_no\_retrieval & DeepSeek-V4-Flash & 89 & 7951770 & 726503 & 8678273 & \$1.8814 & \$0.021139 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \subsection{Patch Powered by GPT-4o}
 
 The results in Table \ref{tab:cwe_comparison_gpt4o} follow similar patterns to those observed in Table \ref{tab:cwe_comparison_all_methods}. Tool Calling Agent, both with and without retrieval for CodeBERT variations, outperformed the prompt-only GPT-4o baseline. Comparing token-level metrics, prompt-only BERTScore/ROUGE scores hover in the 0.10–0.35 range, while Tool Calling raises them to 0.60–0.99.
@@ -1579,42 +1642,42 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
 
 
 %Need to be finished, but first verify relevance
-% \begin{table}[htbp]
-%   \centering
-%   \small
-%   \setlength{\tabcolsep}{5pt}
-%   \caption{Patch Generation Summary by CWE for DeepSeek-4-Flash}
-%   \label{tab:patch_analysis_summary_by_cwe_deepseek}
-%   \begin{tabular}{llccccc}
-%     \toprule
-%     \textbf{Mode} & \textbf{CWE} & \textbf{N} & \makecell{\bfseries Success\\\bfseries(\%)} & \makecell{\bfseries Avg.\\\bfseries Turns} & \makecell{\bfseries Verify\\\bfseries Rate (\%)} & \makecell{\bfseries Violation\\\bfseries Rate (\%)} \\
-%     \midrule
-%     \multicolumn{7}{l}{\textit{CodeBERT Pattern}} \\
-%     \hspace{1em} Single Turn & CWE-190 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-20  & 15 & 13.3 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-416 & 15 & 36.4 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-476 & 14 & 41.7 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-787 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
-%     \cmidrule{2-7}
-%     \hspace{1em} Tool Calling & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
-%     \hspace{1em} Tool Calling & CWE-20  & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
-%     \hspace{1em} Tool Calling & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
-%     \hspace{1em} Tool Calling & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
-%     \hspace{1em} Tool Calling & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
-%     \hspace{1em} Tool Calling & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
-%     \midrule
-%     \multicolumn{7}{l}{\textit{CodeBERT Sequence}} \\
-%     \hspace{1em} Single Turn & CWE-190 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-20  & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-362 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-416 & 15 & 6.7  & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-787 & 15 & \multicolumn{4}{c}{\textit{[... continue CWE-787 data ...]}} \\
-%     % NOTE: You can continue adding the remaining CodeBERT Seq and Topological Structure rows here following the same indentation pattern.
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
+\begin{table}[htbp]
+  \centering
+  \small
+  \setlength{\tabcolsep}{5pt}
+  \caption{Patch Generation Summary by CWE for DeepSeek-4-Flash}
+  \label{tab:patch_analysis_summary_by_cwe_deepseek}
+  \begin{tabular}{llccccc}
+    \toprule
+    \textbf{Mode} & \textbf{CWE} & \textbf{N} & \makecell{\bfseries Success\\\bfseries(\%)} & \makecell{\bfseries Avg.\\\bfseries Turns} & \makecell{\bfseries Verify\\\bfseries Rate (\%)} & \makecell{\bfseries Violation\\\bfseries Rate (\%)} \\
+    \midrule
+    \multicolumn{7}{l}{\textit{CodeBERT Pattern}} \\
+    \hspace{1em} Single Turn & CWE-190 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
+    \hspace{1em} Single Turn & CWE-20  & 15 & 13.3 & 1.00 & 0.0 & 0.0 \\
+    \hspace{1em} Single Turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
+    \hspace{1em} Single Turn & CWE-416 & 15 & 36.4 & 1.00 & 0.0 & 0.0 \\
+    \hspace{1em} Single Turn & CWE-476 & 14 & 41.7 & 1.00 & 0.0 & 0.0 \\
+    \hspace{1em} Single Turn & CWE-787 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
+    \cmidrule{2-7}
+    \hspace{1em} Tool Calling & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
+    \hspace{1em} Tool Calling & CWE-20  & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
+    \hspace{1em} Tool Calling & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
+    \hspace{1em} Tool Calling & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
+    \hspace{1em} Tool Calling & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
+    \hspace{1em} Tool Calling & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
+    \midrule
+    \multicolumn{7}{l}{\textit{CodeBERT Sequence}} \\
+    \hspace{1em} Single Turn & CWE-190 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
+    \hspace{1em} Single Turn & CWE-20  & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
+    \hspace{1em} Single Turn & CWE-362 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
+    \hspace{1em} Single Turn & CWE-416 & 15 & 6.7  & 1.00 & 0.0 & 0.0 \\
+    \hspace{1em} Single Turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
+    \hspace{1em} Single Turn & CWE-787 & 15 & \multicolumn{4}{c}{\textit{[... continue CWE-787 data ...]}} \\
+    % NOTE: You can continue adding the remaining CodeBERT Seq and Topological Structure rows here following the same indentation pattern.
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 
 % \begin{table}[t]
