@@ -26,15 +26,16 @@ Raw CodeBERT similarity on the full code is not sufficient for the retrieval sta
       \midrule
       \multicolumn{5}{c}{\textit{Structure-Only}} \\
       \midrule
-      \textbf{Combined} & \textbf{0.8904} & \textbf{0.9589} & \textbf{0.9162} & \textbf{0.4978} \\
-      GIN & 0.7260 & 0.8767 & 0.7879 & 0.4427 \\
-      WL & 0.6986 & 0.7945 & 0.7363 & 0.4386 \\
+      \textbf{Combined} & \textbf{0.890} & \textbf{0.959} & \textbf{0.916} & \textbf{0.498} \\
+      GIN & 0.726 & 0.877 & 0.788 & 0.443 \\
+      WL & 0.699 & 0.795 & 0.736 & 0.439 \\
       \midrule
       \multicolumn{5}{c}{\textit{CodeBERT pretrained}} \\
       \midrule
-      CodeBERT (baseline) & 0.1533 & 0.2200 & 0.1826 & 0.2933 \\
-      CodeBERT (seq) & 0.7534 & 0.8630 & 0.7927 & 0.4121 \\
-CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
+      CodeBERT (baseline) & 0.153 & 0.220 & 0.183 & 0.293 \\
+      CodeBERT (seq) & 0.753 & 0.863 & 0.793 & 0.412 \\
+      CodeBERT (pat) & 0.712 & 0.836 & 0.768 & 0.415 \\
+      \bottomrule
     \end{tabular}
     \\[2pt]
     {\tiny\textcolor{notecol}{Source: \texttt{experiments/output/checkpoint5/20260505\_141347\_experiment\_f59ab1/results.json}}}
@@ -116,25 +117,25 @@ Therefore, L2 normalization is validated as part of the pipeline.
     \midrule
     \rowcolor{c1!12}
     Combined
-      & \chit{0.8219} & \chit{0.8597}
-      && \cwarn{0.8082} & 0.8436 
+      & \chit{0.822} & \chit{0.860}
+      && \cwarn{0.808} & 0.844 
       && \cmiss{0.136} & 0.060 \\
     CodeBERT seq
-      & 0.8767 & 0.8992
-      && 0.8767 & 0.8992
-      && \cmiss{0.7397} & 0.7923 \\
+      & 0.877 & 0.899
+      && 0.877 & 0.899
+      && \cmiss{0.740} & 0.792 \\
     GIN
-      & 0.6575 & 0.7335
-      && 0.6575 & 0.7289
-      && \cmiss{0.0547} & 0.0482 \\
+      & 0.658 & 0.734
+      && 0.658 & 0.729
+      && \cmiss{0.055} & 0.048 \\
     CodeBERT pat.
-      & 0.8630 & 0.8801
-      && 0.8493 & 0.8799
-      && \cmiss{0.7260} & 0.7778 \\
+      & 0.863 & 0.880
+      && 0.849 & 0.880
+      && \cmiss{0.726} & 0.778 \\
     WL
-      & 0.8082 & 0.8396
-      && 0.8219 & 0.8449
-      && \cmiss{0.0} & 0.0501 \\
+      & 0.808 & 0.840
+      && 0.822 & 0.845
+      && \cmiss{0.000} & 0.050 \\
     \bottomrule
   \end{tabular}
   \caption{Embedder Retrieval Ablation Study Performance for L2-Normalization and PCA}\label{tab:pca_l2}
@@ -330,7 +331,7 @@ With that, the MAP rises from $\sim0.26$ (Semantic) to $\sim0.73$ (Structure + S
     \label{img:combined_cve_map}
 \end{figure}
 
-The cases in which the Topological Structure embedder succeeded in Figure~\\ref{img:combined_cve_map} reveal its potential for vulnerability investigation. 
+The cases in which the Topological Structure embedder succeeded, as shown in Figure~\ref{img:combined_cve_map}, reveal its potential for vulnerability investigation. 
 The Topological Structure embedder successfully identified integer overflow vulnerabilities in dynamic memory functions (e.g., arithmetic in \texttt{realloc}/\texttt{malloc} calls, as seen in CVE-2023-36326). 
 This happens because the code contains an arithmetic operation node that feeds directly into an allocation call, without an intervening conditional control-flow branch node. A CPG topology encodes this data-dependency pipeline via Control flow, and, optionally, Data Flow Graph, whereas CodeBERT treats it as tokens separated by intermediate code. This pattern was identified using the graph topological kernels that compose the Topological Structure model, namely WL and GIN, even with frozen weights and a shallow architecture.
 
@@ -613,46 +614,46 @@ Consequently, even though the agent workflow verifies the correctness of the ret
     \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-190}} 
-      & Codex-5.3 Baseline                & \cmiss{$0.1629 \pm 0.1965^*$} & 0.4016 & \chit{$0.6980 \pm 0.2507^*$} \\
-      & Tool Calling Agent (w/o Retr.)    & $0.6964 \pm 0.3688$ & 0.7895 & $0.6071 \pm 0.4920$ \\
-      & CodeBERT Seq                      & $0.6954 \pm 0.3705$ & \chit{0.7912} & $0.6164 \pm 0.4825$ \\
-      & CodeBERT Pattern                  & $0.6955 \pm 0.3691$ & $0.7897 \pm 0.2868$ & $0.6148 \pm 0.4826$ \\
-      & Topological Structure             & $0.6943 \pm 0.3693$ & 0.7875 & $0.6073 \pm 0.4887$ \\
+      & Codex-5.3 Baseline                 & \cmiss{$0.163 \pm 0.197^*$} & 0.402 & \chit{$0.698 \pm 0.251^*$} \\
+      & Tool Calling Agent (w/o Retr.)    & $0.696 \pm 0.369$ & 0.790 & $0.607 \pm 0.492$ \\
+      & CodeBERT Seq                      & $0.695 \pm 0.371$ & \chit{0.791} & $0.616 \pm 0.483$ \\
+      & CodeBERT Pattern                  & $0.696 \pm 0.369$ & $0.790 \pm 0.287$ & $0.615 \pm 0.483$ \\
+      & Topological Structure             & $0.694 \pm 0.369$ & 0.788 & $0.607 \pm 0.489$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
-      & Codex-5.3 Baseline                & $0.3476 \pm 0.2416^*$ & 0.3416 & $0.8342 \pm 0.0803^{\ddagger}$ \\
-      & Tool Calling Agent (w/o Retr.)    & $0.9073 \pm 0.1596$ & 0.9240 & $0.8634 \pm 0.2335$ \\
-      & CodeBERT Seq                      & $0.9108 \pm 0.1564$ & 0.9291 & \chit{$0.8643 \pm 0.2340$} \\
-      & CodeBERT Pattern                  & $0.9108 \pm 0.1564$ & $0.9266 \pm 0.0695$ & $0.8636 \pm 0.2336$ \\
-      & Topological Structure             & $0.9108 \pm 0.1564$ & \chit{0.9282} & $0.8641 \pm 0.2339$ \\
+      & Codex-5.3 Baseline                 & $0.348 \pm 0.242^*$ & 0.342 & $0.834 \pm 0.080^{\ddagger}$ \\
+      & Tool Calling Agent (w/o Retr.)    & $0.907 \pm 0.160$ & 0.924 & $0.863 \pm 0.234$ \\
+      & CodeBERT Seq                      & $0.911 \pm 0.156$ & 0.929 & \chit{$0.864 \pm 0.234$} \\
+      & CodeBERT Pattern                  & $0.911 \pm 0.156$ & $0.927 \pm 0.070$ & $0.864 \pm 0.234$ \\
+      & Topological Structure             & $0.911 \pm 0.156$ & \chit{0.928} & $0.864 \pm 0.234$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
-      & Codex-5.3 Baseline                & $0.3523 \pm 0.2340^*$ & 0.3793 & $0.9051 \pm 0.0645^{\S}$ \\
-      & Tool Calling Agent (w/o Retr.)    & $0.9565 \pm 0.0876$ & 0.9917 & $0.9975 \pm 0.0032$ \\
-      & CodeBERT Seq                      & \chit{$0.9743 \pm 0.0710$} & 0.9942 & \chit{$0.9988 \pm 0.0022$} \\
-      & CodeBERT Pattern                  & $0.9140 \pm 0.2141$ & $0.9369 \pm 0.2032$ & $0.9884 \pm 0.0335$ \\
-      & Topological Structure             & $0.9669 \pm 0.0874$ & \chit{0.9968} & $0.9981 \pm 0.0031$ \\
+      & Codex-5.3 Baseline                 & $0.352 \pm 0.234^*$ & 0.379 & $0.905 \pm 0.065^{\S}$ \\
+      & Tool Calling Agent (w/o Retr.)    & $0.957 \pm 0.088$ & 0.992 & $0.998 \pm 0.003$ \\
+      & CodeBERT Seq                      & \chit{$0.974 \pm 0.071$} & 0.994 & \chit{$0.999 \pm 0.002$} \\
+      & CodeBERT Pattern                  & $0.914 \pm 0.214$ & $0.937 \pm 0.203$ & $0.988 \pm 0.034$ \\
+      & Topological Structure             & $0.967 \pm 0.087$ & \chit{0.997} & $0.998 \pm 0.003$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
-      & Codex-5.3 Baseline                & $0.3018 \pm 0.2103^*$ & 0.2350 & $0.8644 \pm 0.1075^{\mathparagraph}$ \\
-      & Tool Calling Agent (w/o Retr.)    & $0.8835 \pm 0.2869$ & 0.9175 & $0.9071 \pm 0.2673$ \\
-      & CodeBERT Seq                      & \chit{$0.9387 \pm 0.2091$} & \chit{0.9717} & \chit{$0.9337 \pm 0.2397$} \\
-      & CodeBERT Pattern                  & $0.9179 \pm 0.2477$ & $0.9602 \pm 0.1025$ & $0.8990 \pm 0.3106$ \\
-      & Topological Structure             & $0.9369 \pm 0.2086$ & 0.9691 & $0.9249 \pm 0.2641$ \\
+      & Codex-5.3 Baseline                 & $0.302 \pm 0.210^*$ & 0.235 & $0.864 \pm 0.108^{\mathparagraph}$ \\
+      & Tool Calling Agent (w/o Retr.)    & $0.884 \pm 0.287$ & 0.918 & $0.907 \pm 0.267$ \\
+      & CodeBERT Seq                      & \chit{$0.939 \pm 0.209$} & \chit{0.972} & \chit{$0.934 \pm 0.240$} \\
+      & CodeBERT Pattern                  & $0.918 \pm 0.248$ & $0.960 \pm 0.103$ & $0.899 \pm 0.311$ \\
+      & Topological Structure             & $0.937 \pm 0.209$ & 0.969 & $0.925 \pm 0.264$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
-      & Codex-5.3 Baseline                & $0.1981 \pm 0.1525^*$ & 0.1695 & $0.8241 \pm 0.2303^*$ \\
-      & Tool Calling Agent (w/o Retr.)    & $0.9334 \pm 0.1832$ & 0.9235 & $0.8436 \pm 0.3606$ \\
-      & CodeBERT Seq                      & \chit{$0.9283 \pm 0.1896$} & \chit{0.9167} & \chit{$0.8315 \pm 0.3724$} \\
-      & CodeBERT Pattern                  & $0.9153 \pm 0.2048$ & $0.8990 \pm 0.2083$ & $0.8009 \pm 0.3996$ \\
-      & Topological Structure             & $0.8514 \pm 0.3177$ & 0.8432 & $0.8292 \pm 0.3713$ \\
+      & Codex-5.3 Baseline                 & $0.198 \pm 0.153^*$ & 0.170 & $0.824 \pm 0.230^*$ \\
+      & Tool Calling Agent (w/o Retr.)    & $0.933 \pm 0.183$ & 0.924 & $0.844 \pm 0.361$ \\
+      & CodeBERT Seq                      & \chit{$0.928 \pm 0.190$} & \chit{0.917} & \chit{$0.832 \pm 0.372$} \\
+      & CodeBERT Pattern                  & $0.915 \pm 0.205$ & $0.899 \pm 0.208$ & $0.801 \pm 0.400$ \\
+      & Topological Structure             & $0.851 \pm 0.318$ & 0.843 & $0.829 \pm 0.371$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
-      & Codex-5.3 Baseline                & $0.0693 \pm 0.0749^{\ddagger}$ & 0.2158 & $0.0347 \pm 0.0365^{\S}$ \\
-      & Tool Calling Agent (w/o Retr.)    & $0.5104 \pm 0.0573$ & 0.9245 & $0.0000 \pm 0.0000$ \\
-      & CodeBERT Seq                      & $0.5227 \pm 0.0461$ & 0.9350 & $0.1282 \pm 0.2490$ \\
-      & CodeBERT Pattern                  & \chit{$0.5241 \pm 0.0437$} & \chit{$0.9370 \pm 0.0421$} & \chit{$0.1894 \pm 0.2695$} \\
-      & Topological Structure             & $0.5165 \pm 0.0522$ & 0.9139 & $0.0000 \pm 0.0000$ \\
+      & Codex-5.3 Baseline                 & $0.069 \pm 0.075^{\ddagger}$ & 0.216 & $0.035 \pm 0.037^{\S}$ \\
+      & Tool Calling Agent (w/o Retr.)    & $0.510 \pm 0.057$ & 0.925 & $0.000 \pm 0.000$ \\
+      & CodeBERT Seq                      & $0.523 \pm 0.046$ & 0.935 & $0.128 \pm 0.249$ \\
+      & CodeBERT Pattern                  & \chit{$0.524 \pm 0.044$} & \chit{$0.937 \pm 0.042$} & \chit{$0.189 \pm 0.270$} \\
+      & Topological Structure             & $0.517 \pm 0.052$ & 0.914 & $0.000 \pm 0.000$ \\
     \bottomrule
   \end{tabular}
   \vspace{1ex}
@@ -706,24 +707,24 @@ This suggests that patch generation difficulty is more related to semantic vulne
     \textbf{Mode} & \textbf{Lang.} & \textbf{N} & \textbf{BLEU-4} & \makecell{\bfseries BERT F$_1$} & \makecell{\bfseries Hunk F$_1$} \\
     \midrule
     \multirow{2}{*}{Codex Baseline} 
-      & C   & 65 & 0.0519 & 0.3240 & 0.8452 \\
-      & C++ & 24  & 0.0621 & 0.2104 & 0.3643 \\
+      & C   & 65 & 0.052 & 0.324 & 0.845 \\
+      & C++ & 24  & 0.062 & 0.210 & 0.364 \\
     \midrule
     \multirow{2}{*}{Tool Calling (No Retr.)} 
-      & C   & 65 & 0.9068 & 0.9627 & 0.9533 \\
-      & C++ & 24 & 0.8528 & 0.6539 & 0.3102 \\
+      & C   & 65 & 0.907 & 0.963 & 0.953 \\
+      & C++ & 24 & 0.853 & 0.654 & 0.310 \\
     \midrule
     \multirow{2}{*}{CodeBERT Pattern} 
-      & C   & 65 & 0.7696 & 0.8652 & 0.9343 \\
-      & C++ & 24 & 0.8525 & 0.6539 & 0.3102 \\
+      & C   & 65 & 0.770 & 0.865 & 0.934 \\
+      & C++ & 24 & 0.853 & 0.654 & 0.310 \\
     \midrule
     \multirow{2}{*}{CodeBERT Seq} 
-      & C   & 65 & 0.9185 & 0.9770 & 0.9569 \\
-      & C++ & 24 & 0.8556 & 0.6539 & 0.3102 \\
+      & C   & 65 & 0.919 & 0.977 & 0.957 \\
+      & C++ & 24 & 0.856 & 0.654 & 0.310 \\
     \midrule
     \multirow{2}{*}{Combined} 
-      & C   & 65 & 0.9076 & 0.9636 & 0.9580 \\
-      & C++ & 24 & 0.8328 & 0.6044 & 0.2116 \\
+      & C   & 65 & 0.908 & 0.964 & 0.958 \\
+      & C++ & 24 & 0.833 & 0.604 & 0.212 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -842,48 +843,48 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
     \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-190}} 
-      & GPT-4o Baseline  & 0.1034 $\pm$ 0.1087$^{\mathparagraph}$ & 0.3724 $\pm$ 0.2467$^*$ & 0.1735 $\pm$ 0.2896$^*$ \\
-      & Tool Calling (w/o Retrieval) & 0.6092 $\pm$ 0.3786 & 0.6947 $\pm$ 0.3308 & 0.4967 $\pm$ 0.5236 \\
-      & CodeBERT\_seq & 0.6378 $\pm$ 0.4127 & 0.7166 $\pm$ 0.3542 & 0.6155 $\pm$ 0.4919 \\
-      & CodeBERT\_pattern & \chit{0.6852 $\pm$ 0.4046$^*$} & \chit{0.7632 $\pm$ 0.3502$^*$} & \chit{0.6811 $\pm$ 0.4589$^*$} \\
-      & Topological Structure (Tool Calling) & 0.4245 $\pm$ 0.3801$^*$ & 0.5518 $\pm$ 0.3613$^*$ & 0.4834 $\pm$ 0.4658$^*$ \\
+      & GPT-4o Baseline  & 0.103 $\pm$ 0.109$^{\mathparagraph}$ & 0.372 $\pm$ 0.247$^*$ & 0.174 $\pm$ 0.290$^*$ \\
+      & Tool Calling (w/o Retrieval) & 0.609 $\pm$ 0.379 & 0.695 $\pm$ 0.331 & 0.497 $\pm$ 0.524 \\
+      & CodeBERT\_seq & 0.638 $\pm$ 0.413 & 0.717 $\pm$ 0.354 & 0.616 $\pm$ 0.492 \\
+      & CodeBERT\_pattern & \chit{0.685 $\pm$ 0.405$^*$} & \chit{0.763 $\pm$ 0.350$^*$} & \chit{0.681 $\pm$ 0.459$^*$} \\
+      & Topological Structure (Tool Calling) & 0.425 $\pm$ 0.380$^*$ & 0.552 $\pm$ 0.361$^*$ & 0.483 $\pm$ 0.466$^*$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
-      & GPT-4o Baseline  & 0.4341 $\pm$ 0.2887$^*$ & 0.4286 $\pm$ 0.3017$^*$ & 0.1306 $\pm$ 0.2164$^*$ \\
-      & Tool Calling (w/o Retrieval) & \chit{0.9375 $\pm$ 0.0613} & \chit{0.8586 $\pm$ 0.1236} & 0.9135 $\pm$ 0.0774 \\
-      & CodeBERT\_seq & 0.7214 $\pm$ 0.4469 & 0.7069 $\pm$ 0.4305 & 0.9048 $\pm$ 0.0802 \\
-      & CodeBERT\_pattern & 0.6406 $\pm$ 0.4818$^*$ & 0.6358 $\pm$ 0.4713$^*$ & \chit{0.9147 $\pm$ 0.0634$^{\ddagger}$} \\
-      & Topological Structure (Tool Calling) & 0.6620 $\pm$ 0.4602$^*$ & 0.6655 $\pm$ 0.4502$^*$ & 0.8825 $\pm$ 0.1084$^\dagger$ \\
+      & GPT-4o Baseline  & 0.434 $\pm$ 0.289$^*$ & 0.429 $\pm$ 0.302$^*$ & 0.131 $\pm$ 0.216$^*$ \\
+      & Tool Calling (w/o Retrieval) & \chit{0.938 $\pm$ 0.061} & \chit{0.859 $\pm$ 0.124} & 0.914 $\pm$ 0.077 \\
+      & CodeBERT\_seq & 0.721 $\pm$ 0.447 & 0.707 $\pm$ 0.431 & 0.905 $\pm$ 0.080 \\
+      & CodeBERT\_pattern & 0.641 $\pm$ 0.482$^*$ & 0.636 $\pm$ 0.471$^*$ & \chit{0.915 $\pm$ 0.063$^{\ddagger}$} \\
+      & Topological Structure (Tool Calling) & 0.662 $\pm$ 0.460$^*$ & 0.666 $\pm$ 0.450$^*$ & 0.883 $\pm$ 0.108$^\dagger$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
-      & GPT-4o Baseline  & 0.2754 $\pm$ 0.2318$^*$ & 0.2952 $\pm$ 0.1821$^*$ & 0.0145 $\pm$ 0.0233$^{\S}$ \\
-      & Tool Calling (w/o Retrieval) & 0.7293 $\pm$ 0.4454 & 0.7434 $\pm$ 0.4484 & 0.9754 $\pm$ 0.0444 \\
-      & CodeBERT\_seq & \chit{0.9898 $\pm$ 0.0307} & \chit{0.9969 $\pm$ 0.0037} & \chit{0.9970 $\pm$ 0.0042} \\
-      & CodeBERT\_pattern & 0.9448 $\pm$ 0.1095$^*$ & 0.9944 $\pm$ 0.0062$^{\S}$ & 0.9968 $\pm$ 0.0039$^{\S}$ \\
-      & Topological Structure (Tool Calling) & 0.4456 $\pm$ 0.4124$^*$ & 0.4349 $\pm$ 0.4507$^*$ & 0.9325 $\pm$ 0.0737$^{\ddagger}$ \\
+      & GPT-4o Baseline  & 0.275 $\pm$ 0.232$^*$ & 0.295 $\pm$ 0.182$^*$ & 0.015 $\pm$ 0.023$^{\S}$ \\
+      & Tool Calling (w/o Retrieval) & 0.729 $\pm$ 0.445 & 0.743 $\pm$ 0.448 & 0.975 $\pm$ 0.044 \\
+      & CodeBERT\_seq & \chit{0.990 $\pm$ 0.031} & \chit{0.997 $\pm$ 0.004} & \chit{0.997 $\pm$ 0.004} \\
+      & CodeBERT\_pattern & 0.945 $\pm$ 0.110$^*$ & 0.994 $\pm$ 0.006$^{\S}$ & 0.997 $\pm$ 0.004$^{\S}$ \\
+      & Topological Structure (Tool Calling) & 0.446 $\pm$ 0.412$^*$ & 0.435 $\pm$ 0.451$^*$ & 0.933 $\pm$ 0.074$^{\ddagger}$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
-      & GPT-4o Baseline  & 0.3570 $\pm$ 0.1491$^*$ & 0.2169 $\pm$ 0.1079$^\dagger$ & 0.0850 $\pm$ 0.1719$^*$ \\
-      & Tool Calling (w/o Retrieval) & 0.8300 $\pm$ 0.3457 & 0.8715 $\pm$ 0.2072 & 0.7912 $\pm$ 0.4427 \\
-      & CodeBERT\_seq & 0.7165 $\pm$ 0.4492 & 0.7608 $\pm$ 0.4125 & 0.8849 $\pm$ 0.2922 \\
-      & CodeBERT\_pattern & \chit{0.9138 $\pm$ 0.2879$^*$} & \chit{0.9163 $\pm$ 0.2716$^*$} & \chit{0.9814 $\pm$ 0.0573$^{\ddagger}$} \\
-      & Topological Structure (Tool Calling) & 0.2671 $\pm$ 0.4242$^*$ & 0.3390 $\pm$ 0.4305$^*$ & 0.8207 $\pm$ 0.3181$^*$ \\
+      & GPT-4o Baseline  & 0.357 $\pm$ 0.149$^*$ & 0.217 $\pm$ 0.108$^\dagger$ & 0.085 $\pm$ 0.172$^*$ \\
+      & Tool Calling (w/o Retrieval) & 0.830 $\pm$ 0.346 & 0.872 $\pm$ 0.207 & 0.791 $\pm$ 0.443 \\
+      & CodeBERT\_seq & 0.717 $\pm$ 0.449 & 0.761 $\pm$ 0.413 & 0.885 $\pm$ 0.292 \\
+      & CodeBERT\_pattern & \chit{0.914 $\pm$ 0.288$^*$} & \chit{0.916 $\pm$ 0.272$^*$} & \chit{0.981 $\pm$ 0.057$^{\ddagger}$} \\
+      & Topological Structure (Tool Calling) & 0.267 $\pm$ 0.424$^*$ & 0.339 $\pm$ 0.431$^*$ & 0.821 $\pm$ 0.318$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
-      & GPT-4o Baseline  & 0.2134 $\pm$ 0.1955$^*$ & 0.2148 $\pm$ 0.1725$^*$ & 0.0889 $\pm$ 0.2026$^*$ \\
-      & Tool Calling (w/o Retrieval) & 0.7659 $\pm$ 0.3787 & 0.7583 $\pm$ 0.4079 & 0.8359 $\pm$ 0.3449 \\
-      & CodeBERT\_seq & 0.8068 $\pm$ 0.3536 & 0.7945 $\pm$ 0.3490 & 0.7660 $\pm$ 0.4094 \\
-      & CodeBERT\_pattern & \chit{0.9071 $\pm$ 0.2130$^*$} & \chit{0.8922 $\pm$ 0.2162$^*$} & 0.7827 $\pm$ 0.4133$^*$ \\
-      & Topological Structure (Tool Calling) & 0.6131 $\pm$ 0.4731$^*$ & 0.6318 $\pm$ 0.4977$^*$ & \chit{0.8496 $\pm$ 0.3449$^*$} \\
+      & GPT-4o Baseline  & 0.213 $\pm$ 0.196$^*$ & 0.215 $\pm$ 0.173$^*$ & 0.089 $\pm$ 0.203$^*$ \\
+      & Tool Calling (w/o Retrieval) & 0.766 $\pm$ 0.379 & 0.758 $\pm$ 0.408 & 0.836 $\pm$ 0.345 \\
+      & CodeBERT\_seq & 0.807 $\pm$ 0.354 & 0.795 $\pm$ 0.349 & 0.766 $\pm$ 0.409 \\
+      & CodeBERT\_pattern & \chit{0.907 $\pm$ 0.213$^*$} & \chit{0.892 $\pm$ 0.216$^*$} & 0.783 $\pm$ 0.413$^*$ \\
+      & Topological Structure (Tool Calling) & 0.613 $\pm$ 0.473$^*$ & 0.632 $\pm$ 0.498$^*$ & \chit{0.850 $\pm$ 0.345$^*$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
-      & GPT-4o Baseline  & 0.3554 $\pm$ 0.1851 & 0.4136 $\pm$ 0.3552 & 0.0382 $\pm$ 0.1130 \\
-      & Tool Calling (w/o Retrieval) & \chit{0.5097 $\pm$ 0.0631} & \chit{0.8760 $\pm$ 0.0899} & 0.0000 $\pm$ 0.0000 \\
-      & CodeBERT\_seq & 0.4707 $\pm$ 0.1602 & 0.8448 $\pm$ 0.2710 & \chit{0.0450 $\pm$ 0.0990} \\
-      & CodeBERT\_pattern & 0.4346 $\pm$ 0.1932$^*$ & 0.8025 $\pm$ 0.3552$^*$ & 0.0433 $\pm$ 0.1130$^{\P}$ \\
-      & Topological Structure (Tool Calling) & 0.4705 $\pm$ 0.1599$^*$ & 0.8489 $\pm$ 0.2419$^*$ & 0.0169 $\pm$ 0.0402$^{\S}$ \\
+      & GPT-4o Baseline  & 0.355 $\pm$ 0.185 & 0.414 $\pm$ 0.355 & 0.038 $\pm$ 0.113 \\
+      & Tool Calling (w/o Retrieval) & \chit{0.510 $\pm$ 0.063} & \chit{0.876 $\pm$ 0.090} & 0.000 $\pm$ 0.000 \\
+      & CodeBERT\_seq & 0.471 $\pm$ 0.160 & 0.845 $\pm$ 0.271 & \chit{0.045 $\pm$ 0.099} \\
+      & CodeBERT\_pattern & 0.435 $\pm$ 0.193$^*$ & 0.803 $\pm$ 0.355$^*$ & 0.043 $\pm$ 0.113$^{\P}$ \\
+      & Topological Structure (Tool Calling) & 0.471 $\pm$ 0.160$^*$ & 0.849 $\pm$ 0.242$^*$ & 0.017 $\pm$ 0.040$^{\S}$ \\
     \bottomrule
-  \end{tabular}
+\end{tabular}
 
   \vspace{0.5em}
   \begin{minipage}{\linewidth}
@@ -903,49 +904,48 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
     \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-190}} 
-      & DeepSeek Baseline & 0.1518 $\pm$ 0.1274$^\dagger$ & 0.3664 $\pm$ 0.2328$^*$ & 0.2243 $\pm$ 0.3297$^*$ \\
-      & Tool Calling (w/o Retrieval) & 0.7155 $\pm$ 0.4454$^*$ & 0.7896 $\pm$ 0.3531$^*$ & \chit{0.7771 $\pm$ 0.4022$^*$} \\
-      & CodeBERT\_seq & 0.6150 $\pm$ 0.5346$^*$ & 0.8930 $\pm$ 0.1441$^*$ & 0.5328 $\pm$ 0.6607$^*$ \\
-      & CodeBERT\_pattern & 0.6240 $\pm$ 0.4203$^*$ & 0.8084 $\pm$ 0.2532$^*$ & 0.5594 $\pm$ 0.4945$^*$ \\
-      & Topological Structure (Tool Calling) & \chit{0.7343 $\pm$ 0.4307$^*$} & \chit{0.9285 $\pm$ 0.1150$^*$} & 0.6894 $\pm$ 0.5132$^*$ \\
+      & DeepSeek Baseline & 0.152 $\pm$ 0.127$^\dagger$ & 0.366 $\pm$ 0.233$^*$ & 0.224 $\pm$ 0.330$^*$ \\
+      & Tool Calling (w/o Retrieval) & 0.716 $\pm$ 0.445$^*$ & 0.790 $\pm$ 0.353$^*$ & \chit{0.777 $\pm$ 0.402$^*$} \\
+      & CodeBERT\_seq & 0.615 $\pm$ 0.535$^*$ & 0.893 $\pm$ 0.144$^*$ & 0.533 $\pm$ 0.661$^*$ \\
+      & CodeBERT\_pattern & 0.624 $\pm$ 0.420$^*$ & 0.808 $\pm$ 0.253$^*$ & 0.559 $\pm$ 0.494$^*$ \\
+      & Topological Structure (Tool Calling) & \chit{0.734 $\pm$ 0.431$^*$} & \chit{0.928 $\pm$ 0.115$^*$} & 0.689 $\pm$ 0.513$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
-      & DeepSeek Baseline & 0.4097 $\pm$ 0.2890$^*$ & 0.4072 $\pm$ 0.2736$^*$ & 0.1698 $\pm$ 0.2362$^*$ \\
-      & Tool Calling (w/o Retrieval) & 0.8767 $\pm$ 0.1965$^*$ & 0.9320 $\pm$ 0.0854$^\dagger$ & 0.8444 $\pm$ 0.3019$^*$ \\
-      & CodeBERT\_seq & \chit{0.9072 $\pm$ 0.0680$^*$} & \chit{0.9445 $\pm$ 0.0454$^\dagger$} & \chit{0.9342 $\pm$ 0.0670$^*$} \\
-      & CodeBERT\_pattern & 0.7803 $\pm$ 0.2761$^*$ & 0.9294 $\pm$ 0.1190$^*$ & 0.7752 $\pm$ 0.4372$^*$ \\
-      & Topological Structure (Tool Calling) & 0.7998 $\pm$ 0.2465$^*$ & 0.8938 $\pm$ 0.0967$^*$ & 0.7549 $\pm$ 0.3655$^*$ \\
+      & DeepSeek Baseline & 0.410 $\pm$ 0.289$^*$ & 0.407 $\pm$ 0.274$^*$ & 0.170 $\pm$ 0.236$^*$ \\
+      & Tool Calling (w/o Retrieval) & 0.877 $\pm$ 0.197$^*$ & 0.932 $\pm$ 0.085$^\dagger$ & 0.844 $\pm$ 0.302$^*$ \\
+      & CodeBERT\_seq & \chit{0.907 $\pm$ 0.068$^*$} & \chit{0.945 $\pm$ 0.045$^\dagger$} & \chit{0.934 $\pm$ 0.067$^*$} \\
+      & CodeBERT\_pattern & 0.780 $\pm$ 0.276$^*$ & 0.929 $\pm$ 0.119$^*$ & 0.775 $\pm$ 0.437$^*$ \\
+      & Topological Structure (Tool Calling) & 0.800 $\pm$ 0.246$^*$ & 0.894 $\pm$ 0.097$^*$ & 0.755 $\pm$ 0.365$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
-      & DeepSeek Baseline & 0.3658 $\pm$ 0.2686$^*$ & 0.3417 $\pm$ 0.2866$^*$ & 0.0093 $\pm$ 0.0171$^{\S}$ \\
-      & Tool Calling (w/o Retrieval) & 0.9689 $\pm$ 0.0878$^\dagger$ & 0.9938 $\pm$ 0.0164$^{\S}$ & 0.9988 $\pm$ 0.0030$^{\S}$ \\
-      & CodeBERT\_seq & 0.9645 $\pm$ 0.0939$^*$ & 0.9958 $\pm$ 0.0063$^{\S}$ & 0.9978 $\pm$ 0.0036$^{\S}$ \\
-      & CodeBERT\_pattern & \chit{1.0000 $\pm$ 0.0000$^{\S}$} & \chit{0.9998 $\pm$ 0.0004$^{\S}$} & \chit{0.9994 $\pm$ 0.0014$^{\S}$} \\
-      & Topological Structure (Tool Calling) & 0.9724 $\pm$ 0.0828$^{\mathparagraph}$ & 0.9971 $\pm$ 0.0048$^{\S}$ & 0.9979 $\pm$ 0.0032$^{\S}$ \\
+      & DeepSeek Baseline & 0.366 $\pm$ 0.269$^*$ & 0.342 $\pm$ 0.287$^*$ & 0.009 $\pm$ 0.017$^{\S}$ \\
+      & Tool Calling (w/o Retrieval) & 0.969 $\pm$ 0.088$^\dagger$ & 0.994 $\pm$ 0.016$^{\S}$ & 0.999 $\pm$ 0.003$^{\S}$ \\
+      & CodeBERT\_seq & 0.965 $\pm$ 0.094$^*$ & 0.996 $\pm$ 0.006$^{\S}$ & 0.998 $\pm$ 0.004$^{\S}$ \\
+      & CodeBERT\_pattern & \chit{1.000 $\pm$ 0.000$^{\S}$} & \chit{1.000 $\pm$ 0.000$^{\S}$} & \chit{0.999 $\pm$ 0.001$^{\S}$} \\
+      & Topological Structure (Tool Calling) & 0.972 $\pm$ 0.083$^{\mathparagraph}$ & 0.997 $\pm$ 0.005$^{\S}$ & 0.998 $\pm$ 0.003$^{\S}$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
-      & DeepSeek Baseline & 0.4488 $\pm$ 0.0793$^{\mathparagraph}$ & 0.2795 $\pm$ 0.0729$^{\ddagger}$ & 0.0805 $\pm$ 0.1828$^*$ \\
-      & Tool Calling (w/o Retrieval) & \chit{1.0000 $\pm$ 0.0000$^{\S}$} & \chit{0.9909 $\pm$ 0.0100$^{\ddagger}$} & \chit{0.9968 $\pm$ 0.0042$^{\S}$} \\
-      & CodeBERT\_seq & 0.8823 $\pm$ 0.2952$^*$ & 0.9478 $\pm$ 0.1178$^*$ & 0.8692 $\pm$ 0.3387$^*$ \\
-      & CodeBERT\_pattern & 0.7230 $\pm$ 0.3850$^*$ & 0.7683 $\pm$ 0.3464$^*$ & 0.7799 $\pm$ 0.4376$^*$ \\
-      & Topological Structure (Tool Calling) & 0.8738 $\pm$ 0.2916$^*$ & 0.9413 $\pm$ 0.1228$^*$ & 0.8502 $\pm$ 0.3751$^*$ \\
+      & DeepSeek Baseline & 0.449 $\pm$ 0.079$^{\mathparagraph}$ & 0.280 $\pm$ 0.073$^{\ddagger}$ & 0.081 $\pm$ 0.183$^*$ \\
+      & Tool Calling (w/o Retrieval) & \chit{1.000 $\pm$ 0.000$^{\S}$} & \chit{0.991 $\pm$ 0.010$^{\ddagger}$} & \chit{0.997 $\pm$ 0.004$^{\S}$} \\
+      & CodeBERT\_seq & 0.882 $\pm$ 0.295$^*$ & 0.948 $\pm$ 0.118$^*$ & 0.869 $\pm$ 0.339$^*$ \\
+      & CodeBERT\_pattern & 0.723 $\pm$ 0.385$^*$ & 0.768 $\pm$ 0.346$^*$ & 0.780 $\pm$ 0.438$^*$ \\
+      & Topological Structure (Tool Calling) & 0.874 $\pm$ 0.292$^*$ & 0.941 $\pm$ 0.123$^*$ & 0.850 $\pm$ 0.375$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
-      & DeepSeek Baseline & 0.3073 $\pm$ 0.2349$^*$ & 0.2369 $\pm$ 0.2246$^*$ & 0.0973 $\pm$ 0.2761$^*$ \\
-      & Tool Calling (w/o Retrieval) & 0.9146 $\pm$ 0.2171$^*$ & 0.9343 $\pm$ 0.1890$^*$ & \chit{0.8892 $\pm$ 0.3291$^*$} \\
-      & CodeBERT\_seq & 0.8264 $\pm$ 0.3502$^*$ & 0.8354 $\pm$ 0.3374$^*$ & 0.8790 $\pm$ 0.3307$^*$ \\
-      & CodeBERT\_pattern & \chit{0.9627 $\pm$ 0.0986$^*$} & \chit{0.9921 $\pm$ 0.0171$^{\S}$} & 0.8558 $\pm$ 0.3774$^*$ \\
-      & Topological Structure (Tool Calling) & 0.8982 $\pm$ 0.2249$^*$ & 0.9320 $\pm$ 0.1890$^*$ & 0.7776 $\pm$ 0.4409$^*$ \\
+      & DeepSeek Baseline & 0.307 $\pm$ 0.235$^*$ & 0.237 $\pm$ 0.225$^*$ & 0.097 $\pm$ 0.276$^*$ \\
+      & Tool Calling (w/o Retrieval) & 0.915 $\pm$ 0.217$^*$ & 0.934 $\pm$ 0.189$^*$ & \chit{0.889 $\pm$ 0.329$^*$} \\
+      & CodeBERT\_seq & 0.826 $\pm$ 0.350$^*$ & 0.835 $\pm$ 0.337$^*$ & 0.879 $\pm$ 0.331$^*$ \\
+      & CodeBERT\_pattern & \chit{0.963 $\pm$ 0.099$^*$} & \chit{0.992 $\pm$ 0.017$^{\S}$} & 0.856 $\pm$ 0.377$^*$ \\
+      & Topological Structure (Tool Calling) & 0.898 $\pm$ 0.225$^*$ & 0.932 $\pm$ 0.189$^*$ & 0.778 $\pm$ 0.441$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
-      & DeepSeek Baseline & 0.0491 $\pm$ 0.0567$^{\S}$ & 0.2137 $\pm$ 0.1678$^*$ & 0.0451 $\pm$ 0.0483$^{\S}$ \\
-      & Tool Calling (w/o Retrieval) & 0.4569 $\pm$ 0.1306$^*$ & 0.8245 $\pm$ 0.2656$^*$ & 0.0146 $\pm$ 0.0402$^{\S}$ \\
-      & CodeBERT\_seq & \chit{0.5311 $\pm$ 0.0589$^{\ddagger}$} & \chit{0.9254 $\pm$ 0.0388$^{\S}$} & 0.1455 $\pm$ 0.2699$^*$ \\
-      & CodeBERT\_pattern & 0.4664 $\pm$ 0.1555$^*$ & 0.8437 $\pm$ 0.2742$^*$ & \chit{0.1953 $\pm$ 0.2697$^*$} \\
-      & Topological Structure (Tool Calling) & 0.4367 $\pm$ 0.1788$^*$ & 0.7961 $\pm$ 0.3124$^*$ & 0.0034 $\pm$ 0.0096$^{\S}$ \\
+      & DeepSeek Baseline & 0.049 $\pm$ 0.057$^{\S}$ & 0.214 $\pm$ 0.168$^*$ & 0.045 $\pm$ 0.048$^{\S}$ \\
+      & Tool Calling (w/o Retrieval) & 0.457 $\pm$ 0.131$^*$ & 0.825 $\pm$ 0.266$^*$ & 0.015 $\pm$ 0.040$^{\S}$ \\
+      & CodeBERT\_seq & \chit{0.531 $\pm$ 0.059$^{\ddagger}$} & \chit{0.925 $\pm$ 0.039$^{\S}$} & 0.145 $\pm$ 0.270$^*$ \\
+      & CodeBERT\_pattern & 0.466 $\pm$ 0.155$^*$ & 0.844 $\pm$ 0.274$^*$ & \chit{0.195 $\pm$ 0.270$^*$} \\
+      & Topological Structure (Tool Calling) & 0.437 $\pm$ 0.179$^*$ & 0.796 $\pm$ 0.312$^*$ & 0.003 $\pm$ 0.010$^{\S}$ \\
     \bottomrule
-  \end{tabular}
-
+\end{tabular}
   \vspace{0.5em}
   \begin{minipage}{\linewidth}
     \small
@@ -1318,48 +1318,48 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
     \textbf{CWE Category} & \textbf{Method} & \textbf{Support ($n$)} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-190}} 
-      & Codex-5.3 Baseline                & -- & \cmiss{$0.1629 \pm 0.1965^*$} & 0.4016 & \chit{$0.6980 \pm 0.2507^*$} \\
-      & Tool Calling Baseline             & 3  & $0.7343 \pm 0.4307^*$ & $0.9285 \pm 0.1150^*$ & $0.6894 \pm 0.5132^*$ \\
-      & CodeBERT Seq                      & 2  & $0.6150 \pm 0.5346^*$ & $0.8930 \pm 0.1441^*$ & $0.5328 \pm 0.6607^*$ \\
-      & CodeBERT Pattern                  & 4  & $0.6240 \pm 0.4203^*$ & $0.8084 \pm 0.2532^*$ & $0.5594 \pm 0.4945^*$ \\
-      & Topological Structure             & -- & $0.6943 \pm 0.3693$ & 0.7875 & $0.6073 \pm 0.4887$ \\
+      & Codex-5.3 Baseline                 & -- & \cmiss{$0.163 \pm 0.196^*$} & 0.402 & \chit{$0.698 \pm 0.251^*$} \\
+      & Tool Calling Baseline              & 3  & $0.734 \pm 0.431^*$ & $0.928 \pm 0.115^*$ & $0.689 \pm 0.513^*$ \\
+      & CodeBERT Seq                       & 2  & $0.615 \pm 0.535^*$ & $0.893 \pm 0.144^*$ & $0.533 \pm 0.661^*$ \\
+      & CodeBERT Pattern                   & 4  & $0.624 \pm 0.420^*$ & $0.808 \pm 0.253^*$ & $0.559 \pm 0.494^*$ \\
+      & Topological Structure              & -- & $0.694 \pm 0.369$ & 0.787 & $0.607 \pm 0.489$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
-      & Codex-5.3 Baseline                & -- & $0.3476 \pm 0.2416^*$ & 0.3416 & $0.8342 \pm 0.0803^{\ddagger}$ \\
-      & Tool Calling Baseline             & 5  & $0.7998 \pm 0.2465^*$ & $0.8938 \pm 0.0967^*$ & $0.7549 \pm 0.3655^*$ \\
-      & CodeBERT Seq                      & 4  & \chit{$0.9072 \pm 0.0680^*$} & \chit{$0.9445 \pm 0.0454^{\dagger}$} & \chit{$0.9342 \pm 0.0670^*$} \\
-      & CodeBERT Pattern                  & 4  & $0.7803 \pm 0.2761^*$ & $0.9294 \pm 0.1190^*$ & $0.7752 \pm 0.4372^*$ \\
-      & Topological Structure             & -- & $0.9108 \pm 0.1564$ & 0.9282 & $0.8641 \pm 0.2339$ \\
+      & Codex-5.3 Baseline                 & -- & $0.348 \pm 0.242^*$ & 0.342 & $0.834 \pm 0.080^{\ddagger}$ \\
+      & Tool Calling Baseline              & 5  & $0.800 \pm 0.246^*$ & $0.894 \pm 0.097^*$ & $0.755 \pm 0.365^*$ \\
+      & CodeBERT Seq                       & 4  & \chit{$0.907 \pm 0.068^*$} & \chit{$0.945 \pm 0.045^{\dagger}$} & \chit{$0.934 \pm 0.067^*$} \\
+      & CodeBERT Pattern                   & 4  & $0.780 \pm 0.276^*$ & $0.929 \pm 0.119^*$ & $0.775 \pm 0.437^*$ \\
+      & Topological Structure              & -- & $0.911 \pm 0.156$ & 0.928 & $0.864 \pm 0.234$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
-      & Codex-5.3 Baseline                & -- & $0.3523 \pm 0.2340^*$ & 0.3793 & $0.9051 \pm 0.0645^{\S}$ \\
-      & Tool Calling Baseline             & 9  & $0.9724 \pm 0.0828^{\dagger}$ & $0.9971 \pm 0.0048^{\S}$ & $0.9979 \pm 0.0032^{\S}$ \\
-      & CodeBERT Seq                      & 7  & $0.9645 \pm 0.0939^*$ & $0.9958 \pm 0.0063^{\S}$ & \chit{$0.9978 \pm 0.0036^{\S}$} \\
-      & CodeBERT Pattern                  & 5  & \chit{$1.0000 \pm 0.0000^{\S}$} & \chit{$0.9998 \pm 0.0004^{\S}$} & $0.9994 \pm 0.0014^{\S}$ \\
-      & Topological Structure             & -- & $0.9669 \pm 0.0874$ & 0.9968 & $0.9981 \pm 0.0031$ \\
+      & Codex-5.3 Baseline                 & -- & $0.352 \pm 0.234^*$ & 0.379 & $0.905 \pm 0.065^{\S}$ \\
+      & Tool Calling Baseline              & 9  & $0.972 \pm 0.083^{\dagger}$ & $0.997 \pm 0.005^{\S}$ & $0.998 \pm 0.003^{\S}$ \\
+      & CodeBERT Seq                       & 7  & $0.965 \pm 0.094^*$ & $0.996 \pm 0.006^{\S}$ & \chit{$0.998 \pm 0.004^{\S}$} \\
+      & CodeBERT Pattern                   & 5  & \chit{$1.000 \pm 0.000^{\S}$} & \chit{$1.000 \pm 0.000^{\S}$} & $0.999 \pm 0.001^{\S}$ \\
+      & Topological Structure              & -- & $0.967 \pm 0.087$ & 0.997 & $0.998 \pm 0.003$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
-      & Codex-5.3 Baseline                & -- & $0.3018 \pm 0.2103^*$ & 0.2350 & $0.8644 \pm 0.1075^{\mathparagraph}$ \\
-      & Tool Calling Baseline             & 7  & $0.8738 \pm 0.2916^*$ & $0.9413 \pm 0.1228^*$ & $0.8502 \pm 0.3751^*$ \\
-      & CodeBERT Seq                      & 7  & \chit{$0.8823 \pm 0.2952^*$} & \chit{$0.9478 \pm 0.1178^*$} & \chit{$0.8692 \pm 0.3387^*$} \\
-      & CodeBERT Pattern                  & 5  & $0.7230 \pm 0.3850^*$ & $0.7683 \pm 0.3464^*$ & $0.7799 \pm 0.4376^*$ \\
-      & Topological Structure             & -- & $0.9369 \pm 0.2086$ & 0.9691 & $0.9249 \pm 0.2641$ \\
+      & Codex-5.3 Baseline                 & -- & $0.302 \pm 0.210^*$ & 0.235 & $0.864 \pm 0.107^{\mathparagraph}$ \\
+      & Tool Calling Baseline              & 7  & $0.874 \pm 0.292^*$ & $0.941 \pm 0.123^*$ & $0.850 \pm 0.375^*$ \\
+      & CodeBERT Seq                       & 7  & \chit{$0.882 \pm 0.295^*$} & \chit{$0.948 \pm 0.118^*$} & \chit{$0.869 \pm 0.339^*$} \\
+      & CodeBERT Pattern                   & 5  & $0.723 \pm 0.385^*$ & $0.768 \pm 0.346^*$ & $0.780 \pm 0.438^*$ \\
+      & Topological Structure              & -- & $0.937 \pm 0.209$ & 0.969 & $0.925 \pm 0.264$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
-      & Codex-5.3 Baseline                & -- & $0.1981 \pm 0.1525^*$ & 0.1695 & $0.8241 \pm 0.2303^*$ \\
-      & Tool Calling Baseline             & 9  & $0.8982 \pm 0.2249^*$ & $0.9320 \pm 0.1890^*$ & $0.7776 \pm 0.4409^*$ \\
-      & CodeBERT Seq                      & 9  & $0.8264 \pm 0.3502^*$ & $0.8354 \pm 0.3374^*$ & \chit{$0.8790 \pm 0.3307^*$} \\
-      & CodeBERT Pattern                  & 7  & \chit{$0.9627 \pm 0.0986^*$} & \chit{$0.9921 \pm 0.0171^{\S}$} & $0.8558 \pm 0.3774^*$ \\
-      & Topological Structure             & -- & $0.8514 \pm 0.3177$ & 0.8432 & $0.8292 \pm 0.3713$ \\
+      & Codex-5.3 Baseline                 & -- & $0.198 \pm 0.152^*$ & 0.170 & $0.824 \pm 0.230^*$ \\
+      & Tool Calling Baseline              & 9  & $0.898 \pm 0.225^*$ & $0.932 \pm 0.189^*$ & $0.778 \pm 0.441^*$ \\
+      & CodeBERT Seq                       & 9  & $0.826 \pm 0.350^*$ & $0.835 \pm 0.337^*$ & \chit{$0.879 \pm 0.331^*$} \\
+      & CodeBERT Pattern                   & 7  & \chit{$0.963 \pm 0.099^*$} & \chit{$0.992 \pm 0.017^{\S}$} & $0.856 \pm 0.377^*$ \\
+      & Topological Structure              & -- & $0.851 \pm 0.318$ & 0.843 & $0.829 \pm 0.371$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
-      & Codex-5.3 Baseline                & -- & $0.0693 \pm 0.0749^{\ddagger}$ & 0.2158 & $0.0347 \pm 0.0365^{\S}$ \\
-      & Tool Calling Baseline             & 8  & $0.4367 \pm 0.1788^*$ & $0.7961 \pm 0.3124^*$ & $0.0034 \pm 0.0096^{\S}$ \\
-      & CodeBERT Seq                      & 8  & \chit{$0.5311 \pm 0.0589^{\ddagger}$} & $0.9254 \pm 0.0388^{\S}$ & $0.1455 \pm 0.2699^*$ \\
-      & CodeBERT Pattern                  & 11 & $0.4664 \pm 0.1555^*$ & $0.8437 \pm 0.2742^*$ & \chit{$0.1953 \pm 0.2697^*$} \\
-      & Topological Structure             & -- & $0.5165 \pm 0.0522$ & 0.9139 & $0.0000 \pm 0.0000$ \\
+      & Codex-5.3 Baseline                 & -- & $0.069 \pm 0.075^{\ddagger}$ & 0.216 & $0.035 \pm 0.036^{\S}$ \\
+      & Tool Calling Baseline              & 8  & $0.437 \pm 0.179^*$ & $0.796 \pm 0.312^*$ & $0.003 \pm 0.010^{\S}$ \\
+      & CodeBERT Seq                       & 8  & \chit{$0.531 \pm 0.059^{\ddagger}$} & $0.925 \pm 0.039^{\S}$ & $0.145 \pm 0.270^*$ \\
+      & CodeBERT Pattern                   & 11 & $0.466 \pm 0.155^*$ & $0.844 \pm 0.274^*$ & \chit{$0.195 \pm 0.270^*$} \\
+      & Topological Structure              & -- & $0.516 \pm 0.052$ & 0.914 & $0.000 \pm 0.000$ \\
     \bottomrule
-  \end{tabular}
+\end{tabular}
   \vspace{1ex}
   \raggedright
   \scriptsize
@@ -1605,8 +1605,8 @@ Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \m
     % codebert\_pattern / tool\_calling & gpt-5.3-codex & 89 & 3.3M & 87.2K & 3.4M & \$6.94 & \$0.078 \\
     Semantic - Tool & codex & 75 & 400K & 55K & 452K & \$1.46 & \$0.019 \\
     Topology - Tool & codex & 75 & 399K & 55K & 453K & \$1.47 & \$0.020 \\
-    Model baseline & codex &  &  &  &  & \$ & \$0. \\
-    Tool w/o retrieval & codex &  &  &  &  & \$ & \$0.0 \\
+    Model baseline & codex & 75 & 320K & 45K & 365K & \$1.184 & \$0.0117 \\
+    Tool w/o retrieval & codex & 75 & 333K & 57K & 390K & \$1.39 & \$0.0137 \\
     \midrule
     Sem.+Struc - Tool & GPT-4o & 75 & 559K & 57K & 616K & \$2.95 & \$0.039 \\
     Semantic - Tool & GPT-4o & 75 & 625K & 56K & 681K & \$3.18 & \$0.042 \\
