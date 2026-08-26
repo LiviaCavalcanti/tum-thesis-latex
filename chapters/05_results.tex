@@ -847,14 +847,14 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
       & Tool Calling (w/o Retrieval) & 0.609 $\pm$ 0.379 & 0.695 $\pm$ 0.331 & 0.497 $\pm$ 0.524 \\
       & CodeBERT\_seq & 0.638 $\pm$ 0.413 & 0.717 $\pm$ 0.354 & 0.616 $\pm$ 0.492 \\
       & CodeBERT\_pattern & \chit{0.685 $\pm$ 0.405$^*$} & \chit{0.763 $\pm$ 0.350$^*$} & \chit{0.681 $\pm$ 0.459$^*$} \\
-      & Topological Structure (Tool Calling) & 0.425 $\pm$ 0.380$^*$ & 0.552 $\pm$ 0.361$^*$ & 0.483 $\pm$ 0.466$^*$} \\
+      & Topological Structure & 0.425 $\pm$ 0.380$^*$ & 0.552 $\pm$ 0.361$^*$ & 0.483 $\pm$ 0.466$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
       & GPT-4o Baseline  & 0.434 $\pm$ 0.289$^*$ & 0.429 $\pm$ 0.302$^*$ & 0.131 $\pm$ 0.216$^*$ \\
       & Tool Calling (w/o Retrieval) & \chit{0.938 $\pm$ 0.061} & \chit{0.859 $\pm$ 0.124} & 0.914 $\pm$ 0.077 \\
       & CodeBERT\_seq & 0.721 $\pm$ 0.447 & 0.707 $\pm$ 0.431 & 0.905 $\pm$ 0.080 \\
       & CodeBERT\_pattern & 0.641 $\pm$ 0.482$^*$ & 0.636 $\pm$ 0.471$^*$ & \chit{0.915 $\pm$ 0.063$^{\ddagger}$} \\
-      & Topological Structure (Tool Calling) & 0.662 $\pm$ 0.460$^*$ & 0.666 $\pm$ 0.450$^*$ & 0.883 $\pm$ 0.108$^\dagger$ \\
+      & Topological Structure  & 0.662 $\pm$ 0.460$^*$ & 0.666 $\pm$ 0.450$^*$ & 0.883 $\pm$ 0.108$^\dagger$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
       & GPT-4o Baseline  & 0.275 $\pm$ 0.232$^*$ & 0.295 $\pm$ 0.182$^*$ & 0.015 $\pm$ 0.023$^{\S}$ \\
@@ -868,21 +868,21 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
       & Tool Calling (w/o Retrieval) & 0.830 $\pm$ 0.346 & 0.872 $\pm$ 0.207 & 0.791 $\pm$ 0.443 \\
       & CodeBERT\_seq & 0.717 $\pm$ 0.449 & 0.761 $\pm$ 0.413 & 0.885 $\pm$ 0.292 \\
       & CodeBERT\_pattern & \chit{0.914 $\pm$ 0.288$^*$} & \chit{0.916 $\pm$ 0.272$^*$} & \chit{0.981 $\pm$ 0.057$^{\ddagger}$} \\
-      & Topological Structure (Tool Calling) & 0.267 $\pm$ 0.424$^*$ & 0.339 $\pm$ 0.431$^*$ & 0.821 $\pm$ 0.318$^*$ \\
+      & Topological Structure & 0.267 $\pm$ 0.424$^*$ & 0.339 $\pm$ 0.431$^*$ & 0.821 $\pm$ 0.318$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
       & GPT-4o Baseline  & 0.213 $\pm$ 0.196$^*$ & 0.215 $\pm$ 0.173$^*$ & 0.089 $\pm$ 0.203$^*$ \\
       & Tool Calling (w/o Retrieval) & 0.766 $\pm$ 0.379 & 0.758 $\pm$ 0.408 & 0.836 $\pm$ 0.345 \\
       & CodeBERT\_seq & 0.807 $\pm$ 0.354 & 0.795 $\pm$ 0.349 & 0.766 $\pm$ 0.409 \\
       & CodeBERT\_pattern & \chit{0.907 $\pm$ 0.213$^*$} & \chit{0.892 $\pm$ 0.216$^*$} & 0.783 $\pm$ 0.413$^*$ \\
-      & Topological Structure (Tool Calling) & 0.613 $\pm$ 0.473$^*$ & 0.632 $\pm$ 0.498$^*$ & \chit{0.850 $\pm$ 0.345$^*$} \\
+      & Topological Structure & 0.613 $\pm$ 0.473$^*$ & 0.632 $\pm$ 0.498$^*$ & \chit{0.850 $\pm$ 0.345$^*$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
       & GPT-4o Baseline  & 0.355 $\pm$ 0.185 & 0.414 $\pm$ 0.355 & 0.038 $\pm$ 0.113 \\
       & Tool Calling (w/o Retrieval) & \chit{0.510 $\pm$ 0.063} & \chit{0.876 $\pm$ 0.090} & 0.000 $\pm$ 0.000 \\
       & CodeBERT\_seq & 0.471 $\pm$ 0.160 & 0.845 $\pm$ 0.271 & \chit{0.045 $\pm$ 0.099} \\
       & CodeBERT\_pattern & 0.435 $\pm$ 0.193$^*$ & 0.803 $\pm$ 0.355$^*$ & 0.043 $\pm$ 0.113$^{\P}$ \\
-      & Topological Structure (Tool Calling) & 0.471 $\pm$ 0.160$^*$ & 0.849 $\pm$ 0.242$^*$ & 0.017 $\pm$ 0.040$^{\S}$ \\
+      & Topological Structure & 0.471 $\pm$ 0.160$^*$ & 0.849 $\pm$ 0.242$^*$ & 0.017 $\pm$ 0.040$^{\S}$ \\
     \bottomrule
 \end{tabular}
 
@@ -901,49 +901,49 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
   \label{tab:cwe_comparison_deepseek}
   \begin{tabular}{llccc}
     \toprule
-    \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
+    \textbf{\makecell{CWE\\Category}} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-190}} 
       & DeepSeek Baseline & 0.152 $\pm$ 0.127$^\dagger$ & 0.366 $\pm$ 0.233$^*$ & 0.224 $\pm$ 0.330$^*$ \\
       & Tool Calling (w/o Retrieval) & 0.716 $\pm$ 0.445$^*$ & 0.790 $\pm$ 0.353$^*$ & \chit{0.777 $\pm$ 0.402$^*$} \\
       & CodeBERT\_seq & 0.615 $\pm$ 0.535$^*$ & 0.893 $\pm$ 0.144$^*$ & 0.533 $\pm$ 0.661$^*$ \\
       & CodeBERT\_pattern & 0.624 $\pm$ 0.420$^*$ & 0.808 $\pm$ 0.253$^*$ & 0.559 $\pm$ 0.494$^*$ \\
-      & Topological Structure (Tool Calling) & \chit{0.734 $\pm$ 0.431$^*$} & \chit{0.928 $\pm$ 0.115$^*$} & 0.689 $\pm$ 0.513$^*$ \\
+      & Topological Structure & \chit{0.734 $\pm$ 0.431$^*$} & \chit{0.928 $\pm$ 0.115$^*$} & 0.689 $\pm$ 0.513$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
       & DeepSeek Baseline & 0.410 $\pm$ 0.289$^*$ & 0.407 $\pm$ 0.274$^*$ & 0.170 $\pm$ 0.236$^*$ \\
       & Tool Calling (w/o Retrieval) & 0.877 $\pm$ 0.197$^*$ & 0.932 $\pm$ 0.085$^\dagger$ & 0.844 $\pm$ 0.302$^*$ \\
       & CodeBERT\_seq & \chit{0.907 $\pm$ 0.068$^*$} & \chit{0.945 $\pm$ 0.045$^\dagger$} & \chit{0.934 $\pm$ 0.067$^*$} \\
       & CodeBERT\_pattern & 0.780 $\pm$ 0.276$^*$ & 0.929 $\pm$ 0.119$^*$ & 0.775 $\pm$ 0.437$^*$ \\
-      & Topological Structure (Tool Calling) & 0.800 $\pm$ 0.246$^*$ & 0.894 $\pm$ 0.097$^*$ & 0.755 $\pm$ 0.365$^*$ \\
+      & Topological Structure & 0.800 $\pm$ 0.246$^*$ & 0.894 $\pm$ 0.097$^*$ & 0.755 $\pm$ 0.365$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
       & DeepSeek Baseline & 0.366 $\pm$ 0.269$^*$ & 0.342 $\pm$ 0.287$^*$ & 0.009 $\pm$ 0.017$^{\S}$ \\
       & Tool Calling (w/o Retrieval) & 0.969 $\pm$ 0.088$^\dagger$ & 0.994 $\pm$ 0.016$^{\S}$ & 0.999 $\pm$ 0.003$^{\S}$ \\
       & CodeBERT\_seq & 0.965 $\pm$ 0.094$^*$ & 0.996 $\pm$ 0.006$^{\S}$ & 0.998 $\pm$ 0.004$^{\S}$ \\
       & CodeBERT\_pattern & \chit{1.000 $\pm$ 0.000$^{\S}$} & \chit{1.000 $\pm$ 0.000$^{\S}$} & \chit{0.999 $\pm$ 0.001$^{\S}$} \\
-      & Topological Structure (Tool Calling) & 0.972 $\pm$ 0.083$^{\mathparagraph}$ & 0.997 $\pm$ 0.005$^{\S}$ & 0.998 $\pm$ 0.003$^{\S}$ \\
+      & Topological Structure & 0.972 $\pm$ 0.083$^{\mathparagraph}$ & 0.997 $\pm$ 0.005$^{\S}$ & 0.998 $\pm$ 0.003$^{\S}$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
       & DeepSeek Baseline & 0.449 $\pm$ 0.079$^{\mathparagraph}$ & 0.280 $\pm$ 0.073$^{\ddagger}$ & 0.081 $\pm$ 0.183$^*$ \\
       & Tool Calling (w/o Retrieval) & \chit{1.000 $\pm$ 0.000$^{\S}$} & \chit{0.991 $\pm$ 0.010$^{\ddagger}$} & \chit{0.997 $\pm$ 0.004$^{\S}$} \\
       & CodeBERT\_seq & 0.882 $\pm$ 0.295$^*$ & 0.948 $\pm$ 0.118$^*$ & 0.869 $\pm$ 0.339$^*$ \\
       & CodeBERT\_pattern & 0.723 $\pm$ 0.385$^*$ & 0.768 $\pm$ 0.346$^*$ & 0.780 $\pm$ 0.438$^*$ \\
-      & Topological Structure (Tool Calling) & 0.874 $\pm$ 0.292$^*$ & 0.941 $\pm$ 0.123$^*$ & 0.850 $\pm$ 0.375$^*$ \\
+      & Topological Structure & 0.874 $\pm$ 0.292$^*$ & 0.941 $\pm$ 0.123$^*$ & 0.850 $\pm$ 0.375$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
       & DeepSeek Baseline & 0.307 $\pm$ 0.235$^*$ & 0.237 $\pm$ 0.225$^*$ & 0.097 $\pm$ 0.276$^*$ \\
       & Tool Calling (w/o Retrieval) & 0.915 $\pm$ 0.217$^*$ & 0.934 $\pm$ 0.189$^*$ & \chit{0.889 $\pm$ 0.329$^*$} \\
       & CodeBERT\_seq & 0.826 $\pm$ 0.350$^*$ & 0.835 $\pm$ 0.337$^*$ & 0.879 $\pm$ 0.331$^*$ \\
       & CodeBERT\_pattern & \chit{0.963 $\pm$ 0.099$^*$} & \chit{0.992 $\pm$ 0.017$^{\S}$} & 0.856 $\pm$ 0.377$^*$ \\
-      & Topological Structure (Tool Calling) & 0.898 $\pm$ 0.225$^*$ & 0.932 $\pm$ 0.189$^*$ & 0.778 $\pm$ 0.441$^*$ \\
+      & Topological Structure & 0.898 $\pm$ 0.225$^*$ & 0.932 $\pm$ 0.189$^*$ & 0.778 $\pm$ 0.441$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
       & DeepSeek Baseline & 0.049 $\pm$ 0.057$^{\S}$ & 0.214 $\pm$ 0.168$^*$ & 0.045 $\pm$ 0.048$^{\S}$ \\
       & Tool Calling (w/o Retrieval) & 0.457 $\pm$ 0.131$^*$ & 0.825 $\pm$ 0.266$^*$ & 0.015 $\pm$ 0.040$^{\S}$ \\
       & CodeBERT\_seq & \chit{0.531 $\pm$ 0.059$^{\ddagger}$} & \chit{0.925 $\pm$ 0.039$^{\S}$} & 0.145 $\pm$ 0.270$^*$ \\
       & CodeBERT\_pattern & 0.466 $\pm$ 0.155$^*$ & 0.844 $\pm$ 0.274$^*$ & \chit{0.195 $\pm$ 0.270$^*$} \\
-      & Topological Structure (Tool Calling) & 0.437 $\pm$ 0.179$^*$ & 0.796 $\pm$ 0.312$^*$ & 0.003 $\pm$ 0.010$^{\S}$ \\
+      & Topological Structure & 0.437 $\pm$ 0.179$^*$ & 0.796 $\pm$ 0.312$^*$ & 0.003 $\pm$ 0.010$^{\S}$ \\
     \bottomrule
 \end{tabular}
   \vspace{0.5em}
@@ -1422,11 +1422,11 @@ Analyzing the Figure \ref{img:cost_bertscore_cvefixes}, Tool-calling variants of
 
 \section{Generation: AutoPatch Dataset}
 
-The AutoPatch dataset presents a simpler patch generation challenge than CVEfixes: vulnerabilities are confined to single functions with localized, few-line repairs. This reduced complexity allows for a cleaner evaluation of the retrieval-augmented pipeline's effectiveness when the fix is mechanically straightforward.
+The AutoPatch dataset presents a simpler patch-generation challenge than CVEfixes, as vulnerabilities are generally limited to single functions and involve localized, few-line repairs. This reduced complexity results in higher performance and allows for a cleaner evaluation of the patching pipeline's effectiveness.
 
 \subsection{GPT-5.3-Codex}
 
-Table~\ref{tab:autopatch_overall_pipeline_performance_gpt_codex} summarizes the overall pipeline performance for GPT-5.3-Codex. All three retrieval variants achieve high completion rates (88--100\%) and strong LLM Judge validity (70--85\%). The \textit{Combined} (Topology) retrieval strategy achieves the highest completion rate (100\%) and Judge validity (85.3\%), followed by \textit{CodeBERT Seq} (Semantic) at 96\% completion and 82.7\% validity. The \textit{CodeBERT Pattern} (Semantic+Structure) variant, despite lower completion (88\%), still achieves 70.3\% validity. Token-based metrics (BLEU-4, ROUGE-L) are nearly identical across variants ($\approx$0.83 and $\approx$0.90, respectively), indicating that when patches are successfully generated, their textual similarity to ground truth is consistent regardless of retrieval strategy.
+Table~\ref{tab:autopatch_overall_pipeline_performance_gpt_codex} summarizes the overall pipeline performance for GPT-5.3-Codex. All three retrieval variants achieve high completion rates (88 - 100\%) and strong LLM Judge validity (70 - 85\%). The \textit{Topology} retrieval strategy achieves the highest completion rate (100\%) and Judge validity (85.3\%), followed by \textit{Semantic}  at 96\% completion and 82.7\% validity. The \textit{Semantic+Structure}  variant, despite lower completion (88\%), still achieves 70.3\% validity. Token-based metrics (BLEU-4, ROUGE-L) are very similar across variants ($\approx$0.83 and $\approx$0.90, respectively), indicating that when patches are correctly generated for this dataset, they are textually similar to ground truth regardless of the retrieval strategy.
 
 \begin{figure}
     \centering
@@ -1435,9 +1435,23 @@ Table~\ref{tab:autopatch_overall_pipeline_performance_gpt_codex} summarizes the 
     \label{img:autopatch_gptcodex_bertscore}
 \end{figure}
 
-Figure~\ref{img:autopatch_gptcodex_bertscore} shows the BERTScore distributions across CWE categories for GPT-5.3-Codex. The confidence intervals overlap substantially across all retrieval variants, confirming that no single embedding strategy dominates at the semantic similarity level. This statistical equivalence, combined with the high Judge validity rates, suggests that for localized single-function fixes, the choice of retrieval embedding has minimal impact on patch quality when using a sufficiently capable model.
+Figure~\ref{img:autopatch_gptcodex_bertscore} shows the BERTScore distributions across CWE categories for GPT-5.3-Codex. 
+The confidence intervals overlap across all retrieval variants, reiterating the previous observation that no single embedding strategy dominates regarding semantic similarity. 
+This statistical equivalence, combined with the high Judge validity rates, suggests that for localized single-function fixes, the choice of retrieval embedding has minimal impact on patch quality when using a sufficiently capable model.
 
-Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex} breaks down performance by vulnerability category. Memory Safety (CWE-416, CWE-476) and Concurrency (CWE-362, CWE-667) represent the largest sample sizes (22--31 patches per variant). Numeric/Type vulnerabilities (CWE-190, CWE-787) show notably lower BERTScore ($\approx$0.31--0.32) despite high BLEU-4 ($\approx$0.87--0.89), indicating that integer overflow and out-of-bounds write patches may be lexically similar but semantically divergent from ground truth. Resource Management patches show moderate performance across all metrics.
+There are also paired cases where retrieval was effectively the same, but outcomes diverged. For example, some same-CVE examples still flipped from valid to invalid, which suggests the generation trajectory mattered. In cases like CVE-2025-21702, both runs retrieved the same CVE with the same similarity, yet the generated patch quality differed. That is hard to explain purely by retrieval.
+
+Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex} breaks down performance by vulnerability category. Memory Safety (CWE-416, CWE-476) and Concurrency (CWE-362, CWE-667) have the largest sample sizes (22-31 patches each). Resource Management patches show moderate performance across all metrics. Numeric/Type vulnerabilities (CWE-190, CWE-787) have a lower BERTScore ($\approx$0.31 - 0.32) despite high BLEU-4 ($\approx$0.87--0.89). This may indicate that, because the data stems from an augmentation with different models, generating patches results in refactoring, or that the dataset's ground truth includes helpers that are neither generated in the patch nor passed as input to vulnerable code. See the example in Appendix \ref{chapter:appendix_example_autopatch}.
+
+Despite achieving a higher retrieval CWE match rate of 94.7\%, the Topological retriever has a lower LLM-judge valid rate than Semantic+Structure (CWE match rate of 84\%), 30 INVALID / 45 VALID, and 22 INVALID / 51 VALID / 2 ERROR, respectively. In paired comparisons, some Semantic+Structure retrieval cases flip to invalid with the Topological retriever because the generated patch contains a misleading fix pattern, introduces compile errors, or applies the wrong kind of guard. For example:
+\begin{itemize}
+    \item CVE-2024-57262: Semantic+Structure retrieved the same CVE and produced a valid patch; Topological retrieved CVE-2025-21815 with higher similarity, but the patch introduced a compile error.
+    \item CVE-2025-21702: both retrieved the same CVE, but Topological generated a zero-limit guard that did not address the use-after-free/resource-lifetime root cause.
+    \item CVE-2025-21801: Topological had higher similarity but produced a locking patch with double-unlock/stray-code issues.
+ 
+\end{itemize}
+Class-level drops support that: combined is much worse on NULL Pointer Dereference validity (18.2\% vs Semantic+Structure’s 45.5\%) and worse on Integer Overflow or Wraparound (66.7\% vs 77.8\%). Improper locking remains at 92.3\%, indicating this is not a universal degradation. Instead, it is concentrated in vulnerability classes where the exact local semantic fix matters more than broad structural similarity.
+It may suggest that this difference in performance of the Semantic+Structure sequence seems to retrieve examples whose code-level edit semantics are more useful to the patching agent; it may also be due to variations in the generation process, since the agent is non-deterministic by nature. This requires further investigation.
 
 \begin{figure}
     \centering
@@ -1487,25 +1501,26 @@ Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex} breaks down perform
   \end{tabular}
 \end{table}
 
-
 \subsection{GPT-4o}
 
-Table~\ref{tab:autopatch_overall_pipeline_performance_gpt4o} presents GPT-4o's performance on the same AutoPatch dataset. Compared to GPT-5.3-Codex, GPT-4o exhibits lower completion rates (72--80\%) and substantially reduced LLM Judge validity (50--65\%). The \textit{Combined} variant achieves the highest completion (77.3\%) but the lowest validity among retrieval-augmented methods (56.8\%), suggesting that higher completion does not guarantee functional correctness. The \textit{Tool-only} baseline without retrieval shows 80\% completion but only 50\% validity, with markedly lower token-based metrics (BLEU-4: 0.66, ROUGE-L: 0.73) and high variance (BERTScore std: 0.244).
+Table~\ref{tab:autopatch_overall_pipeline_performance_gpt4o} presents GPT-4o's performance on the same AutoPatch dataset. Compared to GPT-5.3-Codex, GPT-4o exhibits lower completion rates (72 - 80\%) and reduced LLM Judge validity (50 - 65\%). 
+The \textit{Topology} pipeline achieves the highest completion (77.3\%) but the lowest validity among retrieval-augmented methods (56.8\%). This drop in performance may be a consequence, suggesting that higher completion does not guarantee functional correctness. The \textit{Tool-only} baseline without retrieval shows 80\% completion but only 50\% validity, with lower token-based metrics (BLEU-4: 0.66, ROUGE-L: 0.73) and high variance (BERTScore std: 0.244).
 
-Figure~\ref{img:autopatch_gpt4o_bertscore} reveals greater performance heterogeneity for GPT-4o than for Codex. The Tool-only baseline exhibits the widest confidence intervals, with complete failures on certain CWE categories (e.g., NULL Pointer Dereference) due to output formatting errors such as unclosed SEARCH\&REPLACE blocks or placeholder text. In contrast, retrieval-augmented variants maintain more consistent performance across categories.
+Figure~\ref{img:autopatch_gpt4o_bertscore} reveals performance heterogeneity for GPT-4o, different than Codex. The Tool-only baseline exhibits the largest confidence intervals, with certain CWE categories yielding a BERTScore of 0 (e.g., NULL Pointer Dereference) due to output formatting errors, such as unclosed SEARCH\&REPLACE blocks or retrieving only placeholder text instead of the code. In contrast, retrieval pipeline variants maintain more consistent performance across categories.
 
-Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o} shows that GPT-4o's category-level performance varies more than Codex's. The Tool-only baseline struggles particularly with Concurrency vulnerabilities (BLEU-4: 0.42, BERTScore: 0.27), while retrieval-augmented methods maintain BLEU-4 $>$ 0.85 for the same category. Memory Safety patches show the strongest performance across all variants, with retrieval methods achieving BERTScore $>$ 0.58.
+Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o} shows the GPT-4o's category-level performance variance. The Tool-only baseline struggles particularly with Concurrency vulnerabilities (BLEU-4: 0.42, BERTScore: 0.27), whereas retrieval pipelines achieve BLEU-4> 0.85 in the same category. Memory Safety patches show the best performance with retrieval methods achieving BERTScore $>$ 0.58.
 
 \paragraph{Model Comparison.}
-The comparison between GPT-5.3-Codex and GPT-4o on AutoPatch reveals a clear capability gap. Codex achieves 15--35 percentage points higher LLM Judge validity across all retrieval variants. This gap is most pronounced for the Combined/Topology strategy (85.3\% vs 56.8\%) and smallest for CodeBERT Pattern/Semantic+Structure (70.3\% vs 63.0\%). The results suggest that on localized, single-function vulnerability patches, model capability is the dominant factor, and retrieval augmentation provides diminishing returns when the base model is sufficiently powerful.
+Codex achieves 15 - 35\% higher LLM Judge validity across all retrieval variants compared to GPT-4o. This gap is larger for the Topology retriever (85.3\% vs 56.8\%), whereas less pronounced for Semantic+Structure (70.3\% vs 63.0\%). 
+This gap between GPT-5.3-Codex and GPT-4o on the AutoPatch dataset suggests that model capability is the dominant factor for localized, single-function vulnerability patches. Additionally, prompt enrichment via the retrieval of similar CWEs yields very low performance returns when the base model is powerful enough.
 
-Conversely, for GPT-4o, retrieval augmentation provides a meaningful boost: all three retrieval variants outperform the Tool-only baseline by 6--15 percentage points on Judge validity. This indicates that retrieval context compensates for model limitations by grounding the generation in relevant vulnerability patterns.
+Conversely, for GPT-4o, the prompt enrichment via retrieval provides a relevant boost. In this case, all three retrieval variants outperform the Tool-only baseline by 6 - 15 percentage points on Judge validity. This indicates that context compensates model limitations by grounding the generation in relevant vulnerability patterns.
 
 \paragraph{Cost Analysis.}
-Table~\ref{tab:generation_cost_summary_condensed} presents the generation costs. GPT-5.3-Codex is substantially more cost-efficient, averaging \$0.018--0.020 per patch versus \$0.039--0.042 for GPT-4o with retrieval. The Tool-only GPT-4o baseline incurs the highest per-entry cost (\$0.224) due to the extended multi-turn interactions required when no retrieval context guides the generation. RAG-augmented pipelines reduce GPT-4o costs by 5--6$\times$ compared to the no-retrieval baseline while simultaneously improving patch quality. Compared to the CVEfixes dataset (Table~\ref{tab:cvefixes_generation_cost_summary}), AutoPatch generation costs are 3--6$\times$ lower per entry for equivalent configurations---reflecting the reduced complexity of single-function, localized fixes versus multi-file vulnerability patches that require substantially larger context windows and more reasoning steps.
+Table~\ref{tab:generation_cost_summary_condensed} summarizes the patch generation costs for AutoPatch. GPT-5.3-Codex is more cost-efficient, with an average of \$0.018-0.020 per patch versus \$0.039--0.042 for GPT-4o with retrieval. The Tool-only GPT-4o baseline has the highest per-entry cost (\$0.224), which may indicate that when there is no retrieval context to guide generation, the model compensates by using more tokens and loops, and, as seen previously, this is not enough to deliver performance. RAG pipelines reduce GPT-4o costs by 5-6$\times$ compared to the no-retrieval baseline while simultaneously improving patch quality. 
+Compared to the CVEfixes dataset (Table~\ref{tab:cvefixes_generation_cost_summary}), AutoPatch generation costs are 3 to 6$\times$ lower per entry for equivalent configurations. 
+This is probably due to the reduced complexity of the dataset, which consists of single-function and requires localized fixes compared to the multi-file vulnerability patches that require substantially larger context windows and more reasoning steps.
 
-\paragraph{Summary.}
-On the simpler AutoPatch dataset, the retrieval-augmented pipeline achieves high success rates (70--85\% Judge validity with Codex, 56--65\% with GPT-4o). The key findings are: (1) model capability dominates---GPT-5.3-Codex substantially outperforms GPT-4o regardless of retrieval strategy; (2) retrieval augmentation provides consistent benefits for less capable models; (3) token-based metrics (BLEU, ROUGE) plateau across variants, but Judge validity and BERTScore reveal meaningful differences; and (4) the Combined/Topology retrieval achieves the best trade-off of completion rate and functional validity for the stronger model, while Semantic+Structure offers the most stable performance for the weaker model.
 
 \begin{table}[H]
   \centering
@@ -1645,10 +1660,6 @@ Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \m
 % **Broader Finding:**
 % Notably, **all model variants failed in this run** (not just DeepSeek), suggesting a systemic issue with the pipeline configuration rather than model-specific problems. The distinction is that single-turn produced no output (error status) while tool-calling produced malformed output (parse_error status).
 
-The CVEfixes dataset presents substantially higher per-entry costs than AutoPatch due to the increased complexity of multi-function, cross-file vulnerability patches that require longer context windows and more reasoning steps.
-
-Analyzing the Figure \ref{img:cost_bertscore_autopatch},
-
 
 \begin{figure}
     \centering
@@ -1656,3 +1667,6 @@ Analyzing the Figure \ref{img:cost_bertscore_autopatch},
     \caption{AutoPatch Patching Cost vs. BERTScore as quality measure.}
     \label{img:cost_bertscore_autopatch}
 \end{figure}
+
+\section{conclusion}
+On the simpler AutoPatch dataset, the retrieval-augmented pipeline achieves high success rates (70--85\% Judge validity with Codex, 56--65\% with GPT-4o). The key findings are: (1) model capability dominates---GPT-5.3-Codex substantially outperforms GPT-4o regardless of retrieval strategy; (2) retrieval augmentation provides consistent benefits for less capable models; (3) token-based metrics (BLEU, ROUGE) plateau across variants, but Judge validity and BERTScore reveal meaningful differences; and (4) the Combined/Topology retrieval achieves the best trade-off of completion rate and functional validity for the stronger model, while Semantic+Structure offers the most stable performance for the weaker model.
