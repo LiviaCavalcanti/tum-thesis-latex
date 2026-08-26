@@ -214,7 +214,7 @@ On the other hand, most embedders even show a slight improvement without PCA (Co
     CWE-787 & 4/15 (26.67\%) & \textbf{11/15 (73.33\%)} & 1/15 (6.67\%) \\
     \midrule
     \textbf{Overall CWE Accuracy} & 48/89 (53.93\%) & \textbf{58/89 (65.17\%)} & 21/89 (23.60\%) \\
-    \textbf{Overall CVE Accuracy} & /89 (49.44\%) & \textbf{48/89 (53.93\%)} & 15/89 (16.85\%) \\
+    \textbf{Overall CVE Accuracy} & 44/89 (49.44\%) & \textbf{48/89 (53.93\%)} & 15/89 (16.85\%) \\
     \bottomrule
   \end{tabular}
   \caption{Embedder Retrieval Performance Comparison Across CWE Categories and Overall Metrics}\label{tab:retrieval_embeddings}
@@ -224,11 +224,11 @@ Analyzing the ranking score distribution per retriever reveals that retrieval di
 Overall, the CodeBERT-based retrievers outperform the Topological Structure embedding model. This suggests that for these real-world scenarios, the underlying semantic signal carries more weight than the aggregated code topological structure representations crafted under the settings used in this work.
 
 \paragraph{Semantic + Structure Performance}
-For the Semantic + Structure Retriever, the plot \ref{img:retrieval_boxplots} shows that vulnerability classes such as CWE-190 and CWE-787 exhibit clear, distinct separations with no overlap between the interquartile ranges (IQRs) or whiskers of incorrect and correct matches. However, an exception occurs in CWE-20, where the ranking scores for incorrect retrievals are concentrated at higher values than the correct ones.
+For the Semantic + Structure Retriever, Figure~\ref{img:retrieval_boxplots} shows that vulnerability classes such as CWE-190 and CWE-787 exhibit clear, distinct separations with no overlap between the interquartile ranges (IQRs) or whiskers of incorrect and correct matches. However, an exception occurs in CWE-20, where the ranking scores for incorrect retrievals are concentrated at higher values than the correct ones.
 
 For CWE-476, while correct matches score slightly higher on average, their distributions noticeably overlap, lacking a clean separation. CWE-362 demonstrates a similarly fuzzy boundary. While the IQR for errors is mainly in the lower half of the correct ranking score distribution, the 25th percentile (p25) of correct retrievals aligns with the median of incorrect retrievals.
 
-CWE-416 presents a challenger scenario. The incorrect retrievals exhibit a higher IQR, with its upper quartile significantly overlapping the correct score distribution. In practice, this wide variance means the retriever frequently ranks incorrect queries as highly as correct ones. Because the 75th percentile (p75) of the incorrect scores remains below the maximum of the correct distribution, yet still overlaps with its range, establishing a reliable classification threshold without losses is impossible in this case.
+CWE-416 presents a challenging scenario. The incorrect retrievals exhibit a higher IQR, with its upper quartile significantly overlapping the correct score distribution. In practice, this wide variance means the retriever frequently ranks incorrect queries as highly as correct ones. Because the 75th percentile (p75) of the incorrect scores remains below the maximum of the correct distribution, yet still overlaps with its range, establishing a reliable classification threshold without losses is impossible in this case.
 
 \paragraph{Semantic Retriever Performance}
 The Semantic Retriever model exhibits a similar trend but with some differences. 
@@ -251,7 +251,7 @@ This high volume of high-ranking false positives likely occurs because a vulnera
 
 % Possibility, check the confusion matrix
 
-TODO: FIX CONFIDENCE SCORE TO SIMILARITY SCORE
+% TODO: FIX CONFIDENCE SCORE TO SIMILARITY SCORE
 
 \begin{figure}
     \centering
@@ -292,14 +292,14 @@ Broad refactoring or multi-file architectural changes, such as locking macros or
 
 \begin{figure}
     \centering
-    \includegraphics[width=1\linewidth]{img/retrieval/codebert_pettern_cve_map_by_cve.png}
+    \includegraphics[width=1\linewidth]{img/retrieval/codebert_pattern_cve_map_by_cve.png}
     \caption{CodeBERT Pattern CVE mAP}
-    \label{img:codebert_seq_cve_map}
+    \label{img:codebert_pattern_cve_map}
 \end{figure}
 
 In general, multi-file changes and configuration-dependent issues perform poorly across all the embedding methods explored. 
 
-Semantic model Graphic \ref{img:codebert_seq_cve_map} shows better performance than the Structure+Semantic model on CVE-2012-3552, which is a race condition in Linux kernel IP socket option handling. 
+The Semantic model (Figure~\ref{img:codebert_seq_cve_map}) shows better performance than the Structure+Semantic model (Figure~\ref{img:codebert_pattern_cve_map}) on CVE-2012-3552, which is a race condition in Linux kernel IP socket option handling. 
 It happens because the Structure+Semantic model relies on regular expressions (\texttt{RE\_LOCK} and \textbf{RE\_UNLOCK}) to catch standard locking calls such as \texttt{mutex\_lock, spin\_lock, down\_read/write, and rtnl\_lock}, which fail when the code uses specific domain identifiers. 
 This is the case of CVE-2012-3552, which calls \texttt{ip\_setup\_cork()}, performing unprotected-thread data manipulation that is not included in the regex. 
 Therefore, the regex group that signals a race condition remains empty. 
@@ -318,19 +318,19 @@ With that, the MAP rises from $\sim0.26$ (Semantic) to $\sim0.73$ (Structure + S
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{img/retrieval/codebert_seq_cve_map_by_cve.png}
-    \caption{CodeBERT Pattern CVE mAP}
-    \label{img:codebert_cve_map}
+    \caption{CodeBERT Sequence CVE mAP}
+    \label{img:codebert_seq_cve_map}
 \end{figure}
 
 
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{img/retrieval/combined_cve_map_by_cve.png}
-    \caption{CodeBERT Pattern CVE mAP}
+    \caption{Topological Structure (Combined) CVE mAP}
     \label{img:combined_cve_map}
 \end{figure}
 
-The cases in which the Topological Structure embedder succeeded in Figure \ref{img:combined_cve_map} reveal its potential for vulnerability investigation. 
+The cases in which the Topological Structure embedder succeeded in Figure~\\ref{img:combined_cve_map} reveal its potential for vulnerability investigation. 
 The Topological Structure embedder successfully identified integer overflow vulnerabilities in dynamic memory functions (e.g., arithmetic in \texttt{realloc}/\texttt{malloc} calls, as seen in CVE-2023-36326). 
 This happens because the code contains an arithmetic operation node that feeds directly into an allocation call, without an intervening conditional control-flow branch node. A CPG topology encodes this data-dependency pipeline via Control flow, and, optionally, Data Flow Graph, whereas CodeBERT treats it as tokens separated by intermediate code. This pattern was identified using the graph topological kernels that compose the Topological Structure model, namely WL and GIN, even with frozen weights and a shallow architecture.
 
@@ -357,39 +357,10 @@ When analyzing the patch difference of the patches generated by the \texttt{Code
 Patch hunk metrics demonstrate that the \texttt{tool\_calling} agentic approach outperforms \texttt{single\_turn}, improving \texttt{hunk\_token\_jaccard} from $5\%$ to $15\%$ and increasing \texttt{hunk\_removed\_f1} by $+0.17$.
 These results indicate that evaluating prompt variations and control-flow strategies requires patch-isolated metrics to clearly evaluate fix quality.
 
-Similarly, applying the hunk metric evaluation to the Topological Structureretriever pipeline, we observe a high rate of incorrect patches (\texttt{hunk\_added\_f1 $\thickapprox$ 0.02}). 
+Similarly, applying the hunk metric evaluation to the Topological Structure retriever pipeline, we observe a high rate of incorrect patches (\texttt{hunk\_added\_f1 $\thickapprox$ 0.02}). 
 It occurs because the patches simply reproduce the vulnerable input. 
 Analyzing the pipeline a step earlier, the retrieval performance is poor with only a 29\% CWE-match rate. %, which suggests that it is important to have a good retrieval. 
 Consequently, even though the agent workflow verifies the correctness of the retrieved CVE for the code snippet under analysis, downstream LLM patch generation cannot easily recover from initial retrieval errors, corroborating the importance of robust (context?) retrieval for effective automated repair. 
-
-% How to evaluate adding a multi-agent architecture
-% The infrastructure is built for exactly this: a multi-agent is a new Agent subclass (\texttt{src\/agents\/base.py}) registered in src/agents/registry.py, run through the same harness (batch_inference → src.evaluate → dashboard) so it's tracked identically. The evaluation discipline matters more than the code:
-% Decide what you're isolating. Today single_turn vs tool_calling confounds prompt + orchestration, so you can't attribute the delta. For a clean multi-agent comparison, hold the generation prompt and tools constant and vary only the orchestration (e.g. planner → patcher → reviewer). Otherwise you get another uninterpretable result.
-% Control confounds: same model, same precomputed retrieval, same CVE-aware split, same target code. Use --mode precomputed so retrieval is identical across arms.
-% Score on discriminating + operational axes, not surface means:
-% Quality: hunk_f1, hunk_added_f1, hunk_token_jaccard (the metric we just wired).
-% Paired per-query deltas + a sign/Wilcoxon test — never compare aggregate means over different evaluated subsets (that was the original trap).
-% Coverage/robustness: parse-error & skip rate, n_turns, n_tool_calls.
-% Cost: prompt/completion tokens and latency — multi-agent multiplies calls, so define a budget and report quality-per-token.
-% Functional signal: the LLM-judge and human-label pipelines already exist (src/evaluate/llm_evaluation.py, llm_vulnerability_eval.jsonl, human_labels.jsonl) — a reviewer agent should be judged on whether it moves the verdict, not text overlap.
-% Pre-register a win condition, e.g. "+X hunk_f1 at ≤ current parse-error rate and $≤ N×$ tokens."
-% Line runs up side-by-side with the existing experiments/dashboard_scripts/comparison_dashboard.py.
-% Concretely: implement MultiAgentAgent in architectures, register it, run main.py --mode batch --architecture multi_agent, then python -m src.evaluate <run>.
-
-% What direction actually gets better results
-% The hunk metric already localizes the real failure: patches echo the function and rarely produce the correct changed line (hunk_added_f1 $≈$ 0.02). That reframes priorities — surface fluency is fine; the fix is wrong. Ranked by likely leverage:
-
-% Retrieval is the ceiling (highest leverage). I checked: the retrieved example shares the query's CWE only 29% of the time (CVE 17%). The model is usually shown as a different vulnerability class as its "similar example." This is a RAG project — improving the retriever (graph embeddings, CWE-filtered / reranked retrieval, larger top-k with selection) will likely beat any orchestration change. Test it directly: does hunk_f1 rise on the subset where cwe_match=True? If yes, retrieval is your bottleneck.
-% Change the output contract: emit a diff/hunk, not a whole rewritten function. Regenerating the full function is what buries the fix and produces the "echo" failure. Asking for a unified diff or minimal changed lines targets hunk_added_f1 head-on and is a small change.
-% Give the agent a real verification signal. tool_calling gestures at this, but only has syntax/LLM checks. A reviewer/multi-agent loop only helps if it has ground truth — surrounding code, a compile step, or a PoC/test. More LLM opinion without a signal won't improve correctness.
-% Cheap robustness win: fix the 4 tool_calling parse-errors (all hit max_iterations=6 without submit_patch) — raise the cap or force submit on the last turn.
-% Evaluate what you want to optimize: invest in functional/build-based correctness so you're not steering on text overlap.
-% Multi-agent is worth measuring, but given the 29\% CWE-match retrieval and the diff-vs-full-function issue, I'd expect retrieval quality (#1) and the diff output format (#2) to move results more than adding agents.
-
-% \subsection{File vs. Method}
-% After investigation, I found that the method graphs were actually degenerated, that is, Joern was not able to understand the code elements 
-% resulting in a graph of a unique node element, containing the whole code and edges that have as source the node, but the other end is null.
-% This behavior could result from the lack of declaration/definition of all elements, making it difficult for Joern to create the graphs.
 
 % Because the dataset also contains the file, we have done a comparison of the performance using the file and the method as input. 
 % \begin{table}[htbp]
@@ -560,6 +531,78 @@ Consequently, even though the agent workflow verifies the correctness of the ret
 %   \end{tabular}
 % \end{table}
 
+% Table 1: Overall Summary
+\begin{table}[t]
+  \centering
+  \caption{Patch generation summary by embedding variant and mode DeepSeek-V4-Flash}
+  \label{tab:patch_analysis_summary_DeepSeek-V4-Flash}
+  \small
+  \begin{tabular}{l r rrrr r r}
+    \toprule
+    & & \multicolumn{3}{c}{Match Rates (\%)} & & & \\
+    \cmidrule(lr){3-5}
+    Embedding / Mode & $N$ & Success & CVE & CWE & Avg. Sim. & Avg. Turns & LLM Valid (\%) \\
+    \midrule
+    CodeBERT Pattern (Single-turn) & 89 & 33.7 & 53.9 & 60.6 & 0.149 & 1.00 & 1.1 \\
+    CodeBERT Pattern (Tool-calling) & 89 & 40.4 & 53.9 & 60.6 & 0.399 & 5.40 & 27.0 \\
+    \addlinespace
+    CodeBERT Seq (Single-turn)     & 89 & 28.1 & 49.4 & 54.0 & 0.115 & 1.00 & 0.0 \\
+    CodeBERT Seq (Tool-calling)    & 89 & 41.6 & 49.4 & 54.0 & 0.390 & 5.55 & 25.8 \\
+    \addlinespace
+    Combined (Single-turn)         & 89 & 33.7 & 16.8 & 23.6 & 0.083 & 1.00 & 0.0 \\
+    Combined (Tool-calling)        & 89 & 46.1 & 16.8 & 23.6 & 0.432 & 5.36 & 6.7 \\
+    \addlinespace
+    Tool-calling (No Retrieval)    & 89 & 42.7 & 53.9 & 60.6 & 0.425 & 5.22 & 21.3 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% Table 2: Breakdown by CWE
+\begin{table}[H]
+  \centering
+  \caption{Patch generation summary by embedding variant and mode, broken down by CWE DeepSeek-V4-Flash}
+  \label{tab:patch_analysis_summary_by_cwe_DeepSeek-V4-Flash}
+  \small
+  \begin{tabular}{l l r r r r r}
+    \toprule
+    Embedding / Mode & CWE & $N$ & Success (\%) & Avg. Turns & Verify Rate (\%) & Violation Rate (\%) \\
+    \midrule
+    \multirow{6}{*}{CodeBERT Pattern} 
+      & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
+      & CWE-20  & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
+      & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
+      & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
+      & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
+      & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
+    \midrule
+    \multirow{6}{*}{CodeBERT Seq} 
+      & CWE-190 & 15 & 13.3 & 6.00 & 80.0 & 6.7 \\
+      & CWE-20  & 15 & 26.7 & 5.73 & 93.3 & 0.0 \\
+      & CWE-362 & 15 & 46.7 & 5.53 & 93.3 & 6.7 \\
+      & CWE-416 & 15 & 46.7 & 5.33 & 86.7 & 13.3 \\
+      & CWE-476 & 14 & 64.3 & 5.21 & 85.7 & 0.0 \\
+      & CWE-787 & 15 & 53.3 & 5.47 & 100.0 & 6.7 \\
+    \midrule
+    \multirow{6}{*}{Combined} 
+      & CWE-190 & 15 & 20.0 & 5.80 & 86.7 & 0.0 \\
+      & CWE-20  & 15 & 33.3 & 5.53 & 100.0 & 0.0 \\
+      & CWE-362 & 15 & 60.0 & 5.07 & 93.3 & 20.0 \\
+      & CWE-416 & 15 & 46.7 & 5.47 & 93.3 & 0.0 \\
+      & CWE-476 & 14 & 64.3 & 5.00 & 100.0 & 0.0 \\
+      & CWE-787 & 15 & 53.3 & 5.27 & 100.0 & 6.7 \\
+    \midrule
+    \multirow{6}{*}{Tool-calling} 
+      & CWE-190 & 15 & 53.3 & 5.40 & 93.3 & 0.0 \\
+      & CWE-20  & 15 & 60.0 & 4.87 & 100.0 & 0.0 \\
+      & CWE-362 & 15 & 33.3 & 5.20 & 100.0 & 0.0 \\
+      & CWE-416 & 15 & 27.3 & 5.64 & 100.0 & 0.0 \\
+      & CWE-476 & 14 & 50.0 & 5.08 & 100.0 & 8.3 \\
+      & CWE-787 & 15 & 46.7 & 5.20 & 100.0 & 0.0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
 \begin{table}[H]
   \centering
   \small
@@ -689,376 +732,6 @@ Strong retrieval directly enables better downstream patch generation, but evalua
 Surface-level string and edit-distance metrics—such as BLEU-4, BERTScore F1, and Hunk F1—often create a false sense of repair quality.
 In contrast, semantically grounded models may show slight drops in surface-level lexical precision, but they successfully resolve up to nearly 57\% of CVEs and 63\% of CWEs by generating functionally correct fixes.
 
-% ------------------
-% TO BE REVIEWED 3552:
-% Because standard LLMs process tokens one at a time without an active kernel tree or compiler to verify structural logic, they often focus on whatever pattern in the diff matches their strongest statistical association, or generate patches that address nearby code patterns rather than the specific race condition.
-% Pattern Matching vs. Semantic Understanding: CVE-2012-3552 is a subtle race condition in inet->opt manipulation during socket corking (ip\_setup\_cork / setsockopt). Fixing it requires adding RCU protection or explicit synchronization around option pointers. Models often default to patching visible, local variable patterns (like missing bounds checks or simple refcount drops) because those simple code smells are far more common in code-fixing training datasets than complex concurrent race conditions.  
-% Other Issues Addressed in Your Patch
-% The remaining hunks in your diff address other unrelated kernel bugs:
-
-% ICMP socket handling (net/ipv4/icmp.c): Adds CPU preemption disabling (get\_cpu() / put\_cpu()) to prevent per-CPU ICMP socket usage races.
-
-% inet\_release socket locking (net/ipv4/af\_inet.c): Wraps sock\_rps\_reset\_flow and socket teardown in lock\_sock(sk) / release\_sock(sk) to prevent race conditions during socket close (CVE-2012-3412).
-
-% TCP SYN cookie handling (net/ipv4/tcp\_ipv4.c): Fixes timestamp option clearing when processing SYN cookies (CVE-2012-2372).
-
-% L2TP IP binding lookup (net/l2tp/l2tp\_ip.c): Adds a duplicate check via \_\_l2tp\_ip\_bind\_lookup before inserting into l2tp\_ip\_bind\_table (CVE-2011-2723).
-
-% New CWE
-% CWE 787
-
-% This patch addresses **CVE-2021-37651**, a vulnerability in TensorFlow's C++ implementation of the `CTCBeamSearchDecoder` operator.
-
-% ### Vulnerability Overview
-
-% * **Vulnerability Type:** Buffer Overflow / Out-of-Bounds Read
-% * **Component:** TensorFlow Lite custom operator for CTC Beam Search Decoding (`ctc_beam_search_decoder.cc`)
-% * **Root Cause:**
-% 1. The code previously did not enforce that `top_paths > 0`, allowing non-positive values to pass through.
-% 2. More critically, the logic assumed that `beam_search.TopPaths(...)` would always populate `log_probs` with exactly `top_paths` entries. If `TopPaths` returned fewer paths than requested (e.g., if fewer valid decoding paths existed than specified by `top_paths`), the subsequent loop over `0` to `top_paths - 1` resulted in an out-of-bounds access on the `log_probs` vector (`log_probs[bp]`).
-
-
-
-% ### What the Patch Fixes
-
-% * **`TF_LITE_ENSURE(context, top_paths > 0);`** ensures the requested number of top paths is strictly positive during node validation (`Prepare`).
-% * **`TF_LITE_ENSURE_EQ(context, log_probs.size(), top_paths);`** checks that `log_probs` was populated with the expected number of paths before reading from it, preventing out-of-bounds reads during execution (`Eval`).
-
-% ### Comparing the Severity
-
-% **CVE-2020-15211** (CVSS 4.8 / Medium) is a core architecture issue in TensorFlow Lite related to handling optional tensor index `-1` in flatbuffers, which could lead to heap out-of-bounds reads and writes across various operators.
-
-% The patch provided in your diff (**CVE-2021-37651** / CVSS ~5.5–7.5 Range) fixes an operator-specific dynamic out-of-bounds array access in `CTCBeamSearchDecoder`.
-
-% * **CVE-2020-15211** represents a wider systemic model-loader bug, but it typically yields constrained OOB offsets (reading/writing near array boundaries relative to index `-1`).
-% * **CVE-2021-37651** can result in direct out-of-bounds heap memory access during model execution when `TopPaths` returns fewer valid decoding paths than `top_paths`, potentially leading to a process crash (DoS) or unexpected data leakage.
-
-% Depending on security priority metrics:
-
-% * **Impact Scope:** **CVE-2020-15211** is broader because it affects TFLite model parsing and graph execution centrally.
-% * **Exploitability & Arbitrary Offset:** **CVE-2021-37651** can be triggered easily with valid model inputs during `Eval()` by supplying an edge-case sequence that yields empty/fewer beam paths than `top_paths`.
-
-% ---
-
-% ### Why the Confusion or Intended Target Occurred
-
-% Here are three hypotheses explaining why this patch might have been intended for CVE-2020-15211 but actually resolves CVE-2021-37651:
-
-% 1. **Mass Security Remediation Sweeps:**
-% During 2020 and 2021, the TensorFlow team conducted large audit sweeps across all TFLite custom C++ operators to enforce input validation (`TF_LITE_ENSURE`). Security teams working through batch vulnerability lists often grouped tensor boundary issues together, leading to mix-ups in advisory IDs or issue tracker tags.
-% 2. **Upstream Advisory Misattribution / Duplicate Reports:**
-% Security researchers frequently submit multiple POCs for related edge cases. A report targeting `CTCBeamSearchDecoder` might have been initially logged under the tracking ticket or advisory umbrella for TFLite memory corruption (such as CVE-2020-15211) before being assigned its own specific CVE identifier (CVE-2021-37651) upon patch release.
-% 3. **Incomplete Early Fixes:**
-% CVE-2020-15211 addressed `-1` optional tensor index checks during flatbuffer verification. While reviewing `CTCBeamSearchDecoder` for improper tensor indices during the CVE-2020-15211 audit, engineers likely spotted the unvalidated `top_paths` and runtime `log_probs` size mismatch in the same function, patching both around the same refactoring timeline.
-
-% What CVE-2012-3552 Is
-% CVE-2012-3552 is a race condition / use-after-free vulnerability in the Linux kernel's IPv4 stack (ip_options_get). When processing IP options, orefdst (a reference to the destination route) was dropped unconditionally via refdst_drop(orefdst). If skb_dst(skb) still pointed to &rt->dst, dropping orefdst decreased the reference count prematurely, leading to a double-free or use-after-free condition.
-
-% How the Fix in Your Diff Resolves It
-% The first hunk in your snippet addresses this exact issue:
-
-% Diff
-%  		if (err || (rt2->rt_type != RTN_UNICAST && rt2->rt_type != RTN_LOCAL)) {
-%  			skb_dst_drop(skb);
-%  			skb->_skb_refdst = orefdst;
-%  			return -EINVAL;
-%  		}
-% -		refdst_drop(orefdst);
-% +		if (skb_dst(skb) != &rt->dst)
-% +			refdst_drop(orefdst);
-%  		if (rt2->rt_type != RTN_LOCAL)
-%  			break;
-% By adding the check if (skb_dst(skb) != &rt->dst), the kernel only drops orefdst if the destination routing object has actually changed, preventing the reference count underflow and eliminating the CVE-2012-3552 vulnerability.
-
-
-% ## LLM analysis of the patches. 
-% https://github.com/tensorflow/tensorflow/commit/fff2c8326280c07733828f990548979bdc893859 CVE 2020 15211
-% #89
-% [tflite]: Insert nullptr checks when obtaining tensors.
-% As part of ongoing refactoring, `tflite::GetInput`, `tflite::GetOutput`, `tflite::GetTemporary` and `tflite::GetIntermediates` will return `nullptr` in some cases. Hence, we insert the `nullptr` checks on all usages.
-
-% We also insert `nullptr` checks on usages of `tflite::GetVariableInput` and `tflite::GetOptionalInputTensor` but only in the cases where there is no obvious check that `nullptr` is acceptable (that is, we only insert the check for the output of these two functions if the tensor is accessed as if it is always not `nullptr`).
-
-% #87
-% You are correct that this is a completely different bug from the previous operator runtime issues. This code fixes **CVE-2021-37678** (also identified as **GHSA-9c86-h4fx-7634** in GitHub Security Advisories).
-
-% ---
-
-% ### What This Code Fixes
-
-% This patch fixes a **Heap-based Buffer Overflow / Off-by-One Write** in the TensorFlow Lite C++ `ModelBuilder` utility (specifically in files like `tensorflow/lite/testing/model_builder.cc` or related model creation helpers).
-
-% There were two distinct vulnerabilities fixed in this patch:
-
-% 1. **Off-by-One Array Boundary Bug (`<=` vs `<`):**
-% * **Before:** `TFLITE_DCHECK(next_operator_id_ <= kMaxOperators)` allowed `next_operator_id_` to equal `kMaxOperators`.
-% * **Impact:** Since arrays are zero-indexed, an array declared with size `kMaxOperators` has valid indices from `0` to `kMaxOperators - 1`. Allowing `next_operator_id_ == kMaxOperators` meant `operators_[next_operator_id_]` would write directly past the end of the pre-allocated fixed-size array on the heap.
-
-
-% 2. **Missing Production Runtime Check:**
-% * `TFLITE_DCHECK` is an assert macro that is **disabled in release builds** (`-DNDEBUG`).
-% * Even if the check failed, release builds skipped it and proceeded to perform the out-of-bounds write.
-% * **Fix:** The patch added explicit `if (...) { return -1; }` bounds checks that execute regardless of build configuration.
-
-
-
-% ---
-
-% ### Key Takeaway on the History
-
-% | Patch Snippet | Identified CVE | Bug Type | Location |
-% | --- | --- | --- | --- |
-% | **Snippet 1** (`CTCBeamSearchDecoder`) | **CVE-2021-37651** | Null Pointer / OOB Read | `ctc_beam_search_decoder.cc` |
-% | **Snippet 2** (`t->bytes / sizeof(float)`) | **CVE-2020-15211** | OOB Write (Operator) | TFLite Custom Operator runtime |
-% | **Snippet 3** (`ModelBuilder` limits) | **CVE-2021-37678** | Off-by-One Heap OOB Write | `model_builder.cc` testing infra |
-
-% #86
-% This specific patch directly addresses **CVE-2021-37651** (also tracked as **GHSA-4m6v-89g8-x27h**).
-
-% ### Vulnerability Context & Impact
-
-% * **Bug Type:** Heap Out-of-Bounds Read / Denial of Service
-% * **Affected Component:** TensorFlow Lite `CTCBeamSearchDecoder` custom operator (`tensorflow/lite/kernels/ctc_beam_search_decoder.cc`)
-% * **Root Cause:**
-% The operator failed to validate model execution parameters during the `Prepare` phase. Specifically, if a model passed a non-positive or invalid parameter (`top_paths <= 0` or `beam_width <= 0`), or if `beam_width` was configured improperly relative to `top_paths`, it would cause downstream memory safety failures or undefined behavior during execution.
-
-% ### What the Patch Does
-
-% 1. **`TF_LITE_ENSURE(context, top_paths > 0);`** verifies that the user requested at least one output beam path.
-% 2. **`TF_LITE_ENSURE(context, option->beam_width > 0);`** prevents non-positive beam widths (which previously caused divide-by-zero, invalid allocations, or bad matrix indexing in the underlying beam search solver).
-% 3. **`TF_LITE_ENSURE(context, option->beam_width >= top_paths);`** ensures the search space is at least as large as the requested top results.
-
-% By failing early in `Prepare()`, this patch prevents malicious or malformed TFLite models from triggering out-of-bounds array reads during `Eval()`.
-
-% #85
-% This patch is part of **CVE-2021-29532** (also tracked under **GHSA-j84v-3g32-hp4p**).
-
-% ### What This Patch Fixes
-
-% * **Bug Type:** Null Pointer Dereference / Denial of Service
-% * **Mechanism:** Replacing raw `GetInput(...)` and `GetOutput(...)` calls with `GetInputSafe(...)` and `GetOutputSafe(...)`, along with `TF_LITE_ENSURE_OK(...)` error handling.
-
-% ### Details & Vulnerability Mechanism
-
-% In TensorFlow Lite, `GetInput` and `GetOutput` return a `nullptr` if the requested input or output tensor index is invalid, out-of-bounds, or optional and unset (such as an index of `-1`).
-
-% Prior to this fix, functions like `NumElements(input)` or field accesses like `input->type` would immediately attempt to dereference `input` without checking if it was `nullptr`. Passing a specially crafted TFLite model with missing/unset inputs or outputs caused a **null pointer dereference**, crashing the runtime process.
-
-% Using `GetInputSafe` ensures that if a tensor cannot be safely retrieved, the node preparation or evaluation fails gracefully with a `TfLiteError` status rather than causing a fatal segmentation fault.
-
-% #84
-% This patch is part of **CVE-2021-29532** (GHSA-j84v-3g32-hp4p).
-
-% ### What This Patch Fixes
-
-% * **Bug Type:** Null Pointer Dereference / Denial of Service
-% * **Affected Component:** TensorFlow Lite Test / Custom Kernel Implementations (such as test kernel fixtures and stub operators in `tensorflow/lite/kernels/`)
-
-% ### Mechanism & Context
-
-% Just like the previous snippet, this diff fixes direct calls to `GetInput(...)` and `GetOutput(...)` inside operator execution lambdas (`reg.invoke`):
-
-% * **Before:** `GetInput` and `GetOutput` return `nullptr` if a tensor index is invalid, out of bounds, or missing. The code immediately accessed `a0->dims->data[0]` or `a1->data.f[i]` without checking for `nullptr`.
-% * **After:** Replacing raw getters with `GetInputSafe` and `GetOutputSafe` guarantees that if a tensor cannot be fetched, execution returns `kTfLiteError` immediately instead of crashing the process via a segmentation fault.
-
-% This refactoring was part of a major security effort across TensorFlow Lite in mid-2021 to systematically audit and eliminate null-pointer dereferences in model execution loops.
-
-% #83
-% Not quite—this is a **partial version** of the patch we looked at earlier.
-
-% ### Key Difference
-
-% * **Earlier Patch:** Included both the off-by-one fix in `TFLITE_DCHECK` **and** the explicit `if (...) { return -1; }` production runtime checks.
-% * **This Patch:** Only fixes the off-by-one boundary check inside `TFLITE_DCHECK` (`<=` to `<`). It does **not** include the runtime checks.
-
-% ---
-
-% ### Security Context & Related CVE
-
-% Because `TFLITE_DCHECK` compiles away to a no-op in production (`-DNDEBUG`) builds, this partial diff alone **did not completely fix the security issue** in release models.
-
-% This initial change was introduced as part of the effort to fix **CVE-2021-37678** (off-by-one heap write in `ModelBuilder`), but because debug assertions don't protect release binaries, it was quickly followed up by adding the explicit runtime guard checks (`if (next_operator_id_ >= kMaxOperators) return -1;`) that we saw in the previous snippet.
-
-% #82
-
-% This patch addresses **CVE-2021-37671** (also tracked under **GHSA-374m-3m3v-648v**).
-
-% ### Vulnerability & Root Cause
-
-% * **Bug Type:** Stack-based Buffer Overflow / Out-of-Bounds Write
-% * **Affected Component:** TensorFlow Lite Micro `Concatenation` operator implementation (`tensorflow/lite/micro/kernels/concatenation.cc`)
-% * **Root Cause:**
-% The operator allocated fixed-size stack arrays to store input shapes and pointers:
-% ```cpp
-% RuntimeShape inputs_shape[kMaxInputNum];
-% const RuntimeShape* inputs_shape_ptr[kMaxInputNum];
-% const data_type* inputs_data[kMaxInputNum];
-
-% ```
-
-
-% However, it failed to validate that `NumInputs(node)` (or `node->inputs->size`) was less than or equal to `kMaxInputNum`. If a model passed more input tensors than `kMaxInputNum` to the `Concatenation` node, execution resulted in a **stack-based buffer overflow**.
-
-% ---
-
-% ### What the Patch Fixes
-
-% 1. **Input Bounds Enforcement:** Added `TF_LITE_ENSURE(context, num_inputs <= kMaxInputNum);` to reject models attempting to concatenate more tensors than the allocated array size can safely hold.
-% 2. **Propagating Execution Status:** Changed `EvalUnquantized` and `EvalQuantizedUInt8` from `void` functions to return `TfLiteStatus`, ensuring that when the check fails, the error status bubbles back up to the caller via `TF_LITE_ENSURE_OK` rather than continuing execution with corrupted stack memory.       
-% #81 
-% This patch is part of **CVE-2021-29532** (GHSA-j84v-3g32-hp4p).
-
-% ### What This Patch Fixes
-
-% * **Bug Type:** Null Pointer Dereference / Denial of Service
-% * **Affected Component:** TensorFlow Lite `HashtableFind` custom operator (`hashtable_find.cc` / hashtable lookup operations)
-
-% ### Details & Mechanism
-
-% Prior to this fix, `PrepareHashtableFind` and `EvalHashtableFind` called raw `GetInput(...)` and `GetOutput(...)` functions:
-
-% * If an input or output tensor index was invalid, out of bounds, or unset (e.g., index `-1`), `GetInput` returned `nullptr`.
-% * The code immediately attempted to access properties like `input_resource_id_tensor->type` or `input_resource_id_tensor->data.i32[0]` without checking for `nullptr`, causing a **null pointer dereference** and crashing the execution process.
-
-% By replacing raw calls with `GetInputSafe` / `GetOutputSafe` and wrapping them with `TF_LITE_ENSURE_OK`, the operator returns a controlled error status instead of triggering a fatal segmentation fault.
-
-% #80
-% This patch addresses **CVE-2021-37637** (also tracked as **GHSA-377c-M3X5-4389**).
-
-% ### Vulnerability & Root Cause
-
-% * **Bug Type:** Heap Out-of-Bounds Read / Out-of-Bounds Write
-% * **Affected Component:** TensorFlow Lite Micro `Relu6` / `Relu` activation operator (`tensorflow/lite/micro/kernels/activations.cc`)
-% * **Root Cause:**
-% The original implementation calculated loop bounds using only the input tensor's raw byte count:
-% ```cpp
-% size_t elements = input->bytes / sizeof(float);
-
-% ```
-
-
-% This approach failed to account for potential shape mismatch or buffer size discrepancies between the `input` and `output` tensors. If a model was crafted with an `output` tensor smaller than the `input` tensor (or vice versa), the raw pointer increment `for (; in < in_end; in++, out++) *out = ...` would read or write past the allocated boundaries of the `output` buffer.
-
-% ---
-
-% ### What the Patch Fixes
-
-% 1. **Shape Alignment Validation:** Uses `MatchingFlatSize(GetTensorShape(input), GetTensorShape(output))` to compute the common flat dimensions shared by both tensors. `MatchingFlatSize` enforces in debug builds (or returns a validated flat element count) that the shape dimensions match.
-% 2. **Indexed Access:** Switched from unbounded pointer arithmetic (`in++`, `out++`) to array index lookup bounded by `flat_size`:
-% ```cpp
-% for (int i = 0; i < flat_size; ++i) {
-%   out[i] = std::min(std::max(0.f, in[i]), 6.f);
-% }
-
-% ```
-
-
-% This prevents writes from overshooting the output buffer if input and output buffer sizes differ.
-
-% #79
-% This patch addresses **CVE-2021-37675** (also tracked as **GHSA-p29c-36pm-vjpf**).
-
-% ### Vulnerability Context & Impact
-
-% * **Bug Type:** Division by Zero, Negative Array Dimension Allocation, Integer Overflow
-% * **Affected Component:** TensorFlow Lite `AudioSpectrogram` custom operator (`tensorflow/lite/kernels/internal/reference/audio_spectrogram.cc` or `audio_spectrogram.cc`)
-% * **Root Cause:**
-% 1. If `params->stride` or `params->window_size` were non-positive (e.g., `stride <= 0`), calculating `params->output_height` resulted in a **division-by-zero crash**.
-% 2. The code lacked non-negative checks on input dimension bounds (`sample_count`, `channel_count`, `output_height`, `output_frequency_channels`). Negative values could trigger invalid heap allocations (such as `std::vector` negative size allocation exceptions) or pointer arithmetic underflows during channel slice offsetting (`channel * output_height * output_width`).
-% 3. Loop counters `i` were 32-bit signed `int`, while indexing offsets were computed from 64-bit `int64_t` variables (`sample_count`, `output_width`), creating potential **integer truncation/overflow** bugs on large audio inputs.
-
-
-
-% ---
-
-% ### What the Patch Fixes
-
-% 1. **Division-by-Zero Protection:**
-% `TF_LITE_ENSURE(context, params->stride > 0);` and `TF_LITE_ENSURE(context, params->window_size > 0);` prevent zero-division when computing output frame height.
-% 2. **Dimension Boundary Validation:**
-% Explicitly checks that input dimensions and output channel attributes are non-negative (`sample_count >= 0`, `channel_count >= 0`, `output_height >= 0`, `output_frequency_channels() >= 0`).
-% 3. **Integer Type Consistency:**
-% Promoted loop control variables from `int` to `int64_t` (`for (int64_t i = 0; ...)`), matching the 64-bit dimension variables to prevent integer wrapping during memory reads and writes.
-
-% #78
-% This patch is part of **CVE-2021-29532** (also tracked as **GHSA-j84v-3g32-hp4p**).
-
-% ### Vulnerability Context & Impact
-
-% * **Bug Type:** Null Pointer Dereference / Denial of Service
-% * **Affected Component:** TensorFlow Lite `BidirectionalSequenceRNN` operator (`tensorflow/lite/kernels/bidirectional_sequence_rnn.cc`)
-% * **Root Cause:**
-% The operator takes numerous required inputs (forward/backward weights, biases, hidden states, outputs). Previously, it retrieved tensors using raw `GetInput(...)`, `GetVariableInput(...)`, and `GetOutput(...)` calls.
-% If a crafted model supplied an out-of-bounds tensor index or omitted any required input tensor, these functions returned `nullptr`. The operator subsequently dereferenced these pointers during sequence processing, causing a fatal process crash via segmentation fault.
-
-% ---
-
-% ### What the Patch Fixes
-
-% 1. **Safe Input Retrieval:** Replaces raw input getters with `GetInputSafe(...)` and `GetVariableInputSafe(...)`, returning `kTfLiteError` if any tensor cannot be retrieved.
-% 2. **Safe Output Retrieval:** Uses `GetOutputSafe(...)` and refactors optional backward output retrieval so that `GetOutputSafe` is only called when `params->merge_outputs` is false, ensuring `bw_output` is checked safely.
-% #77
-% This patch is also part of **CVE-2021-29532** (GHSA-j84v-3g32-hp4p).
-
-% ### What This Patch Fixes
-
-% * **Bug Type:** Null Pointer Dereference / Denial of Service
-% * **Affected Component:** TensorFlow Lite Test Kernels & Mock Operators (e.g., `SimpleStatefulOp`, `MockCustom` in kernel test suites)
-
-% ### Details & Mechanism
-
-% Like the previous examples from this CVE family, the patch replaces direct, unsafe helper calls (`GetInput`, `GetOutput`) with safe variants (`GetInputSafe`, `GetOutputSafe`).
-
-% Before this change:
-
-% * If a test model or custom node omitted expected input/output tensors, `GetInput` / `GetOutput` returned `nullptr`.
-% * Functions like `SimpleStatefulOp::Invoke` and `MockCustom::Invoke` immediately dereferenced these returned pointers (e.g., `input->type`, `input->dims`, or `input->data.i32`) without checking for `nullptr`.
-% * This resulted in a **null pointer dereference** causing a crash (segmentation fault).
-
-% Using `GetInputSafe` wrapped in `TF_LITE_ENSURE_OK` forces the runtime to exit the kernel execution safely with a `TfLiteError` instead of crashing.
-
-% #76
-% This patch is also part of **CVE-2021-29532** (GHSA-j84v-3g32-hp4p).
-
-% ### What This Patch Fixes
-
-% * **Bug Type:** Null Pointer Dereference / Denial of Service
-% * **Affected Component:** TensorFlow Lite Test Kernels / Sample Evaluation Handlers (`SimpleOpEval`)
-
-% ### Details & Mechanism
-
-% Prior to this patch, `SimpleOpEval` fetched input and output tensors using raw `GetInput(...)` and `GetOutput(...)` calls:
-
-% * **Before:** If index `0` or `1` was missing, invalid, or out of bounds, `GetInput`/`GetOutput` returned `nullptr`. The operator then immediately dereferenced these pointers on lines like `*(input1->data.i32)` and `*output_data = ...`, causing a segmentation fault.
-% * **After:** Switching to `GetInputSafe` and `GetOutputSafe` wrapped with `TF_LITE_ENSURE_OK` guarantees that any missing or invalid tensor causes early termination with `kTfLiteError` instead of crashing the process.
-
-% #75
-% This patch addresses **CVE-2021-37673** (also tracked under **GHSA-79j2-m83p-8p2f**).
-
-% ### Vulnerability Context & Impact
-
-% * **Bug Type:** Heap Out-of-Bounds Read / Out-of-Bounds Write / Process Crash
-% * **Affected Component:** TensorFlow Lite `Mfwcc` (Mel-Frequency Cepstral Coefficients) and `AudioFrontend` custom signal processing operators (`tensorflow/lite/kernels/internal/reference/mfwcc.cc` or related audio frontend execution code)
-% * **Root Cause:**
-% 1. **Fixed Allocation Mismatch:** The code initially pre-allocated `num_frames` outer vectors (`std::vector<std::vector<T>> frame_buffer(num_frames)`). However, `num_frames` was an estimated upper bound. If fewer frames were generated than `num_frames`, accessing `frame_buffer[frame_index]` relying on default vector construction caused memory errors or indexing confusion.
-% 2. **Unbounded Output Buffer Write:** The inner loop copied processed filterbank values directly into `filterbanks_flat[index++]` without verifying if `index` had exceeded the total allocated buffer length (`output_size`). If a crafted audio payload produced more spectrographic features than expected for the output tensor, execution resulted in a **heap out-of-bounds write**.
-
-
-
-% ---
-
-% ### What the Patch Fixes
-
-% 1. **Dynamic Vector Growth:** Replaces fixed-size vector default initialization with `reserve(num_frames)` and explicit `emplace_back()` calls as valid frames arrive, ensuring `frame_buffer` contains only valid data.
-% 2. **Output Bounds Guard:** Adds an explicit bounds check before writing to the flattened output tensor buffer:
-% ```cpp
-% if (index >= output_size) {
-%   return;
-% }
-% filterbanks_flat[index++] = f;
-
-% ```
-% This strictly caps the write loop at `output_size` elements, preventing heap memory corruption during model execution.
 
 For CVE-2020-15211 (CWE-787), the Semantic \& Structure pipeline retrieved a CVE-2020-35538 (CWE-476) snippet; therefore, a mismatch. On top of that, the GPT-5.3 model generated a patch addressing another CVE, namely CVE-2021-37637, a shape-alignment validation issue. The patch used \texttt{MatchingFlatSize(GetTensorShape(input)} and \texttt{GetTensorShape(output))} to compute the common flat dimensions shared by both tensors, enforcing a dimension match in both production and debug modes. The patch also switched from unbounded pointer arithmetic (\texttt{in++}, \texttt{out++}) to array index lookup bounded by \texttt{flat\_size}:
 
@@ -1105,110 +778,46 @@ Semantic vector alignment suffers a similar degradation.
 This performance drop is likely due to C++'s complex abstractions, object-oriented constructs, Resource Acquisition Is Initialization (RAII) patterns, and standard library templates usage.
 These features lead to the production of fragmented diff hunks compared to idiomatic, procedural C code, making automated patching more challenging. %TODO add reference showing that fragmented hunking task is harder
 This is a structural limitation that needs further investigation. 
-
-% \begin{table}[H]
-%   \centering
-%   \caption{Generation cost summary by run}
-%   \label{tab:generation_cost_summary_by_run}
-%   \begin{tabular}{llrrrrrrr}
-%     \toprule
-%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
-%     \midrule
-%     codebert\_pattern / tool\_calling& gpt-5.3-codex & 89 & 3728553 & 91794 & 3820347 & \$7.8101 & \$0.087754 \\
-%     codebert\_pattern / tool\_calling& gpt-5.3-codex & 89 & 3268884 & 87212 & 3356096 & \$6.9415 & \$0.077995 \\
-%     codebert\_seq / tool\_calling & gpt-5.3-codex & 89 & 4228325 & 99957 & 4328282 & \$8.7990 & \$0.098865 \\
-%     codebert\_seq / tool\_calling & gpt-4o & 89 & 6026143 & 95784 & 6121927 & \$24.0348 & \$0.270054 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-% \begin{table}[H]
-%   \centering
-%   \caption{Generation cost summary by run}
-%   \label{tab:generation_cost_summary_by_run}
-%   \begin{tabular}{llrrrrrrr}
-%     \toprule
-%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
-%     \midrule
-%     model baseline & gpt-4o & 82 & 872501 & 72631 & 945132 & \$4.3613 & \$0.053187 \\
-%      tool\_calling\_no\_retrieval & gpt-4o & 82 & 4566188 & 83311 & 4649499 & \$18.3729 & \$0.224059 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-% \begin{table}[H]
-%   \centering
-%   \caption{Generation cost summary by run}
-%   \label{tab:generation_cost_summary_by_run}
-%   \begin{tabular}{llrrrrrrr}
-%     \toprule
-%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
-%     \midrule
-%     codex\_baseline & DeepSeek-V4-Flash & 89 & 1123266 & 98096 & 1221362 & \$0.2635 & \$0.002960 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-% \begin{table}[H]
-%   \centering
-%   \caption{Generation cost summary by run}
-%   \label{tab:generation_cost_summary_by_run}
-%   \begin{tabular}{llrrrrrrr}
-%     \toprule
-%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
-%     \midrule
-%     codex\_baseline & DeepSeek-V4-Flash & 89 & 1123266 & 98096 & 1221362 & \$0.2635 & \$0.002960 \\
-%     codebert\_pattern / single\_turn & DeepSeek-V4-Flash & 89 & 3390339 & 300208 & 3690547 & \$0.7973 & \$0.008958 \\
-%     codebert\_pattern / tool\_calling & DeepSeek-V4-Flash & 89 & 8412003 & 724886 & 9136889 & \$1.9680 & \$0.022112 \\
-%     codebert\_seq / tool\_calling & DeepSeek-V4-Flash & 89 & 9183403 & 762795 & 9946198 & \$2.1339 & \$0.023976 \\
-%     combined / single\_turn  & DeepSeek-V4-Flash & 89 & 3998683 & 324862 & 4323545 & \$0.9254 & \$0.010398 \\
-%     combined / tool\_calling & DeepSeek-V4-Flash & 89 & 8840671 & 660618 & 9501289 & \$2.0166 & \$0.022659 \\
-
-%     tool\_calling\_no\_retrieval & DeepSeek-V4-Flash & 89 & 7951770 & 726503 & 8678273 & \$1.8814 & \$0.021139 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}\begin{table}[H]
-%   \centering
-%   \caption{GPT-5.3-Codex: Generation cost summary by run}
-%   \label{tab:generation_cost_summary_by_run}
-%   \begin{tabular}{llrrrrrrr}
-%     \toprule
-%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & Cost (USD) & Avg Cost/Entry (USD) \\
-%     \midrule
-%     codebert\_pattern / tool\_calling & gpt-5.3-codex & 75 & 377422 & 50856 & 428278 & \$1.3725 & \$0.018300 \\
-%     % codebert\_pattern / tool\_calling / & gpt-4o & 20 & 140323 & 10423 & 150746 & \$0.6826 & \$0.034128 \\
-%     codebert\_seq / tool\_calling & gpt-5.3-codex & 75 & 397471 & 54562 & 452033 & \$1.4594 & \$0.019459 \\
-%     combined / tool\_calling & gpt-5.3-codex & 75 & 398051 & 55285 & 453336 & \$1.4706 & \$0.019608 \\
-%     % single\_turn\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 3699287 & 341326 & 4040613 & \$0.8769 & \$0.009853 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
 \begin{table}[H]
   \centering
   \caption{Condensed Generation Cost Summary Across All Experiments}
   \label{tab:generation_cost_summary_condensed}
   \begin{tabular}{llrrrrrr}
     \toprule
-    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg Cost/Entry\\(USD)} \\
+Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
     \midrule
     Sem.+Struc - Tool & codex & 89 & 3.7M & 91.8K & 3.8M & \$7.81 & \$0.088 \\
     % codebert\_pattern / tool\_calling & gpt-5.3-codex & 89 & 3.3M & 87.2K & 3.4M & \$6.94 & \$0.078 \\
     Semantic - Tool & codex & 89 & 4.2M & 100.0K & 4.3M & \$8.80 & \$0.099 \\
+    Topology -Tool & codex & 89 & 4M & 107K & 4.1M & \$8.44 & \$0.095 \\
+    Model baseline & codex & 89 & 1.1M & 65K & 1.2M & \$2.88 & \$0.0324 \\
+    Tool w/o retrieval & codex & 89 & 2.6M & 59K & 2.7M & \$5.34 & \$0.061 \\
     \midrule
-    Sem.+Struc - Tool & gpt-4o & 89 & 6.0M & 95.8K & 6.1M & \$24.03 & \$0.270 \\
-    Model baseline & gpt-4o & 82 & 872.5K & 72.6K & 945.1K & \$4.36 & \$0.053 \\
-    Tool w/o retrieval & gpt-4o & 82 & 4.6M & 83.3K & 4.6M & \$18.37 & \$0.224 \\
+    Sem.+Struc - Tool & GPT-4o & 89 & 6.0M & 95.8K & 6.1M & \$24.03 & \$0.270 \\
+    Semantic - Tool & GPT-4o & 89 & 6M & 70K & 6M & \$23.35 & \$0.262 \\
+    Topology - Tool & GPT-4o & 89 & 6.3M & 84.5K & 6.3M & \$24.74 & \$0.278 \\
+    Model baseline & GPT-4o & 82 & 872.5K & 72.6K & 945.1K & \$4.36 & \$0.053 \\
+    Tool w/o retrieval & GPT-4o & 82 & 4.6M & 83.3K & 4.6M & \$18.37 & \$0.224 \\
     \midrule
-    Model baseline & DeepSeek & 89 & 1.1M & 98.1K & 1.2M & \$0.26 & \$0.003 \\
-    Sem.+Struc - prompt & DeepSeek & 89 & 3.4M & 300.2K & 3.7M & \$0.80 & \$0.009 \\
+    % Sem.+Struc - prompt & DeepSeek & 89 & 3.4M & 300.2K & 3.7M & \$0.80 & \$0.009 \\
     Sem.+Struc - Tool & DeepSeek & 89 & 8.4M & 724.9K & 9.1M & \$1.97 & \$0.022 \\
     Semantic - Tool & DeepSeek & 89 & 9.2M & 762.8K & 9.9M & \$2.13 & \$0.024 \\
-    Topology - prompt & DeepSeek & 89 & 4.0M & 324.9K & 4.3M & \$0.93 & \$0.010 \\
+    % Topology - prompt & DeepSeek & 89 & 4.0M & 324.9K & 4.3M & \$0.93 & \$0.010 \\
     Topology - Tool & DeepSeek & 89 & 8.8M & 660.6K & 9.5M & \$2.02 & \$0.023 \\
+    Model baseline & DeepSeek & 89 & 1.1M & 98.1K & 1.2M & \$0.26 & \$0.003 \\
     Tool w/o retrieval & DeepSeek & 89 & 8.0M & 726.5K & 8.7M & \$1.88 & \$0.021 \\
+    % single\_turn\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 3699287 & 341326 & 4040613 & \$0.8769 & \$0.009853 \\
     \bottomrule
   \end{tabular}
 \end{table}
+
+ % codebert\_pattern / single\_turn / 20260814\_143902\_patching\_34c2b8 / single\_turn\_\_default\_\_precomputed\_\_gpt-4o & gpt-4o & 89 & 3359797 & 115836 & 3475633 & \$14.3368 & \$0.161087 \\\
+ %    codebert\_pattern / tool\_calling / 20260814\_133226\_patching\_ce42e0 / tool\_calling\_\_default\_\_precomputed\_\_gpt-4o & gpt-4o & 89 & 5567670 & 54586 & 5622256 & \$21.6976 & \$0.243793 \\\
+ %    codebert\_seq / single\_turn / 20260814\_201651\_patching\_fc8dab / single\_turn\_\_default\_\_precomputed\_\_gpt-4o & gpt-4o & 89 & 3359797 & 110660 & 3470457 & \$14.2591 & \$0.160215 \\\
+    
+ %    combined / single\_turn / 20260815\_002540\_patching\_c53269 / single\_turn\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 3998683 & 320341 & 4319024 & \$0.9231 & \$0.010372 \\\
+ %    combined / tool\_calling / 20260814\_210430\_patching\_e785e2 / tool\_calling\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 8759373 & 725275 & 9484648 & \$2.0342 & \$0.022856 \\\
+
 
 \subsection{Patch Powered by GPT-4o}
 
@@ -1223,96 +832,127 @@ GPT-4o presents competitive performance when considering tool calling and CodeBE
 Prompt-only performs badly regardless of the model. This suggests that Complex code repair strictly requires iterative tool use. The Topological Structure low performance here indicates that the GPT-5.3-Codex recovers from the retrieval errors, whereas with GPT-4o, despite the available tools, it actually hurts the performance
 
 Overall, the underlying patterns of the task remain identical. For simplicity, one should prioritize Tool Calling w/o retrieval and avoid Patching with prompting without tools. Might also watch for failures for specific vulnerabilities, such as CWE-787, that break hunk alignment. If going for a less powerful model than GPT-5.3-Codex, as exemplified by GPT-4o, one might expect some drop in performance.
-
-% #88
-% Yes, this snippet directly addresses an **out-of-bounds write / buffer overflow** and is part of **CVE-2020-15211**.
-
-% ### What This Specific Snippet Fixes
-
-% Before the patch, the code relied entirely on the first dimension of the input tensor (`a0->dims->data[0]`) to determine how many elements to write into destination tensor `t`:
-
-% ```cpp
-% int num = a0->dims->data[0];
-
-% ```
-
-% If `a0` specified a length (`num_input`) greater than the actual memory allocated for destination tensor `t`, the `for` loop would keep writing float values past `t`'s allocated buffer (`t->data.f[i]`), resulting in a **heap out-of-bounds write**.
-
-% The patch fixes this by calculating the actual capacity of the destination buffer and bounding the loop:
-
-% ```cpp
-% const int num_input = a0->dims->data[0];
-% const int num_tensor = t->bytes / sizeof(float);
-% const int num = num_input < num_tensor ? num_input : num_tensor;
-
-% ```
-
-% ---
-
-% ### How It Connects to CVE-2020-15211
-
-% **CVE-2020-15211** covers a broad range of memory safety bugs in TensorFlow Lite models where custom or built-in operators wrote or read out-of-bounds due to **unvalidated tensor sizes and index boundaries** during execution.
-
-% This patch fits directly under that advisory because:
-
-% * It addresses an unsafe assumption about matching tensor sizes across custom operator execution logic.
-% * CVE-2020-15211 served as an umbrella advisory covering dozens of similar operator-level tensor buffer validation fixes in TFLite.
 \begin{table}[H]
   \centering
   \small
-  \caption{Comparison of Performance Across Methods by CVEFixes CWE Category GPT-4o.}
+  \caption{Comparison of Performance Across Methods by CVEFixes CWE Category (GPT-4o Baseline Updated).}
   \label{tab:cwe_comparison_gpt4o}
   \begin{tabular}{llccc}
     \toprule
     \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
     \midrule
-    \multirow{4}{*}{\textbf{CWE-190}} 
-      & GPT-4o Baseline  & 0.1034 $\pm$ 0.1087 & 0.3536 & 0.1735 $\pm$ 0.2896 \\
+    \multirow{5}{*}{\textbf{CWE-190}} 
+      & GPT-4o Baseline  & 0.1034 $\pm$ 0.1087$^{\mathparagraph}$ & 0.3724 $\pm$ 0.2467$^*$ & 0.1735 $\pm$ 0.2896$^*$ \\
       & Tool Calling (w/o Retrieval) & 0.6092 $\pm$ 0.3786 & 0.6947 $\pm$ 0.3308 & 0.4967 $\pm$ 0.5236 \\
-      & CodeBERT\_seq & 0.6378 $\pm$ 0.4127 & 0.6426 & 0.6155 $\pm$ 0.4919 \\
-      & Topological Structure (Tool Calling) & 0.4245 $\pm$ 0.3801$^*$ & 0.5518 & 0.4834 $\pm$ 0.4658$^*$ \\
+      & CodeBERT\_seq & 0.6378 $\pm$ 0.4127 & 0.7166 $\pm$ 0.3542 & 0.6155 $\pm$ 0.4919 \\
+      & CodeBERT\_pattern & \chit{0.6852 $\pm$ 0.4046$^*$} & \chit{0.7632 $\pm$ 0.3502$^*$} & \chit{0.6811 $\pm$ 0.4589$^*$} \\
+      & Topological Structure (Tool Calling) & 0.4245 $\pm$ 0.3801$^*$ & 0.5518 $\pm$ 0.3613$^*$ & 0.4834 $\pm$ 0.4658$^*$ \\
     \midrule
-    \multirow{4}{*}{\textbf{CWE-20}} 
-      & GPT-4o Baseline  & 0.4341 $\pm$ 0.2887 & 0.3058 & 0.1306 $\pm$ 0.2164 \\
-      & Tool Calling (w/o Retrieval) & 0.9375 $\pm$ 0.0613 & 0.8586 $\pm$ 0.1236 & 0.9135 $\pm$ 0.0774 \\
-      & CodeBERT\_seq & 0.7214 $\pm$ 0.4469 & 0.8132 & 0.9048 $\pm$ 0.0802 \\
-      & Topological Structure (Tool Calling) & 0.6620 $\pm$ 0.4602$^*$ & 0.6655 & 0.8825 $\pm$ 0.1084$^{\ddagger}$ \\
+    \multirow{5}{*}{\textbf{CWE-20}} 
+      & GPT-4o Baseline  & 0.4341 $\pm$ 0.2887$^*$ & 0.4286 $\pm$ 0.3017$^*$ & 0.1306 $\pm$ 0.2164$^*$ \\
+      & Tool Calling (w/o Retrieval) & \chit{0.9375 $\pm$ 0.0613} & \chit{0.8586 $\pm$ 0.1236} & 0.9135 $\pm$ 0.0774 \\
+      & CodeBERT\_seq & 0.7214 $\pm$ 0.4469 & 0.7069 $\pm$ 0.4305 & 0.9048 $\pm$ 0.0802 \\
+      & CodeBERT\_pattern & 0.6406 $\pm$ 0.4818$^*$ & 0.6358 $\pm$ 0.4713$^*$ & \chit{0.9147 $\pm$ 0.0634$^{\ddagger}$} \\
+      & Topological Structure (Tool Calling) & 0.6620 $\pm$ 0.4602$^*$ & 0.6655 $\pm$ 0.4502$^*$ & 0.8825 $\pm$ 0.1084$^\dagger$ \\
     \midrule
-    \multirow{4}{*}{\textbf{CWE-362}} 
-      & GPT-4o Baseline  & 0.2754 $\pm$ 0.2318 & 0.2469 & 0.0145 $\pm$ 0.0233 \\
+    \multirow{5}{*}{\textbf{CWE-362}} 
+      & GPT-4o Baseline  & 0.2754 $\pm$ 0.2318$^*$ & 0.2952 $\pm$ 0.1821$^*$ & 0.0145 $\pm$ 0.0233$^{\S}$ \\
       & Tool Calling (w/o Retrieval) & 0.7293 $\pm$ 0.4454 & 0.7434 $\pm$ 0.4484 & 0.9754 $\pm$ 0.0444 \\
-      & CodeBERT\_seq & 0.9898 $\pm$ 0.0307 & 0.9953 & 0.9970 $\pm$ 0.0042 \\
-      & Topological Structure (Tool Calling) & 0.4456 $\pm$ 0.4124$^*$ & 0.4349 & 0.9325 $\pm$ 0.0737$^{\ddagger}$ \\
+      & CodeBERT\_seq & \chit{0.9898 $\pm$ 0.0307} & \chit{0.9969 $\pm$ 0.0037} & \chit{0.9970 $\pm$ 0.0042} \\
+      & CodeBERT\_pattern & 0.9448 $\pm$ 0.1095$^*$ & 0.9944 $\pm$ 0.0062$^{\S}$ & 0.9968 $\pm$ 0.0039$^{\S}$ \\
+      & Topological Structure (Tool Calling) & 0.4456 $\pm$ 0.4124$^*$ & 0.4349 $\pm$ 0.4507$^*$ & 0.9325 $\pm$ 0.0737$^{\ddagger}$ \\
     \midrule
-    \multirow{4}{*}{\textbf{CWE-416}} 
-      & GPT-4o Baseline  & 0.3570 $\pm$ 0.1491 & 0.1721 & 0.0850 $\pm$ 0.1719 \\
+    \multirow{5}{*}{\textbf{CWE-416}} 
+      & GPT-4o Baseline  & 0.3570 $\pm$ 0.1491$^*$ & 0.2169 $\pm$ 0.1079$^\dagger$ & 0.0850 $\pm$ 0.1719$^*$ \\
       & Tool Calling (w/o Retrieval) & 0.8300 $\pm$ 0.3457 & 0.8715 $\pm$ 0.2072 & 0.7912 $\pm$ 0.4427 \\
-      & CodeBERT\_seq & 0.7165 $\pm$ 0.4492 & 0.9670 & 0.8849 $\pm$ 0.2922 \\
-      & Topological Structure (Tool Calling) & 0.2671 $\pm$ 0.4242$^*$ & 0.3390 & 0.8207 $\pm$ 0.3181$^*$ \\
+      & CodeBERT\_seq & 0.7165 $\pm$ 0.4492 & 0.7608 $\pm$ 0.4125 & 0.8849 $\pm$ 0.2922 \\
+      & CodeBERT\_pattern & \chit{0.9138 $\pm$ 0.2879$^*$} & \chit{0.9163 $\pm$ 0.2716$^*$} & \chit{0.9814 $\pm$ 0.0573$^{\ddagger}$} \\
+      & Topological Structure (Tool Calling) & 0.2671 $\pm$ 0.4242$^*$ & 0.3390 $\pm$ 0.4305$^*$ & 0.8207 $\pm$ 0.3181$^*$ \\
     \midrule
-    \multirow{4}{*}{\textbf{CWE-476}} 
-      & GPT-4o Baseline  & 0.2134 $\pm$ 0.1955 & 0.3417 & 0.0889 $\pm$ 0.2026 \\
+    \multirow{5}{*}{\textbf{CWE-476}} 
+      & GPT-4o Baseline  & 0.2134 $\pm$ 0.1955$^*$ & 0.2148 $\pm$ 0.1725$^*$ & 0.0889 $\pm$ 0.2026$^*$ \\
       & Tool Calling (w/o Retrieval) & 0.7659 $\pm$ 0.3787 & 0.7583 $\pm$ 0.4079 & 0.8359 $\pm$ 0.3449 \\
-      & CodeBERT\_seq & 0.8068 $\pm$ 0.3536 & 0.8510 & 0.7660 $\pm$ 0.4094 \\
-      & Topological Structure (Tool Calling) & 0.6131 $\pm$ 0.4731$^*$ & 0.6318 & 0.8496 $\pm$ 0.3449$^*$ \\
+      & CodeBERT\_seq & 0.8068 $\pm$ 0.3536 & 0.7945 $\pm$ 0.3490 & 0.7660 $\pm$ 0.4094 \\
+      & CodeBERT\_pattern & \chit{0.9071 $\pm$ 0.2130$^*$} & \chit{0.8922 $\pm$ 0.2162$^*$} & 0.7827 $\pm$ 0.4133$^*$ \\
+      & Topological Structure (Tool Calling) & 0.6131 $\pm$ 0.4731$^*$ & 0.6318 $\pm$ 0.4977$^*$ & \chit{0.8496 $\pm$ 0.3449$^*$} \\
     \midrule
-    \multirow{4}{*}{\textbf{CWE-787}} 
-      & GPT-4o Baseline  & 0.3554 & 0.4136 & 0.0382 \\
-      & Tool Calling (w/o Retrieval) & 0.5097 $\pm$ 0.0631 & 0.8760 $\pm$ 0.0899 & 0.0000 $\pm$ 0.0000 \\
-      & CodeBERT\_seq & 0.4707 $\pm$ 0.1602 & 0.9148 & 0.0450 $\pm$ 0.0990 \\
-      & Topological Structure (Tool Calling) & 0.4705 $\pm$ 0.1599$^*$ & 0.8489 & 0.0169 $\pm$ 0.0402$^{\S}$ \\
+    \multirow{5}{*}{\textbf{CWE-787}} 
+      & GPT-4o Baseline  & 0.3554 $\pm$ 0.1851 & 0.4136 $\pm$ 0.3552 & 0.0382 $\pm$ 0.1130 \\
+      & Tool Calling (w/o Retrieval) & \chit{0.5097 $\pm$ 0.0631} & \chit{0.8760 $\pm$ 0.0899} & 0.0000 $\pm$ 0.0000 \\
+      & CodeBERT\_seq & 0.4707 $\pm$ 0.1602 & 0.8448 $\pm$ 0.2710 & \chit{0.0450 $\pm$ 0.0990} \\
+      & CodeBERT\_pattern & 0.4346 $\pm$ 0.1932$^*$ & 0.8025 $\pm$ 0.3552$^*$ & 0.0433 $\pm$ 0.1130$^{\P}$ \\
+      & Topological Structure (Tool Calling) & 0.4705 $\pm$ 0.1599$^*$ & 0.8489 $\pm$ 0.2419$^*$ & 0.0169 $\pm$ 0.0402$^{\S}$ \\
     \bottomrule
   \end{tabular}
 
-  
   \vspace{0.5em}
   \begin{minipage}{\linewidth}
     \small
-    \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$ across evaluated records ($N = 61$ overall; CWE-190 $n=11$, CWE-20 $n=10$, CWE-362 $n=11$, CWE-416 $n=9$, CWE-476 $n=8$, CWE-787 $n=12$). Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
-    \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
+    \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$ across evaluated records ($N = 66$ for GPT-4o Baseline and CodeBERT\_pattern, $N = 61$ for Topological Structure and standard baselines; CWE-190 $n_{base}=15, n_{top}=11, n_{pat}=13$; CWE-20 $n_{base}=15, n_{top}=10, n_{pat}=9$; CWE-362 $n_{base}=15, n_{top}=11, n_{pat}=9$; CWE-416 $n_{base}=10, n_{top}=9, n_{pat}=12$; CWE-476 $n_{base}=11, n_{top}=8, n_{pat}=10$; CWE-787 $n_{top}=12, n_{pat}=13$). Best mean values per metric within each CWE category are highlighted with \texttt{\textbackslash chit\{...\}}. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
+    \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^\dagger$ Moderate Confidence ($80\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
   \end{minipage}
 \end{table}
 
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Comparison of Performance Across Methods by CVEFixes CWE Category (DeepSeek Baseline Evaluation).}
+  \label{tab:cwe_comparison_deepseek}
+  \begin{tabular}{llccc}
+    \toprule
+    \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-190}} 
+      & DeepSeek Baseline & 0.1518 $\pm$ 0.1274$^\dagger$ & 0.3664 $\pm$ 0.2328$^*$ & 0.2243 $\pm$ 0.3297$^*$ \\
+      & Tool Calling (w/o Retrieval) & 0.7155 $\pm$ 0.4454$^*$ & 0.7896 $\pm$ 0.3531$^*$ & \chit{0.7771 $\pm$ 0.4022$^*$} \\
+      & CodeBERT\_seq & 0.6150 $\pm$ 0.5346$^*$ & 0.8930 $\pm$ 0.1441$^*$ & 0.5328 $\pm$ 0.6607$^*$ \\
+      & CodeBERT\_pattern & 0.6240 $\pm$ 0.4203$^*$ & 0.8084 $\pm$ 0.2532$^*$ & 0.5594 $\pm$ 0.4945$^*$ \\
+      & Topological Structure (Tool Calling) & \chit{0.7343 $\pm$ 0.4307$^*$} & \chit{0.9285 $\pm$ 0.1150$^*$} & 0.6894 $\pm$ 0.5132$^*$ \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-20}} 
+      & DeepSeek Baseline & 0.4097 $\pm$ 0.2890$^*$ & 0.4072 $\pm$ 0.2736$^*$ & 0.1698 $\pm$ 0.2362$^*$ \\
+      & Tool Calling (w/o Retrieval) & 0.8767 $\pm$ 0.1965$^*$ & 0.9320 $\pm$ 0.0854$^\dagger$ & 0.8444 $\pm$ 0.3019$^*$ \\
+      & CodeBERT\_seq & \chit{0.9072 $\pm$ 0.0680$^*$} & \chit{0.9445 $\pm$ 0.0454$^\dagger$} & \chit{0.9342 $\pm$ 0.0670$^*$} \\
+      & CodeBERT\_pattern & 0.7803 $\pm$ 0.2761$^*$ & 0.9294 $\pm$ 0.1190$^*$ & 0.7752 $\pm$ 0.4372$^*$ \\
+      & Topological Structure (Tool Calling) & 0.7998 $\pm$ 0.2465$^*$ & 0.8938 $\pm$ 0.0967$^*$ & 0.7549 $\pm$ 0.3655$^*$ \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-362}} 
+      & DeepSeek Baseline & 0.3658 $\pm$ 0.2686$^*$ & 0.3417 $\pm$ 0.2866$^*$ & 0.0093 $\pm$ 0.0171$^{\S}$ \\
+      & Tool Calling (w/o Retrieval) & 0.9689 $\pm$ 0.0878$^\dagger$ & 0.9938 $\pm$ 0.0164$^{\S}$ & 0.9988 $\pm$ 0.0030$^{\S}$ \\
+      & CodeBERT\_seq & 0.9645 $\pm$ 0.0939$^*$ & 0.9958 $\pm$ 0.0063$^{\S}$ & 0.9978 $\pm$ 0.0036$^{\S}$ \\
+      & CodeBERT\_pattern & \chit{1.0000 $\pm$ 0.0000$^{\S}$} & \chit{0.9998 $\pm$ 0.0004$^{\S}$} & \chit{0.9994 $\pm$ 0.0014$^{\S}$} \\
+      & Topological Structure (Tool Calling) & 0.9724 $\pm$ 0.0828$^{\mathparagraph}$ & 0.9971 $\pm$ 0.0048$^{\S}$ & 0.9979 $\pm$ 0.0032$^{\S}$ \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-416}} 
+      & DeepSeek Baseline & 0.4488 $\pm$ 0.0793$^{\mathparagraph}$ & 0.2795 $\pm$ 0.0729$^{\ddagger}$ & 0.0805 $\pm$ 0.1828$^*$ \\
+      & Tool Calling (w/o Retrieval) & \chit{1.0000 $\pm$ 0.0000$^{\S}$} & \chit{0.9909 $\pm$ 0.0100$^{\ddagger}$} & \chit{0.9968 $\pm$ 0.0042$^{\S}$} \\
+      & CodeBERT\_seq & 0.8823 $\pm$ 0.2952$^*$ & 0.9478 $\pm$ 0.1178$^*$ & 0.8692 $\pm$ 0.3387$^*$ \\
+      & CodeBERT\_pattern & 0.7230 $\pm$ 0.3850$^*$ & 0.7683 $\pm$ 0.3464$^*$ & 0.7799 $\pm$ 0.4376$^*$ \\
+      & Topological Structure (Tool Calling) & 0.8738 $\pm$ 0.2916$^*$ & 0.9413 $\pm$ 0.1228$^*$ & 0.8502 $\pm$ 0.3751$^*$ \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-476}} 
+      & DeepSeek Baseline & 0.3073 $\pm$ 0.2349$^*$ & 0.2369 $\pm$ 0.2246$^*$ & 0.0973 $\pm$ 0.2761$^*$ \\
+      & Tool Calling (w/o Retrieval) & 0.9146 $\pm$ 0.2171$^*$ & 0.9343 $\pm$ 0.1890$^*$ & \chit{0.8892 $\pm$ 0.3291$^*$} \\
+      & CodeBERT\_seq & 0.8264 $\pm$ 0.3502$^*$ & 0.8354 $\pm$ 0.3374$^*$ & 0.8790 $\pm$ 0.3307$^*$ \\
+      & CodeBERT\_pattern & \chit{0.9627 $\pm$ 0.0986$^*$} & \chit{0.9921 $\pm$ 0.0171$^{\S}$} & 0.8558 $\pm$ 0.3774$^*$ \\
+      & Topological Structure (Tool Calling) & 0.8982 $\pm$ 0.2249$^*$ & 0.9320 $\pm$ 0.1890$^*$ & 0.7776 $\pm$ 0.4409$^*$ \\
+    \midrule
+    \multirow{5}{*}{\textbf{CWE-787}} 
+      & DeepSeek Baseline & 0.0491 $\pm$ 0.0567$^{\S}$ & 0.2137 $\pm$ 0.1678$^*$ & 0.0451 $\pm$ 0.0483$^{\S}$ \\
+      & Tool Calling (w/o Retrieval) & 0.4569 $\pm$ 0.1306$^*$ & 0.8245 $\pm$ 0.2656$^*$ & 0.0146 $\pm$ 0.0402$^{\S}$ \\
+      & CodeBERT\_seq & \chit{0.5311 $\pm$ 0.0589$^{\ddagger}$} & \chit{0.9254 $\pm$ 0.0388$^{\S}$} & 0.1455 $\pm$ 0.2699$^*$ \\
+      & CodeBERT\_pattern & 0.4664 $\pm$ 0.1555$^*$ & 0.8437 $\pm$ 0.2742$^*$ & \chit{0.1953 $\pm$ 0.2697$^*$} \\
+      & Topological Structure (Tool Calling) & 0.4367 $\pm$ 0.1788$^*$ & 0.7961 $\pm$ 0.3124$^*$ & 0.0034 $\pm$ 0.0096$^{\S}$ \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.5em}
+  \begin{minipage}{\linewidth}
+    \small
+    \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$ across evaluated records ($N = 83$ for DeepSeek Baseline, $N = 46$ for Tool Calling (w/o Retrieval), $N = 37$ for CodeBERT\_seq, $N = 36$ for CodeBERT\_pattern, $N = 41$ for Topological Structure; CWE-190 $n_{ds}=15, n_{tc}=6, n_{top}=3, n_{seq}=2, n_{pat}=4$; CWE-20 $n_{ds}=15, n_{tc}=9, n_{top}=5, n_{seq}=4, n_{pat}=4$; CWE-362 $n_{ds}=15, n_{tc}=8, n_{top}=9, n_{seq}=7, n_{pat}=5$; CWE-416 $n_{ds}=11, n_{tc}=3, n_{top}=7, n_{seq}=7, n_{pat}=5$; CWE-476 $n_{ds}=12, n_{tc}=9, n_{top}=9, n_{seq}=9, n_{pat}=7$; CWE-787 $n_{ds}=15, n_{tc}=11, n_{top}=8, n_{seq}=8, n_{pat}=11$). Best mean values per metric within each CWE category are highlighted with \texttt{\textbackslash chit\{...\}}. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
+    \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^\dagger$ Moderate Confidence ($80\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
+  \end{minipage}
+\end{table}
 % \begin{table}[H]
 %   \centering
 %   \small
@@ -1407,56 +1047,6 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
 % add completion plot comparison 
 % combined`
 
-% ══════════════════════════════════════════════════
-%   LLM JUDGE SUMMARY  (25 records)
-% ══════════════════════════════════════════════════
-%   VALID:    2  (8.0%)
-%   INVALID:  23
-%   ERROR:    0
-% ══════════════════════════════════════════════════
-
-%   By CWE:
-%     CWE-190       total=  1  valid=0  invalid=1  valid_rate=0.0%
-%     CWE-20        total=  1  valid=0  invalid=1  valid_rate=0.0%
-%     CWE-362       total=  6  valid=1  invalid=5  valid_rate=16.7%
-%     CWE-416       total=  7  valid=0  invalid=7  valid_rate=0.0%
-%     CWE-476       total=  9  valid=1  invalid=8  valid_rate=11.1%
-%     CWE-787       total=  1  valid=0  invalid=1  valid_rate=0.0%
-
-% pattern
-% ══════════════════════════════════════════════════
-%   LLM JUDGE SUMMARY  (25 records)
-% ══════════════════════════════════════════════════
-%   VALID:    1  (4.0%)
-%   INVALID:  24
-%   ERROR:    0
-% ══════════════════════════════════════════════════
-
-%   By CWE:
-%     CWE-190       total=  1  valid=0  invalid=1  valid_rate=0.0%
-%     CWE-20        total=  1  valid=0  invalid=1  valid_rate=0.0%
-%     CWE-362       total=  6  valid=1  invalid=5  valid_rate=16.7%
-%     CWE-416       total=  7  valid=0  invalid=7  valid_rate=0.0%
-%     CWE-476       total=  9  valid=0  invalid=9  valid_rate=0.0%
-%     CWE-787       total=  1  valid=0  invalid=1  valid_rate=0.0%
-
-%     seq
-%     ══════════════════════════════════════════════════
-%   LLM JUDGE SUMMARY  (25 records)
-% ══════════════════════════════════════════════════
-%   VALID:    2  (8.0%)
-%   INVALID:  23
-%   ERROR:    0
-% ══════════════════════════════════════════════════
-
-%   By CWE:
-%     CWE-190       total=  1  valid=0  invalid=1  valid_rate=0.0%
-%     CWE-20        total=  1  valid=0  invalid=1  valid_rate=0.0%
-%     CWE-362       total=  6  valid=0  invalid=6  valid_rate=0.0%
-%     CWE-416       total=  7  valid=1  invalid=6  valid_rate=14.3%
-%     CWE-476       total=  9  valid=1  invalid=8  valid_rate=11.1%
-%     CWE-787       total=  1  valid=0  invalid=1  valid_rate=0.0%
-
 \begin{table}[H]
 \centering
 \caption{CVEFixes: LLM Judge Summary (25 records) - GPT-4o Patching Results}
@@ -1539,26 +1129,6 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
 
 % The hardest class is **multi-path concurrency bugs (CWE-362)**: only 2/6 valid across both runs. Single-file lifetime fixes (CWE-416) and NULL-deref fixes (CWE-476) succeed only when the vulnerable site is directly in the retrieved context file.
 
-% \begin{table}[htbp]
-% \centering
-% \caption{CVEFixes: Patch Analysis Metrics (89 records) GPT-4o}
-% \begin{tabular}{lcccccc}
-% \toprule
-% \multirow{2}{*}{\textbf{Metric}} & \multicolumn{2}{c}{\textbf{Combined}} & \multicolumn{2}{c}{\textbf{CodeBERT Seq}} & \multicolumn{2}{c}{\textbf{CodeBERT Pattern}} \\
-% \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
-% & \textbf{Mean} & \textbf{Median} & \textbf{Mean} & \textbf{Median} & \textbf{Mean} & \textbf{Median} \\
-% \midrule
-% BLEU-4        & 0.8893 & 0.9960 & 0.9036 & 0.9985 & 0.9036 & 0.9985 \\
-% BERTScore F1  & 0.8759 & 0.9588 & 0.8878 & 0.9588 & 0.8878 & 0.9588 \\
-% ROUGE-1 F1    & 0.9412 & 0.9976 & 0.9529 & 0.9994 & 0.9529 & 0.9994 \\
-% ROUGE-2 F1    & 0.9164 & 0.9967 & 0.9275 & 0.9988 & 0.9275 & 0.9988 \\
-% ROUGE-L F1    & 0.9387 & 0.9976 & 0.9490 & 0.9994 & 0.9490 & 0.9994 \\
-% Token Jaccard & 0.8219 & 0.9789 & 0.8322 & 0.9789 & 0.8322 & 0.9789 \\
-% Edit Dist     & 0.0839 & 0.0046 & 0.0752 & 0.0019 & 0.0752 & 0.0019 \\
-% Hunk F1       & 0.7758 & 0.9957 & 0.8038 & 0.9957 & 0.8038 & 0.9957 \\
-% \bottomrule
-% \end{tabular}
-% \end{table}
 
 
 \begin{table}[t]
@@ -1576,47 +1146,6 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
     \bottomrule
   \end{tabular}
 \end{table}
-
-% \begin{table}[htbp]
-%   \centering
-%   \small
-%   \setlength{\tabcolsep}{3pt} % Tighten horizontal column padding
-%   \caption{Patch generation summary by embedding variant / mode -- by CWE}
-%   \label{tab:patch_analysis_summary_by_cwe}
-%   \begin{tabular}{llrrrrrrrrrrr}
-%     \toprule
-%     \thead{Mode} & \thead{CWE} & \thead{N} & \thead{Succ.\\(\%)} & \thead{Avg.\\Turns} & \thead{Verify\\(\%)} & \thead{Viol.\\(\%)} & \thead{BLEU-4} & \thead{BERT\\F$_1$} & \thead{R-1\\F$_1$} & \thead{R-2\\F$_1$} & \thead{R-L\\F$_1$} & \thead{Hunk\\F$_1$} \\
-%     \midrule
-%     \multicolumn{13}{l}{\textit{codebert\_pattern}} \\
-%     \hspace{1em} Single Turn & CWE-190 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.005 & 0.126 & 0.196 & 0.063 & 0.145 & 0.826 \\
-%     \hspace{1em} Single Turn & CWE-20  & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.204 & 0.428 & 0.548 & 0.262 & 0.346 & 0.773 \\
-%     \hspace{1em} Single Turn & CWE-362 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.022 & 0.368 & 0.275 & 0.141 & 0.215 & 0.873 \\
-%     \hspace{1em} Single Turn & CWE-416 & 15 & 60.0 & 1.00 & 0.0 & 0.0 & 0.075 & 0.307 & 0.374 & 0.172 & 0.239 & 0.874 \\
-%     \hspace{1em} Single Turn & CWE-476 & 14 & 50.0 & 1.00 & 0.0 & 0.0 & 0.276 & 0.250 & 0.480 & 0.365 & 0.390 & 0.661 \\
-%     \hspace{1em} Single Turn & CWE-787 & 15 & 100.0 & 1.00 & 0.0 & 0.0 & 0.336 & 0.505 & 0.636 & 0.546 & 0.537 & 0.057 \\
-%     \hspace{1em} Tool Calling& CWE-190 & 15 & 86.7 & 3.80 & 100.0 & 33.3 & 0.999 & 0.959 & 0.999 & 0.999 & 0.999 & 0.996 \\
-%     \hspace{1em} Tool Calling& CWE-20  & 15 & 60.0 & 4.47 & 100.0 & 20.0 & -- & -- & -- & -- & -- & -- \\
-%     \hspace{1em} Tool Calling& CWE-362 & 15 & 60.0 & 4.67 & 93.3 & 33.3 & 0.996 & 0.959 & 0.998 & 0.998 & 0.998 & 0.999 \\
-%     \hspace{1em} Tool Calling& CWE-416 & 15 & 80.0 & 4.00 & 100.0 & 33.3 & 0.921 & 0.926 & 0.932 & 0.924 & 0.929 & 0.983 \\
-%     \hspace{1em} Tool Calling& CWE-476 & 14 & 71.4 & 4.21 & 100.0 & 14.3 & 0.850 & 0.974 & 0.915 & 0.908 & 0.912 & 0.876 \\
-%     \hspace{1em} Tool Calling& CWE-787 & 15 & 86.7 & 3.93 & 100.0 & 60.0 & 0.829 & 0.506 & 0.920 & 0.892 & 0.903 & 0.000 \\
-%     \midrule
-%     \multicolumn{13}{l}{\textit{codebert\_seq}} \\
-%     \hspace{1em} Single Turn & CWE-190 & 15 & 73.3 & 1.00 & 0.0 & 0.0 & 0.000 & 0.083 & 0.128 & 0.041 & 0.108 & 0.849 \\
-%     \hspace{1em} Single Turn & CWE-20  & 15 & 46.7 & 1.00 & 0.0 & 0.0 & -- & -- & -- & -- & -- & -- \\
-%     \hspace{1em} Single Turn & CWE-362 & 15 & 66.7 & 1.00 & 0.0 & 0.0 & 0.012 & 0.373 & 0.252 & 0.136 & 0.202 & 0.871 \\
-%     \hspace{1em} Single Turn & CWE-416 & 15 & 60.0 & 1.00 & 0.0 & 0.0 & 0.143 & 0.277 & 0.382 & 0.217 & 0.270 & 0.897 \\
-%     \hspace{1em} Single Turn & CWE-476 & 14 & 71.4 & 1.00 & 0.0 & 0.0 & 0.176 & 0.313 & 0.400 & 0.267 & 0.312 & 0.776 \\
-%     \hspace{1em} Single Turn & CWE-787 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.136 & 0.226 & 0.499 & 0.464 & 0.460 & 0.125 \\
-%     \hspace{1em} Tool Calling& CWE-190 & 15 & 73.3 & 4.20 & 100.0 & 40.0 & -- & -- & -- & -- & -- & -- \\
-%     \hspace{1em} Tool Calling& CWE-20  & 15 & 53.3 & 4.93 & 100.0 & 33.3 & 0.737 & 0.951 & 0.878 & 0.769 & 0.878 & 0.818 \\
-%     \hspace{1em} Tool Calling& CWE-362 & 15 & 60.0 & 4.53 & 100.0 & 66.7 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
-%     \hspace{1em} Tool Calling& CWE-416 & 15 & 66.7 & 4.60 & 100.0 & 40.0 & 0.842 & 0.849 & 0.850 & 0.846 & 0.848 & 0.984 \\
-%     \hspace{1em} Tool Calling& CWE-476 & 14 & 71.4 & 4.21 & 100.0 & 28.6 & 0.798 & 0.901 & 0.853 & 0.847 & 0.850 & 0.883 \\
-%     \hspace{1em} Tool Calling& CWE-787 & 15 & 80.0 & 4.20 & 100.0 & 20.0 & -- & -- & -- & -- & -- & -- \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
 
 \begin{table}[H]
   \centering
@@ -1682,121 +1211,99 @@ Furthermore, the \textit{Combined} retrieval strategy has the LLM Judge function
 Vulnerability-specific patterns are also reproduced under the DeepSeek experiment. As seen in Table \ref{tab:patch_analysis_summary_by_cwe_deepseek}, Tool Calling with Pattern retrieval achieves 73.3\% syntax success and a 93.3\% verify rate on CWE-787. Yet, high performance does not translate to LLM as a Judge's functional validity for out-of-bounds writes. DeepSeek's performance confirms the overall evaluation that reliable automated vulnerability patching demands agentic, iterative tool use coupled with isolated, targeted retrieval, even though further exploration on the agentic workflow is required to meet reliable performance for production code.
 
 
-%Need to be finished, but first verify relevance
-% \begin{table}[htbp]
+
+% \begin{table}[t]
 %   \centering
-%   \small
-%   \setlength{\tabcolsep}{5pt}
-%   \caption{Patch Generation Summary by CWE for DeepSeek-4-Flash}
+%   \caption{CVEFixes: Patch generation summary by embedding variant / mode -- by CWE DeepSeek-4V-Flash}
 %   \label{tab:patch_analysis_summary_by_cwe_deepseek}
-%   \begin{tabular}{llccccc}
+%   \begin{tabular}{llrrrrr}
 %     \toprule
-%     \textbf{Mode} & \textbf{CWE} & \textbf{N} & \makecell{\bfseries Success\\\bfseries(\%)} & \makecell{\bfseries Avg.\\\bfseries Turns} & \makecell{\bfseries Verify\\\bfseries Rate (\%)} & \makecell{\bfseries Violation\\\bfseries Rate (\%)} \\
+%     Source & CWE & N & Success (\%) & Avg. Turns & Verify Rate (\%) & Violation Rate (\%) \\
 %     \midrule
-%     \multicolumn{7}{l}{\textit{CodeBERT Pattern}} \\
-%     \hspace{1em} Single Turn & CWE-190 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-20  & 15 & 13.3 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-416 & 15 & 36.4 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-476 & 14 & 41.7 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-787 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
-%     \cmidrule{2-7}
-%     \hspace{1em} Tool Calling & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
-%     \hspace{1em} Tool Calling & CWE-20  & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
-%     \hspace{1em} Tool Calling & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
-%     \hspace{1em} Tool Calling & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
-%     \hspace{1em} Tool Calling & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
-%     \hspace{1em} Tool Calling & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
-%     \midrule
-%     \multicolumn{7}{l}{\textit{CodeBERT Sequence}} \\
-%     \hspace{1em} Single Turn & CWE-190 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-20  & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-362 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-416 & 15 & 6.7  & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
-%     \hspace{1em} Single Turn & CWE-787 & 15 & \multicolumn{4}{c}{\textit{[... continue CWE-787 data ...]}} \\
-%     % NOTE: You can continue adding the remaining CodeBERT Seq and Topological Structure rows here following the same indentation pattern.
+%     codebert\_pattern/single\_turn & CWE-190 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_pattern/single\_turn & CWE-20 & 15 & 13.3 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_pattern/single\_turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_pattern/single\_turn & CWE-416 & 15 & 36.4 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_pattern/single\_turn & CWE-476 & 14 & 41.7 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_pattern/single\_turn & CWE-787 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_pattern/tool\_calling & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
+%     codebert\_pattern/tool\_calling & CWE-20 & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
+%     codebert\_pattern/tool\_calling & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
+%     codebert\_pattern/tool\_calling & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
+%     codebert\_pattern/tool\_calling & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
+%     codebert\_pattern/tool\_calling & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
+%     codebert\_seq/single\_turn & CWE-190 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_seq/single\_turn & CWE-20 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_seq/single\_turn & CWE-362 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_seq/single\_turn & CWE-416 & 15 & 6.7 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_seq/single\_turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_seq/single\_turn & CWE-787 & 15 & 46.7 & 1.00 & 0.0 & 0.0 \\
+%     codebert\_seq/tool\_calling & CWE-190 & 15 & 13.3 & 6.00 & 80.0 & 6.7 \\
+%     codebert\_seq/tool\_calling & CWE-20 & 15 & 26.7 & 5.73 & 93.3 & 0.0 \\
+%     codebert\_seq/tool\_calling & CWE-362 & 15 & 46.7 & 5.53 & 93.3 & 6.7 \\
+%     codebert\_seq/tool\_calling & CWE-416 & 15 & 46.7 & 5.33 & 86.7 & 13.3 \\
+%     codebert\_seq/tool\_calling & CWE-476 & 14 & 64.3 & 5.21 & 85.7 & 0.0 \\
+%     codebert\_seq/tool\_calling & CWE-787 & 15 & 53.3 & 5.47 & 100.0 & 6.7 \\
+%     combined/single\_turn & CWE-190 & 15 & 33.3 & 1.00 & 0.0 & 0.0 \\
+%     combined/single\_turn & CWE-20 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
+%     combined/single\_turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
+%     combined/single\_turn & CWE-416 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
+%     combined/single\_turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
+%     combined/single\_turn & CWE-787 & 15 & 46.7 & 1.00 & 0.0 & 0.0 \\
+%     combined/tool\_calling & CWE-190 & 15 & 20.0 & 5.80 & 86.7 & 0.0 \\
+%     combined/tool\_calling & CWE-20 & 15 & 33.3 & 5.53 & 100.0 & 0.0 \\
+%     combined/tool\_calling & CWE-362 & 15 & 60.0 & 5.07 & 93.3 & 20.0 \\
+%     combined/tool\_calling & CWE-416 & 15 & 46.7 & 5.47 & 93.3 & 0.0 \\
+%     combined/tool\_calling & CWE-476 & 14 & 64.3 & 5.00 & 100.0 & 0.0 \\
+%     combined/tool\_calling & CWE-787 & 15 & 53.3 & 5.27 & 100.0 & 6.7 \\
+%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-190 & 15 & 53.3 & 5.40 & 93.3 & 0.0 \\
+%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-20 & 15 & 60.0 & 4.87 & 100.0 & 0.0 \\
+%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-362 & 15 & 33.3 & 5.20 & 100.0 & 0.0 \\
+%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-416 & 15 & 27.3 & 5.64 & 100.0 & 0.0 \\
+%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-476 & 14 & 50.0 & 5.08 & 100.0 & 8.3 \\
+%     tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-787 & 15 & 46.7 & 5.20 & 100.0 & 0.0 \\
 %     \bottomrule
 %   \end{tabular}
 % \end{table}
 
 
-\begin{table}[t]
+\begin{table}[H]
   \centering
-  \caption{CVEFixes: Patch generation summary by embedding variant / mode -- by CWE DeepSeek-4V-Flash}
-  \label{tab:patch_analysis_summary_by_cwe_deepseek}
-  \begin{tabular}{llrrrrr}
-    \toprule
-    Source & CWE & N & Success (\%) & Avg. Turns & Verify Rate (\%) & Violation Rate (\%) \\
-    \midrule
-    codebert\_pattern/single\_turn & CWE-190 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
-    codebert\_pattern/single\_turn & CWE-20 & 15 & 13.3 & 1.00 & 0.0 & 0.0 \\
-    codebert\_pattern/single\_turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
-    codebert\_pattern/single\_turn & CWE-416 & 15 & 36.4 & 1.00 & 0.0 & 0.0 \\
-    codebert\_pattern/single\_turn & CWE-476 & 14 & 41.7 & 1.00 & 0.0 & 0.0 \\
-    codebert\_pattern/single\_turn & CWE-787 & 15 & 53.3 & 1.00 & 0.0 & 0.0 \\
-    codebert\_pattern/tool\_calling & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
-    codebert\_pattern/tool\_calling & CWE-20 & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
-    codebert\_pattern/tool\_calling & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
-    codebert\_pattern/tool\_calling & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
-    codebert\_pattern/tool\_calling & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
-    codebert\_pattern/tool\_calling & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
-    codebert\_seq/single\_turn & CWE-190 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
-    codebert\_seq/single\_turn & CWE-20 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
-    codebert\_seq/single\_turn & CWE-362 & 15 & 26.7 & 1.00 & 0.0 & 0.0 \\
-    codebert\_seq/single\_turn & CWE-416 & 15 & 6.7 & 1.00 & 0.0 & 0.0 \\
-    codebert\_seq/single\_turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
-    codebert\_seq/single\_turn & CWE-787 & 15 & 46.7 & 1.00 & 0.0 & 0.0 \\
-    codebert\_seq/tool\_calling & CWE-190 & 15 & 13.3 & 6.00 & 80.0 & 6.7 \\
-    codebert\_seq/tool\_calling & CWE-20 & 15 & 26.7 & 5.73 & 93.3 & 0.0 \\
-    codebert\_seq/tool\_calling & CWE-362 & 15 & 46.7 & 5.53 & 93.3 & 6.7 \\
-    codebert\_seq/tool\_calling & CWE-416 & 15 & 46.7 & 5.33 & 86.7 & 13.3 \\
-    codebert\_seq/tool\_calling & CWE-476 & 14 & 64.3 & 5.21 & 85.7 & 0.0 \\
-    codebert\_seq/tool\_calling & CWE-787 & 15 & 53.3 & 5.47 & 100.0 & 6.7 \\
-    combined/single\_turn & CWE-190 & 15 & 33.3 & 1.00 & 0.0 & 0.0 \\
-    combined/single\_turn & CWE-20 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
-    combined/single\_turn & CWE-362 & 15 & 20.0 & 1.00 & 0.0 & 0.0 \\
-    combined/single\_turn & CWE-416 & 15 & 40.0 & 1.00 & 0.0 & 0.0 \\
-    combined/single\_turn & CWE-476 & 14 & 21.4 & 1.00 & 0.0 & 0.0 \\
-    combined/single\_turn & CWE-787 & 15 & 46.7 & 1.00 & 0.0 & 0.0 \\
-    combined/tool\_calling & CWE-190 & 15 & 20.0 & 5.80 & 86.7 & 0.0 \\
-    combined/tool\_calling & CWE-20 & 15 & 33.3 & 5.53 & 100.0 & 0.0 \\
-    combined/tool\_calling & CWE-362 & 15 & 60.0 & 5.07 & 93.3 & 20.0 \\
-    combined/tool\_calling & CWE-416 & 15 & 46.7 & 5.47 & 93.3 & 0.0 \\
-    combined/tool\_calling & CWE-476 & 14 & 64.3 & 5.00 & 100.0 & 0.0 \\
-    combined/tool\_calling & CWE-787 & 15 & 53.3 & 5.27 & 100.0 & 6.7 \\
-    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-190 & 15 & 53.3 & 5.40 & 93.3 & 0.0 \\
-    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-20 & 15 & 60.0 & 4.87 & 100.0 & 0.0 \\
-    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-362 & 15 & 33.3 & 5.20 & 100.0 & 0.0 \\
-    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-416 & 15 & 27.3 & 5.64 & 100.0 & 0.0 \\
-    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-476 & 14 & 50.0 & 5.08 & 100.0 & 8.3 \\
-    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & CWE-787 & 15 & 46.7 & 5.20 & 100.0 & 0.0 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[t]
-  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
   \caption{CVEFixes: Patch generation summary by embedding variant / mode -- by language DeepSeek-4V-Flash}
   \label{tab:patch_analysis_summary_by_language_deepseek}
   \begin{tabular}{llrrrrr}
     \toprule
-    Source & Language & N & Success (\%) & CVE Match (\%) & CWE Match (\%) & Avg. Retrieval Sim. \\
+    \textbf{Mode} & \textbf{Lang.} & \textbf{N} & \makecell{\bfseries Success\\(\%)} & \makecell{\bfseries CVE Match\\(\%)} & \makecell{\bfseries CWE Match\\(\%)} & \makecell{\bfseries Avg. Retr.\\\bfseries Sim.} \\
     \midrule
-    codebert\_pattern/single\_turn & C & 65 & 31.1 & 52.3 & 61.5 & 0.097 \\
-    codebert\_pattern/single\_turn & C++ & 24 & 50.0 & 58.3 & 58.3 & 0.289 \\
-    codebert\_pattern/tool\_calling & C & 65 & 34.4 & 52.3 & 61.5 & 0.322 \\
-    codebert\_pattern/tool\_calling & C++ & 24 & 68.2 & 58.3 & 58.3 & 0.608 \\
-    codebert\_seq/single\_turn & C & 65 & 20.0 & 56.9 & 63.1 & 0.074 \\
-    codebert\_seq/single\_turn & C++ & 24 & 50.0 & 29.2 & 29.2 & 0.225 \\
-    codebert\_seq/tool\_calling & C & 65 & 36.9 & 56.9 & 63.1 & 0.360 \\
-    codebert\_seq/tool\_calling & C++ & 24 & 54.2 & 29.2 & 29.2 & 0.473 \\
-    combined/single\_turn & C & 65 & 32.3 & 20.0 & 29.2 & 0.048 \\
-    combined/single\_turn & C++ & 24 & 37.5 & 8.3 & 8.3 & 0.176 \\
-    combined/tool\_calling & C & 65 & 40.0 & 20.0 & 29.2 & 0.388 \\
-    combined/tool\_calling & C++ & 24 & 62.5 & 8.3 & 8.3 & 0.552 \\
-    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & C & 65 & 42.6 & 52.3 & 61.5 & 0.393 \\
-    tool\_calling\_no\_retrieval/20260815\_221731\_patching\_32b6a3 & C++ & 24 & 54.5 & 58.3 & 58.3 & 0.512 \\
+    \multirow{2}{*}{CodeBERT Pattern (Single Turn)} 
+      & C   & 65 & 31.1 & 52.3 & 61.5 & 0.097 \\
+      & C++ & 24 & 50.0 & 58.3 & 58.3 & 0.289 \\
+    \midrule
+    \multirow{2}{*}{CodeBERT Pattern (Tool Calling)} 
+      & C   & 65 & 34.4 & 52.3 & 61.5 & 0.322 \\
+      & C++ & 24 & 68.2 & 58.3 & 58.3 & 0.608 \\
+    \midrule
+    \multirow{2}{*}{CodeBERT Seq (Single Turn)} 
+      & C   & 65 & 20.0 & 56.9 & 63.1 & 0.074 \\
+      & C++ & 24 & 50.0 & 29.2 & 29.2 & 0.225 \\
+    \midrule
+    \multirow{2}{*}{CodeBERT Seq (Tool Calling)} 
+      & C   & 65 & 36.9 & 56.9 & 63.1 & 0.360 \\
+      & C++ & 24 & 54.2 & 29.2 & 29.2 & 0.473 \\
+    \midrule
+    \multirow{2}{*}{Combined (Single Turn)} 
+      & C   & 65 & 32.3 & 20.0 & 29.2 & 0.048 \\
+      & C++ & 24 & 37.5 & 8.3 & 8.3 & 0.176 \\
+    \midrule
+    \multirow{2}{*}{Combined (Tool Calling)} 
+      & C   & 65 & 40.0 & 20.0 & 29.2 & 0.388 \\
+      & C++ & 24 & 62.5 & 8.3 & 8.3 & 0.552 \\
+    \midrule
+    \multirow{2}{*}{Tool Calling (No Retr.)} 
+      & C   & 65 & 42.6 & 52.3 & 61.5 & 0.393 \\
+      & C++ & 24 & 54.5 & 58.3 & 58.3 & 0.512 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1859,215 +1366,85 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
   \dag\ \textbf{Confidence \& Support Notes:} Values represent $\text{Mean} \pm \text{SD}$. Total evaluated records per method: $N = 41$ for Tool Calling Baseline, $N = 37$ for CodeBERT Seq, and $N = 36$ for CodeBERT Pattern. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
   \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^{\dagger}$ Fair Confidence ($80\%-85\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
 \end{table}
+
+\subsection{CVEfixes Generation Cost Analysis}
+% https://developers.openai.com/api/docs/pricing?_sm_nck=1
+% https://platform.claude.com/docs/en/about-claude/pricing
+% https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/deepseek/
+Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs for the CVEfixes dataset experiments across different models and pipeline configurations. 
+
+\paragraph{GPT-5.3-Codex.} Codex baseline costs \$0.03 per entry, while tool-calling without retrieval averages \$0.06 per entry. The retrieval-augmented tool-calling variants average \$0.08--0.10 per entry. This is approximately 2.5 times cheaper than GPT-4o for comparable configurations (see below), being, therefore, more cost-efficient on CVEFixes. This cost advantage, combined with stronger performance metrics (Section~\ref{tab:cwe_generation_comparison_deepseek}), makes it the preferred choice for production deployments.
+
+\paragraph{GPT-4o.} Once again, the tool-calling pipeline with retrieval has the highest costs, \$0.24--0.26 per entry on average. The model baseline without tools averages \$0.05 per entry, while the tool-calling baseline without retrieval costs \$0.22 per entry. This indicates that the agentic interaction pattern is the main cost reason, even though the retrieval context itself probably contributes to the costs since the prompt tokens used in each run sum up to millions.
+
+\paragraph{DeepSeek-V4-Flash.} As expected, DeepSeek offers the most cost-effective option at \$0.009--0.024 per entry across all configurations. The model baseline costs only \$0.003 per entry, while tool-calling variants with retrieval average \$0.022--0.024 per entry. However, as discussed in Section~\ref{tab:cvefixes_overall_patch_generation_summary_deepseek}, the generation pipeline with DeepSeek experienced output formatting issues that limited the patch generation rate. Therefore, the pipeline might include fallbacks and Human-in-the-Loop verifications if this model is deployed in production. The DeepSeek performance is an example that raw cost efficiency must be weighed against functional reliability.
+
+Analyzing the Figure \ref{img:cost_bertscore_cvefixes}, Tool-calling variants of DeepSeek achieve BERTScore $\sim0.80$ at only \$0.009/entry, dominating the cost-efficiency trade-off.  GPT-5.3-Codex presents the highest BERTScore ($\sim0.825$) with the Semantic retrieval pipeline at \$0.075/entry. GPT-4o delivers performance similar to GPT-5.3-Codex but is twice as expensive (\$0.16-0.17/entry). The model baselines are low-cost but low-performing, reinforcing the previously found indication that the patching task requires tooling to succeed. Similarly, the cost of one prompt with the code, represented by the squares, can be even higher than if you use the retriever that filters the context to be passed, even though the cost is not translated into the BERTScore-F1 metric.
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{img/costs/cost_vs_quality.png}
+    \caption{CVEFixes Patching Cost vs. BERTScore as quality measure.}
+    \label{img:cost_bertscore_cvefixes}
+\end{figure}
+
+
+\begin{table}[H]
+  \centering
+  \caption{CVEfixes: Generation Cost Summary Across Models and Configurations}
+  \label{tab:cvefixes_generation_cost_summary}
+  \begin{tabular}{llrrrrrr}
+    \toprule
+    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+    \midrule
+    % Sem.+Struc (Single) & GPT-4o & 89 & 3.4M & 116K & 3.5M & \$14.34 & \$0.161 \\
+    Sem.+Struc (Tool) & GPT-4o & 89 & 5.6M & 55K & 5.6M & \$21.70 & \$0.244 \\
+    % Semantic (Single) & GPT-4o & 89 & 3.4M & 111K & 3.5M & \$14.26 & \$0.160 \\
+    Semantic (Tool) & GPT-4o & 89 & 5.9M & 70K & 6.0M & \$23.35 & \$0.262 \\
+    Model baseline & GPT-4o & 82 & 873K & 73K & 945K & \$4.36 & \$0.053 \\
+    Tool w/o retrieval & GPT-4o & 82 & 4.6M & 83K & 4.6M & \$18.37 & \$0.224 \\
+    \midrule
+    Sem.+Struc (Tool) & codex & 89 & 3.3M & 87K & 3.4M & \$6.94 & \$0.078 \\
+    Semantic (Tool) & codex & 89 & 4.2M & 100K & 4.3M & \$8.80 & \$0.099 \\
+    Topology (Tool) & codex & 89 & 4.0M & 106K & 4.1M & \$8.44 & \$0.095 \\
+    Model baseline & codex & 89 & 1.1M & 65K & 1.2M & \$2.88 & \$0.032 \\
+    Tool w/o retrieval & codex & 89 & 2.6M & 59K & 2.7M & \$5.40 & \$0.061 \\
+    \midrule
+    Sem.+Struc (Single) & DeepSeek & 89 & 3.4M & 300K & 3.7M & \$0.80 & \$0.009 \\
+    Sem.+Struc (Tool) & DeepSeek & 89 & 8.4M & 725K & 9.1M & \$1.97 & \$0.022 \\
+    Semantic (Tool) & DeepSeek & 89 & 9.2M & 763K & 9.9M & \$2.13 & \$0.024 \\
+    Topology (Single) & DeepSeek & 89 & 4.0M & 325K & 4.3M & \$0.93 & \$0.010 \\
+    Topology (Tool) & DeepSeek & 89 & 8.8M & 661K & 9.5M & \$2.02 & \$0.023 \\
+    Model baseline & DeepSeek & 89 & 1.1M & 98K & 1.2M & \$0.26 & \$0.003 \\
+    Tool w/o retrieval & DeepSeek & 89 & 8.0M & 727K & 8.7M & \$1.88 & \$0.021 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \section{Generation: AutoPatch Dataset}
 
+The AutoPatch dataset presents a simpler patch generation challenge than CVEfixes: vulnerabilities are confined to single functions with localized, few-line repairs. This reduced complexity allows for a cleaner evaluation of the retrieval-augmented pipeline's effectiveness when the fix is mechanically straightforward.
+
 \subsection{GPT-5.3-Codex}
-\begin{table}[H]
-  \centering
-  \small
-  \caption{Performance Evaluation Metrics by CWE Category (CodeBERT Pattern vs. Combined Model).}
-  \label{tab:codebert_pattern_results}
-  \begin{tabular}{llcccc}
-    \toprule
-    \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
-    \midrule
-    \multirow{2}{*}{\textbf{CWE-190}} 
-      & CodeBERT Pattern  & $0.7155 \pm 0.4454^*$ & -- & $0.7771 \pm 0.4022^*$ \\
-      & Combined Model    & $0.4385 \pm 0.0767^*$ & $0.8316 \pm 0.0998^*$ & $0.0778 \pm 0.1290^*$ \\
-    \midrule
-    \multirow{2}{*}{\textbf{CWE-20}} 
-      & CodeBERT Pattern  & $0.8767 \pm 0.1965^*$ & -- & $0.8444 \pm 0.3019^*$ \\
-      & Combined Model    & -- & -- & -- \\
-    \midrule
-    \multirow{2}{*}{\textbf{CWE-362}} 
-      & CodeBERT Pattern  & $0.9689 \pm 0.0878^*$ & -- & $0.9988 \pm 0.0030^{\S}$ \\
-      & Combined Model    & -- & -- & -- \\
-    \midrule
-    \multirow{2}{*}{\textbf{CWE-416}} 
-      & CodeBERT Pattern  & $1.0000 \pm 0.0000^{\S}$ & -- & $0.9968 \pm 0.0042^{\S}$ \\
-      & Combined Model    & $0.4991 \pm 0.0838^*$ & $0.9107 \pm 0.0258^{\S}$ & $0.0000 \pm 0.0000^{\S}$ \\
-    \midrule
-    \multirow{2}{*}{\textbf{CWE-476}} 
-      & CodeBERT Pattern  & $0.9146 \pm 0.2171^*$ & -- & $0.8892 \pm 0.3291^*$ \\
-      & Combined Model    & $0.6378 \pm 0.1154^*$ & $0.8794 \pm 0.0811^*$ & $0.0159 \pm 0.0420^{\ddagger}$ \\
-    \midrule
-    \multirow{2}{*}{\textbf{CWE-667}} 
-      & CodeBERT Pattern  & -- & -- & -- \\
-      & Combined Model    & $0.5560 \pm 0.1263^{\mathparagraph}$ & $0.9376 \pm 0.0676^{\S}$ & $0.0102 \pm 0.0491^{\S}$ \\
-    \midrule
-    \multirow{2}{*}{\textbf{CWE-787}} 
-      & CodeBERT Pattern  & $0.4569 \pm 0.1306^*$ & -- & $0.0146 \pm 0.0402^{\S}$ \\
-      & Combined Model    & -- & -- & -- \\
-    \bottomrule
-  \end{tabular}
-  \vspace{1ex}
-  \raggedright
-  \scriptsize
-  \dag\ \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$. Sample sizes per category: 
-  \textit{CodeBERT Pattern} ($N=46$): CWE-362 ($n=8$), CWE-476 ($n=9$), CWE-416 ($n=3$), CWE-20 ($n=9$), CWE-190 ($n=6$), and CWE-787 ($n=11$). 
-  \textit{Combined Model} ($N=58$): CWE-667 ($n=23$), CWE-190 ($n=8$), CWE-476 ($n=7$), CWE-416 ($n=6$), CWE-253 ($n=2$), CWE-672 ($n=2$), CWE-825 ($n=2$), and single-instance categories ($n=1$ each: CWE-362, CWE-391, CWE-562, CWE-587, CWE-833, CWE-191, CWE-401, CWE-704). Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
-  \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
-\end{table}
 
-\begin{table}[H]
-\centering
-\caption{Evaluation metrics across vulnerability categories for \textbf{CodeBERT Seq} ($n = 55$ overall, 95\% CI).}
-\label{tab:codebert_seq_eval}
-\small
-\begin{tabular}{l c l c c c}
-\toprule
-\textbf{Vulnerability Category} & \textbf{Sample ($n$)} & \textbf{Metric} & \textbf{Mean $\pm$ Std} & \textbf{95\% CI} & \textbf{Affordable Conf.} \\
-\midrule
-\multirow{4}{*}{\textbf{Integer Overflow or Wraparound}} & \multirow{4}{*}{8} 
-  & BERTScore F1 & $0.4861 \pm 0.0853$ & $[0.4148, 0.5575]$ & 85\% \\
-  & & ROUGE-L F1 & $0.8452 \pm 0.0910$ & $[0.7691, 0.9213]$ & 80\% \\
-  & & Hunk F1 & $0.0417 \pm 0.1178$ & $[-0.0569, 0.1402]$ & -- \\
-  & & Hunk Token Jaccard & $0.2576 \pm 0.1538$ & $[0.1290, 0.3862]$ & -- \\
-\midrule
-\multirow{4}{*}{\textbf{Use After Free}} & \multirow{4}{*}{7} 
-  & BERTScore F1 & $0.5060 \pm 0.0853$ & $[0.4271, 0.5848]$ & 80\% \\
-  & & ROUGE-L F1 & $0.9066 \pm 0.0333$ & $[0.8758, 0.9373]$ & 99\% \\
-  & & Hunk F1 & $0.0000 \pm 0.0000$ & $[0.0000, 0.0000]$ & 99\% \\
-  & & Hunk Token Jaccard & $0.1864 \pm 0.0659$ & $[0.1254, 0.2474]$ & 90\% \\
-\midrule
-\multirow{4}{*}{\textbf{NULL Pointer Dereference}} & \multirow{4}{*}{7} 
-  & BERTScore F1 & $0.6424 \pm 0.1154$ & $[0.5356, 0.7491]$ & -- \\
-  & & ROUGE-L F1 & $0.9210 \pm 0.0948$ & $[0.8334, 1.0087]$ & -- \\
-  & & Hunk F1 & $0.0220 \pm 0.0581$ & $[-0.0318, 0.0757]$ & 90\% \\
-  & & Hunk Token Jaccard & $0.2324 \pm 0.1079$ & $[0.1325, 0.3322]$ & -- \\
-\midrule
-\multirow{4}{*}{\textbf{Incorrect Check of Function Return}} & \multirow{4}{*}{2} 
-  & BERTScore F1 & $0.5304 \pm 0.0216$ & $[0.3367, 0.7242]$ & 80\% \\
-  & & ROUGE-L F1 & $0.8973 \pm 0.0018$ & $[0.8808, 0.9138]$ & 95\% \\
-  & & Hunk F1 & $0.0000 \pm 0.0000$ & $[0.0000, 0.0000]$ & 99\% \\
-  & & Hunk Token Jaccard & $0.1875 \pm 0.0631$ & $[-0.3792, 0.7542]$ & -- \\
-\midrule
-\multirow{4}{*}{\textbf{Resource Operation Post-Expiration}} & \multirow{4}{*}{2} 
-  & BERTScore F1 & $0.6655 \pm 0.1208$ & $[-0.4196, 1.7506]$ & -- \\
-  & & ROUGE-L F1 & $0.8964 \pm 0.0017$ & $[0.8812, 0.9116]$ & 95\% \\
-  & & Hunk F1 & $0.0000 \pm 0.0000$ & $[0.0000, 0.0000]$ & 99\% \\
-  & & Hunk Token Jaccard & $0.0000 \pm 0.0000$ & $[0.0000, 0.0000]$ & 99\% \\
-\midrule
-\multirow{4}{*}{\textbf{Improper Locking}} & \multirow{4}{*}{21} 
-  & BERTScore F1 & $0.5644 \pm 0.1775$ & $[0.4837, 0.6452]$ & -- \\
-  & & ROUGE-L F1 & $0.9027 \pm 0.1697$ & $[0.8254, 0.9799]$ & 80\% \\
-  & & Hunk F1 & $0.0231 \pm 0.0730$ & $[-0.0101, 0.0563]$ & 99\% \\
-  & & Hunk Token Jaccard & $0.1348 \pm 0.0867$ & $[0.0954, 0.1743]$ & 95\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[H]
-  \centering
-  \small
-  \caption{Performance Evaluation Metrics by CWE Category across Evaluated Models.}
-  \label{tab:codebert_comparison_results}
-  \begin{tabular}{llcccc}
-    \toprule
-    \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
-    \midrule
-    \multirow{4}{*}{\textbf{CWE-190}} 
-      & CodeBERT Pattern      & $0.7155 \pm 0.4454^*$ & -- & $0.7771 \pm 0.4022^*$ \\
-      & Combined Model        & $0.4385 \pm 0.0767^*$ & $0.8316 \pm 0.0998^*$ & $0.0778 \pm 0.1290^*$ \\
-      & CodeBERT Seq          & $0.4861 \pm 0.0853^*$ & $0.8452 \pm 0.0910^*$ & $0.0417 \pm 0.1178^*$ \\
-      & Tool Calling (w/o R.) & $0.4409 \pm 0.1006^*$ & $0.8349 \pm 0.0857^*$ & $0.0000 \pm 0.0000^{\S}$ \\
-    \midrule
-    \multirow{4}{*}{\textbf{CWE-20}} 
-      & CodeBERT Pattern      & $0.8767 \pm 0.1965^*$ & -- & $0.8444 \pm 0.3019^*$ \\
-      & Combined Model        & -- & -- & -- \\
-      & CodeBERT Seq          & -- & -- & -- \\
-      & Tool Calling (w/o R.) & -- & -- & -- \\
-    \midrule
-    \multirow{4}{*}{\textbf{CWE-253}} 
-      & CodeBERT Pattern      & -- & -- & -- \\
-      & Combined Model        & -- & -- & -- \\
-      & CodeBERT Seq          & $0.5304 \pm 0.0216^*$ & $0.8973 \pm 0.0018^{\ddagger}$ & $0.0000 \pm 0.0000^{\S}$ \\
-      & Tool Calling (w/o R.) & -- & -- & -- \\
-    \midrule
-    \multirow{4}{*}{\textbf{CWE-362}} 
-      & CodeBERT Pattern      & $0.9689 \pm 0.0878^*$ & -- & $0.9988 \pm 0.0030^{\S}$ \\
-      & Combined Model        & -- & -- & -- \\
-      & CodeBERT Seq          & -- & -- & -- \\
-      & Tool Calling (w/o R.) & -- & -- & -- \\
-    \midrule
-    \multirow{4}{*}{\textbf{CWE-416}} 
-      & CodeBERT Pattern      & $1.0000 \pm 0.0000^{\S}$ & -- & $0.9968 \pm 0.0042^{\S}$ \\
-      & Combined Model        & $0.4991 \pm 0.0838^*$ & $0.9107 \pm 0.0258^{\S}$ & $0.0000 \pm 0.0000^{\S}$ \\
-      & CodeBERT Seq          & $0.5060 \pm 0.0853^*$ & $0.9066 \pm 0.0333^{\S}$ & $0.0000 \pm 0.0000^{\S}$ \\
-      & Tool Calling (w/o R.) & $0.4882 \pm 0.0243^*$ & $0.8896 \pm 0.0805^*$ & $0.0000 \pm 0.0000^{\S}$ \\
-    \midrule
-    \multirow{4}{*}{\textbf{CWE-476}} 
-      & CodeBERT Pattern      & $0.9146 \pm 0.2171^*$ & -- & $0.8892 \pm 0.3291^*$ \\
-      & Combined Model        & $0.6378 \pm 0.1154^*$ & $0.8794 \pm 0.0811^*$ & $0.0159 \pm 0.0420^{\ddagger}$ \\
-      & CodeBERT Seq          & $0.6424 \pm 0.1154^*$ & $0.9210 \pm 0.0948^*$ & $0.0220 \pm 0.0581^{\mathparagraph}$ \\
-      & Tool Calling (w/o R.) & -- & -- & -- \\
-    \midrule
-    \multirow{4}{*}{\textbf{CWE-667}} 
-      & CodeBERT Pattern      & -- & -- & -- \\
-      & Combined Model        & $0.5560 \pm 0.1263^{\mathparagraph}$ & $0.9376 \pm 0.0676^{\S}$ & $0.0102 \pm 0.0491^{\S}$ \\
-      & CodeBERT Seq          & $0.5644 \pm 0.1775^*$ & $0.9027 \pm 0.1697^*$ & $0.0231 \pm 0.0730^{\S}$ \\
-      & Tool Calling (w/o R.) & $0.5328 \pm 0.1493^*$ & $0.9185 \pm 0.1178^*$ & $0.0000 \pm 0.0000^{\S}$ \\
-    \midrule
-    \multirow{4}{*}{\textbf{CWE-672}} 
-      & CodeBERT Pattern      & -- & -- & -- \\
-      & Combined Model        & -- & -- & -- \\
-      & CodeBERT Seq          & $0.6655 \pm 0.1208^*$ & $0.8964 \pm 0.0017^{\ddagger}$ & $0.0000 \pm 0.0000^{\S}$ \\
-      & Tool Calling (w/o R.) & -- & -- & -- \\
-    \midrule
-    \multirow{4}{*}{\textbf{CWE-787}} 
-      & CodeBERT Pattern      & $0.4569 \pm 0.1306^*$ & -- & $0.0146 \pm 0.0402^{\S}$ \\
-      & Combined Model        & -- & -- & -- \\
-      & CodeBERT Seq          & -- & -- & -- \\
-      & Tool Calling (w/o R.) & -- & -- & -- \\
-    \bottomrule
-  \end{tabular}
-  \vspace{1ex}
-  \raggedright
-  \scriptsize
-  \dag\ \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$. Sample sizes per category: 
-  \textit{CodeBERT Pattern} ($N=46$): CWE-362 ($n=8$), CWE-476 ($n=9$), CWE-416 ($n=3$), CWE-20 ($n=9$), CWE-190 ($n=6$), and CWE-787 ($n=11$). 
-  \textit{Combined Model} ($N=58$): CWE-667 ($n=23$), CWE-190 ($n=8$), CWE-476 ($n=7$), CWE-416 ($n=6$), CWE-253 ($n=2$), CWE-672 ($n=2$), CWE-825 ($n=2$), and single-instance categories ($n=1$ each). 
-  \textit{CodeBERT Seq} ($N=55$): CWE-667 ($n=21$), CWE-190 ($n=8$), CWE-416 ($n=7$), CWE-476 ($n=7$), CWE-253 ($n=2$), and CWE-672 ($n=2$). 
-  \textit{Tool Calling w/o Retrieval} ($N=16$): CWE-667 ($n=4$), CWE-190 ($n=2$), CWE-416 ($n=2$), and single-instance categories ($n=1$ each). Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
-  \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
-\end{table}
+Table~\ref{tab:autopatch_overall_pipeline_performance_gpt_codex} summarizes the overall pipeline performance for GPT-5.3-Codex. All three retrieval variants achieve high completion rates (88--100\%) and strong LLM Judge validity (70--85\%). The \textit{Combined} (Topology) retrieval strategy achieves the highest completion rate (100\%) and Judge validity (85.3\%), followed by \textit{CodeBERT Seq} (Semantic) at 96\% completion and 82.7\% validity. The \textit{CodeBERT Pattern} (Semantic+Structure) variant, despite lower completion (88\%), still achieves 70.3\% validity. Token-based metrics (BLEU-4, ROUGE-L) are nearly identical across variants ($\approx$0.83 and $\approx$0.90, respectively), indicating that when patches are successfully generated, their textual similarity to ground truth is consistent regardless of retrieval strategy.
 
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{img/patching/ci_gptcodex_bertscore.png}
-    \caption{BERT Score for GPT-5.3-Codex Patching}
+    \caption{BERTScore confidence intervals for GPT-5.3-Codex patching on AutoPatch, grouped by CWE category.}
     \label{img:autopatch_gptcodex_bertscore}
 \end{figure}
 
-The patch in this dataset requires localized changes, encompassing one function with a few lines of repair. Resulting, therefore, in easier cases when compared to the CVEFixes dataset. When using a powerful model, we see that the patching is quite successful. 
-In Figure \ref{img:autopatch_gptcodex_bertscore}, we can see that the BERTScore performance is statistically equivalent between the different pipelines, with the scores being in general very close and the confidence interval heavily overlapping.
-In Figure \ref{img:autopatch_gpt4o_bertscore}, Topology and Semanctic+Structure performs consistently throughout the different CWEs. Tools without retrieval show the highest performance variation; the critical cases are Bad Return Check and Expired Pointer Dereference, with only 1 patching instance each, and Null Pointer Dereference, with none, due to complete failure to solve the issues. This may be due to mal-formatting the output (e.g., failing to close the SEARCH\&REPLACE block) or to a simple placeholder returned as the patched code. 
+Figure~\ref{img:autopatch_gptcodex_bertscore} shows the BERTScore distributions across CWE categories for GPT-5.3-Codex. The confidence intervals overlap substantially across all retrieval variants, confirming that no single embedding strategy dominates at the semantic similarity level. This statistical equivalence, combined with the high Judge validity rates, suggests that for localized single-function fixes, the choice of retrieval embedding has minimal impact on patch quality when using a sufficiently capable model.
+
+Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex} breaks down performance by vulnerability category. Memory Safety (CWE-416, CWE-476) and Concurrency (CWE-362, CWE-667) represent the largest sample sizes (22--31 patches per variant). Numeric/Type vulnerabilities (CWE-190, CWE-787) show notably lower BERTScore ($\approx$0.31--0.32) despite high BLEU-4 ($\approx$0.87--0.89), indicating that integer overflow and out-of-bounds write patches may be lexically similar but semantically divergent from ground truth. Resource Management patches show moderate performance across all metrics.
 
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{img/patching/ci_gpt4_bertscore.png}
-    \caption{CodeBERT Score for GPT-4o Patching}
+    \caption{BERTScore confidence intervals for GPT-4o patching on AutoPatch, grouped by CWE category.}
     \label{img:autopatch_gpt4o_bertscore}
 \end{figure}
-
-
-The results at the CWE level in Table \ref{tab:cwe_breakdown} reinforce the conclusion that no single configuration dominates, even at the category granularity. 
-However, when comparing the retrieval-augmented variants against the no-retrieval baseline, there is a trade-off by CWE. 
-The Tool Calling without Retrieval baseline is strongest on CWE-190 (Integer Overflow) and CWE-20 (Improper Input Validation), while Topological and Semantic lead on CWE-362 (Race Condition), CWE-416 (Use After Free), and CWE-476 (NULL Pointer Dereference), and Semantic+Structure leads on CWE-787 (Out-of-Bounds Write). 
-This pattern suggests that retrieval context helps most on CWEs where the fix depends on state-tracking reasoning (race conditions, use-after-free, null-pointer lifecycle), while for simpler, more localized categories (integer overflow, input validation), retrieval context is not relevant and can even dilute the model's memory knowledge.
-Besides that, the tool-calling execution behavior in Table \ref{tab:cwe_tool_behavior} shows that the Tool Calling without Retrieval configuration achieves consistently higher verification rates than Semantic+Structure across every CWE category, reaching 100\% for four of the six categories versus three for Semantic+Structure. The violation rates are low in both configurations, with CWE-476 (Null Pointer Dereference) being the hardest case for policy compliance in both setups (16.7\% for CodeBERT Pattern, 8.3\% for baseline). 
-
-
-Another perspective stands for the comparison of the tool-calling modes against single-turn generation.
-Table \ref{tab:retrieval_and_turns} shows that tool-calling mode almost triples the average retrieval similarity compared to single-turn across all three embedding variants (e.g., Semantic+Structure: 0.149 to 0.399; Topological: 0.083 to 0.432), confirming that the iterative ReAct loop is substantially better at surfacing relevant context than a single retrieval pass, independent of which embedding strategy is used. 
-
-Besides that, Tool calling improves the success rate over single-turn generation for every embedding variant, with Topological showing the largest gain (33.7\% to 46.1\%). 
-However, Topological Structure embedding also has by far the lowest CVE Match (16.8\%) and CWE Match (23.6\%) of any configuration, \ref{tab:overall_performance}, and its Judge Valid rate is only 6.7\% in tool-calling mode, the lowest of the three retrieval variants. This is consistent with the earlier BLEU-4/ROUGE-L finding that the model can produce patches that are lexically and structurally plausible yet incorrect.
-
-The Judge Valid column is the most informative signal to measure reliability. Single-turn generation is essentially incapable of producing judge-valid patches (1.1\%, 0.0\%, 0.0\% across the three variants). Tool-calling shows better performance with 27.0\% and 25.8\% for Semantic+Structure and Semantic, respectively, and 21.3\% for the Tool Calling without Retrieval. 
-This roughly 20--25x improvement from single-turn to tool-calling is evidence that retrieval context alone, as in the single-turn setting, is ineffective without the agent's ability to inspect, test, and revise its own output.
-
-gpt-5.3-codex
 \begin{table}[H]
   \centering
   \caption{GPT-5.3-Codex: Overall pipeline performance on the autopatch dataset}
@@ -2113,6 +1490,23 @@ gpt-5.3-codex
 
 \subsection{GPT-4o}
 
+Table~\ref{tab:autopatch_overall_pipeline_performance_gpt4o} presents GPT-4o's performance on the same AutoPatch dataset. Compared to GPT-5.3-Codex, GPT-4o exhibits lower completion rates (72--80\%) and substantially reduced LLM Judge validity (50--65\%). The \textit{Combined} variant achieves the highest completion (77.3\%) but the lowest validity among retrieval-augmented methods (56.8\%), suggesting that higher completion does not guarantee functional correctness. The \textit{Tool-only} baseline without retrieval shows 80\% completion but only 50\% validity, with markedly lower token-based metrics (BLEU-4: 0.66, ROUGE-L: 0.73) and high variance (BERTScore std: 0.244).
+
+Figure~\ref{img:autopatch_gpt4o_bertscore} reveals greater performance heterogeneity for GPT-4o than for Codex. The Tool-only baseline exhibits the widest confidence intervals, with complete failures on certain CWE categories (e.g., NULL Pointer Dereference) due to output formatting errors such as unclosed SEARCH\&REPLACE blocks or placeholder text. In contrast, retrieval-augmented variants maintain more consistent performance across categories.
+
+Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o} shows that GPT-4o's category-level performance varies more than Codex's. The Tool-only baseline struggles particularly with Concurrency vulnerabilities (BLEU-4: 0.42, BERTScore: 0.27), while retrieval-augmented methods maintain BLEU-4 $>$ 0.85 for the same category. Memory Safety patches show the strongest performance across all variants, with retrieval methods achieving BERTScore $>$ 0.58.
+
+\paragraph{Model Comparison.}
+The comparison between GPT-5.3-Codex and GPT-4o on AutoPatch reveals a clear capability gap. Codex achieves 15--35 percentage points higher LLM Judge validity across all retrieval variants. This gap is most pronounced for the Combined/Topology strategy (85.3\% vs 56.8\%) and smallest for CodeBERT Pattern/Semantic+Structure (70.3\% vs 63.0\%). The results suggest that on localized, single-function vulnerability patches, model capability is the dominant factor, and retrieval augmentation provides diminishing returns when the base model is sufficiently powerful.
+
+Conversely, for GPT-4o, retrieval augmentation provides a meaningful boost: all three retrieval variants outperform the Tool-only baseline by 6--15 percentage points on Judge validity. This indicates that retrieval context compensates for model limitations by grounding the generation in relevant vulnerability patterns.
+
+\paragraph{Cost Analysis.}
+Table~\ref{tab:generation_cost_summary_condensed} presents the generation costs. GPT-5.3-Codex is substantially more cost-efficient, averaging \$0.018--0.020 per patch versus \$0.039--0.042 for GPT-4o with retrieval. The Tool-only GPT-4o baseline incurs the highest per-entry cost (\$0.224) due to the extended multi-turn interactions required when no retrieval context guides the generation. RAG-augmented pipelines reduce GPT-4o costs by 5--6$\times$ compared to the no-retrieval baseline while simultaneously improving patch quality. Compared to the CVEfixes dataset (Table~\ref{tab:cvefixes_generation_cost_summary}), AutoPatch generation costs are 3--6$\times$ lower per entry for equivalent configurations---reflecting the reduced complexity of single-function, localized fixes versus multi-file vulnerability patches that require substantially larger context windows and more reasoning steps.
+
+\paragraph{Summary.}
+On the simpler AutoPatch dataset, the retrieval-augmented pipeline achieves high success rates (70--85\% Judge validity with Codex, 56--65\% with GPT-4o). The key findings are: (1) model capability dominates---GPT-5.3-Codex substantially outperforms GPT-4o regardless of retrieval strategy; (2) retrieval augmentation provides consistent benefits for less capable models; (3) token-based metrics (BLEU, ROUGE) plateau across variants, but Judge validity and BERTScore reveal meaningful differences; and (4) the Combined/Topology retrieval achieves the best trade-off of completion rate and functional validity for the stronger model, while Semantic+Structure offers the most stable performance for the weaker model.
+
 \begin{table}[H]
   \centering
   \caption{GPT-4o:Overall pipeline performance on the autopatch dataset}
@@ -2131,8 +1525,8 @@ gpt-5.3-codex
 
 \begin{table}[H]
   \centering
-  \caption{Pipeline performance by CWE category on the autopatch dataset}
-  \label{tab:autopatch_pipeline_by_cwe_category_gpt_codex}
+  \caption{GPT-4o: Pipeline performance by CWE category on the AutoPatch dataset}
+  \label{tab:autopatch_pipeline_by_cwe_category_gpt4o}
   \begin{tabular}{llrrrr}
     \toprule
     Source & Category & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
@@ -2162,26 +1556,73 @@ gpt-5.3-codex
 \end{table}
 
 % uv run python3 utils/aggregate_autopatch_summary.py cvefixes_experiments/output/autopatch/20260816_080855_autopatch_retrieval_patching_5d203b_gpt4/ --out cvefixes_experiments/output/autopatch/20260816_080855_autopatch_retrieval_patching_5d203b_gpt4/autopatch_summary.tex
+% \begin{table}[H]
+%   \centering
+%   \caption{GPT-4o: Generation cost summary by run}
+%   \label{tab:generation_cost_summary_by_run_gpt4o}
+%   \begin{tabular}{llrrrrrrr}
+%     \toprule
+%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+%     \midrule
+%     codebert\_pattern / single\_turn & gpt-4o & 75 & 384527 & 69479 & 454006 & \$2.4842 & \$0.033122 \\
+%     codebert\_pattern / tool\_calling & gpt-4o & 75 & 558624 & 57310 & 615934 & \$2.9545 & \$0.039393 \\
+%     codebert\_seq / single\_turn & gpt-4o & 75 & 405989 & 76320 & 482309 & \$2.6673 & \$0.035563 \\
+%     codebert\_seq / tool\_calling & gpt-4o & 75 & 625030 & 55592 & 680622 & \$3.1777 & \$0.042370 \\
+%     combined / single\_turn & gpt-4o & 75 & 425738 & 78016 & 503754 & \$2.7668 & \$0.036890 \\
+%     combined / tool\_calling & gpt-4o & 75 & 637081 & 63424 & 700505 & \$3.3404 & \$0.044539 \\
+%     tool\_calling\_no\_retrieval & gpt-4o & 20 & 113308 & 16570 & 129878 & \$0.6735 & \$0.033673 \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+% \begin{table}[H]
+%   \centering
+%   \caption{GPT-5.3-Codex: Generation cost summary by run}
+%   \label{tab:generation_cost_summary_by_run}
+%   \begin{tabular}{llrrrrrrr}
+%     \toprule
+%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & Cost (USD) & Avg Cost/Entry (USD) \\
+%     \midrule
+%     codebert\_pattern / tool\_calling & gpt-5.3-codex & 
+%     % codebert\_pattern / tool\_calling / & gpt-4o & 20 & 140323 & 10423 & 150746 & \$0.6826 & \$0.034128 \\
+%     codebert\_seq / tool\_calling & 
+%     combined / tool\_calling & gpt-5.3-codex & 75 & 398051 & 55285 & 453336 & \$1.4706 & \$0.019608 \\
+    
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+
 \begin{table}[H]
   \centering
-  \caption{GPT-4o: Generation cost summary by run}
-  \label{tab:generation_cost_summary_by_run_gpt4o}
-  \begin{tabular}{llrrrrrrr}
+  \caption{Condensed Generation Cost Summary Across All Experiments}
+  \label{tab:generation_cost_summary_condensed}
+  \begin{tabular}{llrrrrrr}
     \toprule
-    Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
     \midrule
-    codebert\_pattern / single\_turn & gpt-4o & 75 & 384527 & 69479 & 454006 & \$2.4842 & \$0.033122 \\
-    codebert\_pattern / tool\_calling & gpt-4o & 75 & 558624 & 57310 & 615934 & \$2.9545 & \$0.039393 \\
-    codebert\_seq / single\_turn & gpt-4o & 75 & 405989 & 76320 & 482309 & \$2.6673 & \$0.035563 \\
-    codebert\_seq / tool\_calling & gpt-4o & 75 & 625030 & 55592 & 680622 & \$3.1777 & \$0.042370 \\
-    combined / single\_turn & gpt-4o & 75 & 425738 & 78016 & 503754 & \$2.7668 & \$0.036890 \\
-    combined / tool\_calling & gpt-4o & 75 & 637081 & 63424 & 700505 & \$3.3404 & \$0.044539 \\
-    tool\_calling\_no\_retrieval & gpt-4o & 20 & 113308 & 16570 & 129878 & \$0.6735 & \$0.033673 \\
+    Sem.+Struc - Tool & codex & 75 & 380K & 51K & 430K & \$1.37 & \$0.018 \\
+    % codebert\_pattern / tool\_calling & gpt-5.3-codex & 89 & 3.3M & 87.2K & 3.4M & \$6.94 & \$0.078 \\
+    Semantic - Tool & codex & 75 & 400K & 55K & 452K & \$1.46 & \$0.019 \\
+    Topology - Tool & codex & 75 & 399K & 55K & 453K & \$1.47 & \$0.020 \\
+    Model baseline & codex &  &  &  &  & \$ & \$0. \\
+    Tool w/o retrieval & codex &  &  &  &  & \$ & \$0.0 \\
+    \midrule
+    Sem.+Struc - Tool & GPT-4o & 75 & 559K & 57K & 616K & \$2.95 & \$0.039 \\
+    Semantic - Tool & GPT-4o & 75 & 625K & 56K & 681K & \$3.18 & \$0.042 \\
+    Topology - Tool & GPT-4o & 75 & 620K & 55K & 680K & \$3.17 & \$0.041 \\
+    Model baseline & GPT-4o & 82 & 872.5K & 72.6K & 945.1K & \$4.36 & \$0.053 \\
+    Tool w/o retrieval & GPT-4o & 82 & 4.6M & 83.3K & 4.6M & \$18.37 & \$0.224 \\
+    % codebert\_pattern / single\_turn & gpt-4o & 75 & 384527 & 69479 & 454006 & \$2.4842 & \$0.033122 \\
+    % codebert\_pattern / tool\_calling & gpt-4o & 75 & 558624 & 57310 & 615934 & \$2.9545 & \$0.039393 \\
+    % codebert\_seq / single\_turn & gpt-4o & 75 & 405989 & 76320 & 482309 & \$2.6673 & \$0.035563 \\
+    % codebert\_seq / tool\_calling & gpt-4o & 75 & 625030 & 55592 & 680622 & \$3.1777 & \$0.042370 \\
+    % combined / single\_turn & gpt-4o & 75 & 425738 & 78016 & 503754 & \$2.7668 & \$0.036890 \\
+    % combined / tool\_calling & gpt-4o & 75 & 625030 & 55592 & 680622 & \$3.1777 & \$0.042370 \\
+    % tool\_calling\_no\_retrieval & gpt-4o & 20 & 113308 & 16570 & 129878 & \$0.6735 & \$0.033673 \\
     \bottomrule
   \end{tabular}
 \end{table}
-
-
 
 % ## Summary
 
@@ -2204,3 +1645,14 @@ gpt-5.3-codex
 % **Broader Finding:**
 % Notably, **all model variants failed in this run** (not just DeepSeek), suggesting a systemic issue with the pipeline configuration rather than model-specific problems. The distinction is that single-turn produced no output (error status) while tool-calling produced malformed output (parse_error status).
 
+The CVEfixes dataset presents substantially higher per-entry costs than AutoPatch due to the increased complexity of multi-function, cross-file vulnerability patches that require longer context windows and more reasoning steps.
+
+Analyzing the Figure \ref{img:cost_bertscore_autopatch},
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{img/costs/cost_vs_quality_autopatch.png}
+    \caption{AutoPatch Patching Cost vs. BERTScore as quality measure.}
+    \label{img:cost_bertscore_autopatch}
+\end{figure}
