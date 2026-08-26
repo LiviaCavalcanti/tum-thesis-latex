@@ -3,7 +3,8 @@
 % TODO: decide if one-sided/two-sided
 %\documentclass[headsepline,footsepline,footinclude=false,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc,BCOR=12mm,DIV=12]{scrbook} % two-sided
 \documentclass[headsepline,footsepline,footinclude=false,oneside,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc]{scrbook} % one-sided
-
+\usepackage[backend=biber]{biblatex}
+\addbibresource{references.bib}
 \usepackage{booktabs}
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,calc}
@@ -14,23 +15,105 @@
 \usepackage{multirow}
 \usepackage{siunitx}
 \usepackage{tabularx}
+\usepackage{threeparttable}
 \usetikzlibrary{backgrounds}
 \usetikzlibrary{fit}
+\usepackage{graphicx}
+\usepackage{minted}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\tcbuselibrary{listings, breakable}
+\usepackage{colortbl}  % for \cellcolor
+\usepackage{makecell}
+\usepackage{float}
+
 
 % TODO: change citation style in settings
 \input{settings}
+
+
+\definecolor{promptbg}{rgb}{0.97,0.97,0.98}
+\definecolor{promptborder}{rgb}{0.85,0.85,0.88}
+\definecolor{prompttext}{rgb}{0.18,0.20,0.24}        % Dark slate for commands & text
+\definecolor{promptkeyword}{rgb}{0.10,0.38,0.72}     % Muted blue for keywords
+\definecolor{promptcomment}{rgb}{0.55,0.58,0.62}
+\definecolor{c1}{RGB}{41,128,185}
+\definecolor{c2}{RGB}{52,152,219}
+\definecolor{c3}{RGB}{155,89,182}
+\definecolor{c4}{RGB}{142,68,173}
+\definecolor{c5}{RGB}{230,126,34}
+\definecolor{c6}{RGB}{211,84,0}
+\definecolor{hit}{RGB}{39,174,96}
+\definecolor{miss}{RGB}{192,57,43}
+\definecolor{warn}{RGB}{243,156,18}
+
 
 % TODO: change thesis information
 \newcommand*{\getUniversity}{Technische Universität München}
 \newcommand*{\getFaculty}{Department of Informatics}
 \newcommand*{\getTitle}{Thesis title}
 \newcommand*{\getTitleGer}{Titel der Abschlussarbeit}
-\newcommand*{\getAuthor}{Lívia Cavalcanti Bandeira Julia~o}
+\newcommand*{\getAuthor}{Lívia Cavalcanti Bandeira Julião}
 \newcommand*{\getDoctype}{ Master's Thesis in Data Engineering and Analytics}
 \newcommand*{\getSupervisor}{Prof. Dr. Jana Giceva Makreshanska}
 \newcommand*{\getAdvisor}{Fabian Wenz}
 \newcommand*{\getSubmissionDate}{Submission date}
 \newcommand*{\getSubmissionLocation}{Munich}
+\newcommand{\chit}[1]{\cellcolor{hit!30} #1}
+\newcommand{\cmiss}[1]{\cellcolor{miss!25} #1}
+\newcommand{\cwarn}[1]{\cellcolor{warn!30} #1}
+
+\newtcblisting[auto counter]{lightprompt}[1][]{
+  breakable,
+  boxrule=0.6pt,
+  colback=promptbg,
+  colframe=promptborder,
+  arc=1.5mm,
+  top=1.5mm,
+  bottom=1.5mm,
+  left=3mm,
+  right=3mm,
+  listing only,
+  listing options={
+    language=bash,
+    basicstyle=\small\ttfamily\color{prompttext},
+    keywordstyle=\color{promptkeyword}\bfseries,
+    commentstyle=\color{promptcomment}\itshape,
+    stringstyle=\color{prompttext},       % Overrides default green strings
+    identifierstyle=\color{prompttext},   % Ensures standard prompt text stays dark
+    showstringspaces=false,
+    breaklines=true,
+    breakatwhitespace=true
+  },
+  #1
+}
+
+\newtcblisting[auto counter]{lightcpp}[1][]{
+  breakable,
+  boxrule=0.6pt,
+  colback=promptbg,
+  colframe=promptborder,
+  arc=1.5mm,
+  top=1.5mm,
+  bottom=1.5mm,
+  left=3mm,
+  right=3mm,
+  listing only,
+  listing options={
+    language=C++,
+    basicstyle=\small\ttfamily\color{prompttext},
+    keywordstyle=\color{promptkeyword}\bfseries,
+    commentstyle=\color{promptcomment}\itshape,
+    stringstyle=\color{prompttext},
+    identifierstyle=\color{prompttext},
+    showstringspaces=false,
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=2
+  },
+  #1
+}
 
 \begin{document}
 
@@ -56,6 +139,7 @@
 \input{chapters/03_dataset}
 \input{chapters/04_methodology}
 \input{chapters/05_results}
+\input{chapters/06_appendix}
 \appendix{}
 
 \microtypesetup{protrusion=false}
