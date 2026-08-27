@@ -6,7 +6,7 @@
 Vulnerabilities are a common issue across most code projects. Once a vulnerability is found and patched, it is registered in a vulnerability catalog, which allows the knowledge to be canonized. For a given entry code change that addresses the vulnerability the catalog stores, for example, the fix composed by the removed code and/or the added code, and the code around it is where the vulnerability resided, and references for the original code change and repository.
 Once a similar vulnerable codebase is identified, reapplying the known fix consists of recognizing that context elsewhere and porting an analogous change.
 
-The identification process, however, requires continuous cross-verification of the catalog with the codebase one is responsible for. This toll usually requires security expertise and competes with feature work for developers' time.
+The identification process, however, requires continuous cross-verification of the catalog with the codebase one is responsible for. This toil usually requires security expertise and competes with feature work for developers' time.
 The blatius ratio of a vulnerability is hard to measure; nevertheless, the consequences are well known. Once a vulnerability is identified, it can be easily exploited by using a public proof of concept, while the project's reputation suffers if it is seen as chronically insecure. 
 %TODO: find a citation quantifying the average time-to-patch for known CVEs in open-source projects (e.g. from an OSS security report) to support this claim with data.
 
@@ -42,16 +42,27 @@ Since vulnerability-relevant logic is diluted by implementation details and boil
 Empirical results from the same work suggest that this code noise induces what the authors term Analysis Focus Drift, wherein the model performs a code quality review rather than a vulnerability analysis.
 There is, therefore, an opportunity to develop methodologies that enrich security-relevant information while filtering out implementation noise. 
 
-Retrieval-augmented approaches can supply the models with structurally similar, previously-fixed vulnerabilities. By doing so, it provides grounding evidence for the task instead of requiring the model to rely on its generic pretraining knowledge via reasoning.
+Retrieval-augmented approaches can supply the models with structurally similar, previously fixed vulnerabilities. By doing so, it provides grounded evidence for the task rather than requiring the model to rely on its generic pretraining knowledge through reasoning.
 Prior work shows that knowledge bases can improve LLM responses in security applications~\cite{Seo2025AutoPatchMF, guo2025bluecodeagentblueteamingagent}.
 %TODO: restore/verify the du2025vulrag and wang2025valign citations on knowledge-base-augmented vulnerability repair; add BibTeX entries once confirmed.
 
-Moreover,various studies show that knowledge bases improve LLM responses in security applications ~\cite{du2025vulragenhancingllmbasedvulnerability, seo2026autopatch, wang2025valign, guo2025bluecodeagentblueteamingagent}.
-Although, it is unclear which retrieval and context-construction strategy optimizes patch quality,  particularly in multi-agent pipelines where retrieval, reasoning, and patch generation are handled by separate components.
+Moreover, various studies show that knowledge bases improve LLM responses in security applications ~\cite{du2025vulragenhancingllmbasedvulnerability, seo2026autopatch, wang2025valign, guo2025bluecodeagentblueteamingagent}.
+Although it is unclear which retrieval and context-construction strategy optimizes patch quality,  particularly in multi-agent pipelines where retrieval, reasoning, and patch generation are handled by separate components.
 
-This thesis investigates exactly that: the use of a structural signature that can be indexed, retrieved, and handed to an LLM as targeted context. Furthermore, it treats each historical fix as a pair of code property graphs and its properties to explore how the structural data can support this pipeline.
+This thesis investigates exactly that: the use of a structural signature that can be indexed, retrieved, and handed to an LLM as targeted context. Furthermore, it treats each historical fix as a pair of code property graphs and their properties to explore how the structural data can support this pipeline.
 
-
+% \subsection{Contributions}
+% %TODO: this paragraph was drafted from memory of the current pipeline state — verify wording, terminology, and completeness against the Methodology chapter before keeping it.
+ 
+% This thesis makes the following contributions:
+ 
+% \begin{itemize}
+%     \item A pipeline for extracting Code Property Graphs (CPGs) via Joern and computing structural diffs between pre- and post-fix versions, using fingerprint-based semantic node matching to resolve Joern's non-deterministic node IDs across graph pairs.
+%     \item A PDG-anchored slicing strategy that bounds the extracted context to the vulnerability-relevant subgraph rather than the full function or file.
+%     \item An evaluation of multiple unsupervised graph embedding strategies for retrieval -- including NetLSD, Weisfeiler-Lehman (WL), GIN, a heterogeneous edge-type-aware R-GCN, and combined/motif-based variants -- indexed with FAISS (flat and HNSW) for similarity search.
+%     \item An agentic, tool-calling patch-generation pipeline that consumes retrieved structural context and produces candidate patches, evaluated across multiple LLM backends and embedding strategies.
+%     \item An empirical assessment of retrieval quality and vulnerability-class coverage on a curated dataset, including a scoping analysis of the AutoPatch dataset that motivates using it as a CVE-list filter over CVEFixes rather than as a training source in its own right.
+% \end{itemize}
 
 \section{Scope and Positioning}
 
@@ -79,7 +90,12 @@ If within reach, we aim to also address the following complementary research que
 \textbf{CRQ2: }What is the computational and financial cost of the approach (e.g., token usage, storage complexity and size, end-to-end pipeline costs)? 
 
 
+\subsection{Thesis Structure}
 
+The remainder of this thesis is organized as follows. Chapter~\ref{chapter:literature-review} reviews related work on LLM-based vulnerability repair, retrieval-augmented generation, and graph-based program representations. 
+Chapter~\ref{chapter:dataset} describes the chosen dataset composition, including the scoping decisions made around AutoPatch and CVEFixes. 
+Chapter~\ref{chapter:methodology} details the CPG extraction, diffing, embedding, and retrieval pipeline, as well as the agentic patch-generation architecture. 
+Chapter~\ref{chapter:results} presents the empirical results across embedding strategies and LLM backends. Chapter~\ref{chapter:analysis} discusses these results in light of RQ1 and RQ2, including the identified methodological caveats and limitations, summarizing the contributions and outlining directions for future work.
 
 
 
@@ -87,3 +103,5 @@ If within reach, we aim to also address the following complementary research que
 % RQ1: Can structural diffs of code property graphs (before/after a fix) serve as effective retrieval signatures for identifying similar historical vulnerabilities across projects?
 % RQ2: Does providing an LLM with retrieved, structurally-similar prior fixes as context improve patch quality/correctness compared to raw-source-only prompting?
 % RQ3: Which retrieval/context-construction strategy (e.g., embedding variant, bounded slice size) most effectively reduces semantic misunderstanding and vulnerability-identification failures in a multi-agent patching pipeline?
+
+% Objectives, rationale/motivation, scope, and structure
