@@ -1,42 +1,74 @@
 \chapter{Dataset}\label{chapter:dataset}
-\section{Dataset}
 
-\subsection{AutoPatch}
+\section{AutoPatch}
 The AutoPatch dataset contains high-severity CVEs disclosed in 2024 and 2025 and collected from the GitHub Advisory Database, Openwall, and the Chromium issue tracker with a custom crawler.
 For each CVE, the entry pairs were augmented using 5 LLMs:  Code Llama (13b-instruct), DeepSeek Coder (v2-lite), DeepSeek-R1 (32b), GPT-4o, and OpenAI o3-mini.
 The augmentation strategies used were: "inserting unreachable code fragments, adding random code in comments, varying whitespace and formatting, defining a useless function, and introducing extraneous newline characters".
 
+% \begin{table}[H]
+% \centering
+% \caption{Distribution of CWE Types in the AutoPatch Dataset ($N = 75$)}
+% \label{tab:autopatch_cwe_distribution}
+% \begin{tabularx}{\textwidth}{llX r r}
+% \toprule
+% \textbf{CWE ID} & \textbf{Category Group} & \textbf{CWE Name / Description} & \textbf{Count} & \textbf{Ratio (\%)} \\
+% \midrule
+% CWE-20  & Validation \& Logic & Improper Input Validation & 20 & 26.67\% \\
+% CWE-362 & Concurrency        & Race Condition / Synchronization & 16 & 21.33\% \\
+% CWE-252 & Validation \& Logic & Unchecked Return Value & 12 & 16.00\% \\
+% CWE-843 & Type Errors        & Type Confusion & 8  & 10.67\% \\
+% CWE-416 & Memory Safety      & Use After Free & 6  & 8.00\% \\
+% CWE-476 & Memory Safety      & NULL Pointer Dereference & 4  & 5.33\% \\
+% CWE-703 & Validation \& Logic & Improper Handling of Exceptional Conditions & 3  & 4.00\% \\
+% CWE-122 & Memory Safety      & Heap-based Buffer Overflow & 1  & 1.33\% \\
+% CWE-125 & Memory Safety      & Out-of-bounds Read & 1  & 1.33\% \\
+% CWE-787 & Memory Safety      & Out-of-bounds Write & 1  & 1.33\% \\
+% CWE-400 & Resource Handling  & Uncontrolled Resource Consumption & 1  & 1.33\% \\
+% CWE-754 & Validation \& Logic & Improper Check for Unusual Conditions & 1  & 1.33\% \\
+% CWE-775 & Resource Handling  & Missing Release of Resource & 1  & 1.33\% \\
+% \midrule
+% \textbf{Total} & & & \textbf{75} & \textbf{100.00\%} \\
+% \bottomrule
+% \end{tabularx}
+% \end{table}
 
-Table \label{tab:autopatch_cwe_distribution} shows the CWE distribution in the AutoPatch dataset across the 75 entries. It is composed dominantly by validation/logic issues (CWE-20, CWE-252) and concurrency issues (CWE-362); the remaining dataset has memory safety CWEs (CWE-416, CWE-476, CWE-122, CWE-125, CWE-787).
-
-
-\begin{table}[htbp]
+\begin{table}
 \centering
 \caption{Distribution of CWE Types in the AutoPatch Dataset ($N = 75$)}
 \label{tab:autopatch_cwe_distribution}
-\begin{tabularx}{\textwidth}{llX r r}
-\toprule
-\textbf{CWE ID} & \textbf{Category Group} & \textbf{CWE Name / Description} & \textbf{Count} & \textbf{Ratio (\%)} \\
-\midrule
-CWE-20  & Validation \& Logic & Improper Input Validation & 20 & 26.67\% \\
-CWE-362 & Concurrency        & Race Condition / Synchronization & 16 & 21.33\% \\
-CWE-252 & Validation \& Logic & Unchecked Return Value & 12 & 16.00\% \\
-CWE-843 & Type Errors        & Type Confusion & 8  & 10.67\% \\
-CWE-416 & Memory Safety      & Use After Free & 6  & 8.00\% \\
-CWE-476 & Memory Safety      & NULL Pointer Dereference & 4  & 5.33\% \\
-CWE-703 & Validation \& Logic & Improper Handling of Exceptional Conditions & 3  & 4.00\% \\
-CWE-122 & Memory Safety      & Heap-based Buffer Overflow & 1  & 1.33\% \\
-CWE-125 & Memory Safety      & Out-of-bounds Read & 1  & 1.33\% \\
-CWE-787 & Memory Safety      & Out-of-bounds Write & 1  & 1.33\% \\
-CWE-400 & Resource Handling  & Uncontrolled Resource Consumption & 1  & 1.33\% \\
-CWE-754 & Validation \& Logic & Improper Check for Unusual Conditions & 1  & 1.33\% \\
-CWE-775 & Resource Handling  & Missing Release of Resource & 1  & 1.33\% \\
-\midrule
-\textbf{Total} & & & \textbf{75} & \textbf{100.00\%} \\
-\bottomrule
-\end{tabularx}
+\begin{tabular}{llc}
+    \toprule
+    \textbf{CWE ID} & \textbf{CWE Category / Name} & \textbf{Count} \\
+    \midrule
+    CWE-416 & Use After Free & 13 \\
+    CWE-190 & Integer Overflow or Wraparound & 10 \\
+    CWE-476 & NULL Pointer Dereference & 9 \\
+    CWE-667 & Improper Locking & 7 \\
+    CWE-362 & Race Condition & 4 \\
+    CWE-843 & Access of Resource Using Incompatible Type (Type Confusion) & 3 \\
+    CWE-833 & Deadlock & 3 \\
+    CWE-253 & Incorrect Check of Function Return Value & 3 \\
+    CWE-787 & Out-of-bounds Write & 3 \\
+    CWE-825 & Expired Pointer Dereference & 2 \\
+    CWE-401 & Memory Leak & 2 \\
+    CWE-672 & Operation on a Resource after Expiration or Release & 2 \\
+    CWE-400 & Uncontrolled Resource Consumption (Resource Exhaustion) & 2 \\
+    CWE-457 & Use of Uninitialized Variable & 2 \\
+    CWE-587 & Assignment of a Fixed Address to a Pointer & 1 \\
+    CWE-840 & Business Logic Errors & 1 \\
+    CWE-664 & Improper Control of a Resource Through Its Lifetime & 1 \\
+    CWE-20  & Improper Input Validation & 1 \\
+    CWE-129 & Improper Validation of Array Index & 1 \\
+    CWE-191 & Integer Underflow & 1 \\
+    CWE-704 & Incorrect Type Conversion or Cast & 1 \\
+    CWE-562 & Return of Stack Variable Address After Scope & 1 \\
+    CWE-252 & Unchecked Return Value & 1 \\
+    \bottomrule
+\end{tabular}
 \end{table}
 
+
+Table \ref{tab:autopatch_cwe_distribution} shows the CWE distribution in the AutoPatch dataset across the 75 entries. It is composed dominantly by validation/logic issues (CWE-20, CWE-252) and concurrency issues (CWE-362); the remaining dataset has memory safety CWEs (CWE-416, CWE-476, CWE-122, CWE-125, CWE-787).
 
 \section{CVEfixes}
 
@@ -44,47 +76,47 @@ CVEfixes\cite{moonen2024cvefixes} is a vulnerability dataset for data-driven sec
 The dataset includes detailed information about the Pull Request CVE resolution, such as the commit-, file-, and method level, as well as the repository- and CVE level.
 The general statistics are shown below: 
 
-  \vspace{0.6em}
-  \textbf{Database Scale}
-  \begin{itemize}
-    \item[\textbf{CVEs}] 11,873 vulnerabilities
-    \item[\textbf{commits}] 12,107 fix commits
-    \item[\textbf{files}] 51,342 changed files
-    \item[\textbf{methods}] 277,948 method changes
-  \end{itemize}
+\begin{itemize}
+    \item\textbf{CVEs} 11,873 vulnerabilities
+    \item\textbf{commits}] 12,107 fix commits
+    \item\textbf{files} 51,342 changed files
+    \item\textbf{methods} 277,948 method changes
+    \item\textbf{CWE types} 272 distinct types
+    \item\textbf{projects} 4,249 open-source projects
+\end{itemize}
 
 % Origin, Collection method, Composition used
 This project uses version v1.0.8, which covers all published CVEs up to 23 July 2024. According to the authors, the projects considered in this dataset include all open-source projects that were reported in CVE records in the NVD in this time frame and had publicly available git repositories. The dataset is stored in a relational database, containing 272 different CWE types across 12107 vulnerability-fixing commits from 4249 open-source projects. The dataset includes the source code before and after changing 51342 files and 138974 functions.
 
-
-  \vspace{0.5em}
-  {\small\textbf{Extracted Corpus Statistics}}\\[6pt]
-  {\scriptsize
-  \renewcommand{\arraystretch}{1.25}
-  \begin{tabular}{lr}
+\begin{table}[htbp]
+\centering
+\caption{Statistics of the Extracted Method-Pair Corpus}
+\label{tab:cvefixes_extracted_stats}
+\begin{tabular}{lr}
     \toprule
     \textbf{Metric} & \textbf{Value} \\
     \midrule
-    Method pairs & 4,607 \\
+    Method pairs (before/after per fix) & 4,607 \\
     Unique CVEs & 1,777 \\
     Unique CWEs & 92 \\
     Languages & C (92\%), C++ (8\%) \\
     \midrule
-    Avg lines added & 22.4 \\
-    Avg lines removed & 5.4 \\
-    Avg similarity ratio & 0.563 \\
-    \midrule
-    Severity: CRITICAL & 557 \\
-    Severity: HIGH & 1,132 \\
-    Severity: MEDIUM & 1,388 \\
+    Avg.\ lines added & 22.4 \\
+    Avg.\ lines removed & 5.4 \\
+    Avg.\ similarity ratio & 0.563 \\
+    % \midrule
+    % Severity: CRITICAL & 557 \\
+    % Severity: HIGH & 1,132 \\
+    % Severity: MEDIUM & 1,388 \\
     \bottomrule
-  \end{tabular}}
+\end{tabular}
+\end{table}
 
 \subsection{Fix Description Encoding}
  
 The AutoPatch is structured into folders where each entry is stored in a folder containing a description JSON (\texttt{db\_entry.json} file=, which includes a field describing the remediation strategy at a symbolic, variable-agnostic level (\texttt{fix\_list}).
 The fix description is using symbolic names with variable and function
-mappings (e.g., \textit{``add a NULL check before dereferencing the
+mappings (e.g., \textit{''add a NULL check before dereferencing the
 pointer''}) lets a fixed pattern learned from one example
 be transferred to a structurally similar target function. 
 With this description, the LLM is expected to use the abstract fix description to apply the required changes to the target using the actual identifiers. 
@@ -95,35 +127,39 @@ system-level focus of the pipeline; on average, a patch adds 22 lines and
 removes 5 lines, reflecting the generally asymmetric nature of security
 fixes.
 
-As a dataset collected from real-world cases with low preprocessing, it will be used to verify the methodology in real-life settings, especially when compared against the 70-sample AutoPatch corpus highly curated by the team. 
+As a dataset collected from real-world cases with low preprocessing, it will be used to verify the methodology in real-life settings, especially when compared against the 75-sample AutoPatch corpus highly curated by the team. 
 
 \subsection{CVEfixes Dataset Integration}
 
-To be able to compare with AutoPatch results, a sample of the dataset was extracted, focusing on similar CWEs. Table~\ref{tab:cvefixes_top_cwe} lists these CWE categories from the full extracted corpus, dominated by memory-safety issues (buffer overflows, out-of-bounds access, use-after-free) alongside input validation and concurrency problems.
+To compare with AutoPatch results, a sample of the dataset was extracted, focusing on similar CWEs. Table~\ref{tab:cvefixes_top_cwe} lists these CWE categories from the full extracted corpus, dominated by memory-safety issues (buffer overflows, out-of-bounds access, use-after-free) alongside input validation and concurrency problems.
  
 \begin{table}[htbp]
 \centering
-\caption{Top CWE Categories in the CVEfixes Extracted Corpus}
+\caption{Top CWE Categories in the CVEfixes Filtered Subset}
 \label{tab:cvefixes_top_cwe}
 \begin{tabular}{llr}
 \toprule
 \textbf{CWE} & \textbf{Name} & \textbf{Count} \\
 \midrule
-CWE-119 & Buffer Overflow & 507 \\
-CWE-125 & Out-of-bounds Read & 393 \\
-CWE-20  & Improper Validation & 308 \\
-CWE-416 & Use After Free & 304 \\
+CWE-119 & Buffer Overflow          & 507 \\
+CWE-125 & Out-of-bounds Read       & 393 \\
+CWE-20  & Improper Validation      & 308 \\
+CWE-416 & Use After Free           & 304 \\
 CWE-476 & NULL Pointer Dereference & 259 \\
-CWE-362 & Race Condition & 250 \\
-CWE-787 & Out-of-bounds Write & 150 \\
-CWE-190 & Integer Overflow & 137 \\
-CWE-400 & Resource Exhaustion & 137 \\
-CWE-401 & Memory Leak & 77 \\
+CWE-362 & Race Condition           & 250 \\
+CWE-787 & Out-of-bounds Write      & 150 \\
+CWE-190 & Integer Overflow         & 137 \\
+CWE-400 & Resource Exhaustion      & 137 \\
+CWE-401 & Memory Leak              & 77  \\
+\midrule
+\textbf{Total} & & \textbf{2,522} \\
 \bottomrule
 \end{tabular}
 \end{table}
  
-Following the goal of having comparable results, a stratified sample of 450 entries was extracted from this subset of CWE, same size as the AutoPatch augmented dataset size. To be able to have enough representation by CVE in the index and query subset, only 6 CWEs were considered to generate the subset: CWE-476, CWE-416, CWE-20, CWE-787, CWE-362, and CWE-190. 
+Following the goal of having comparable results, a stratified sample of 450 entries was extracted from this subset of CWE, the same size as the AutoPatch augmented dataset size. To ensure sufficient representation of CVEs in the index and query subset, only 6 CWEs were considered to generate the subset: CWE-476, CWE-416, CWE-20, CWE-787, CWE-362, and CWE-190. This list was built using as a reference the paper
+% Shao, M., Ding, Y., Cao, J., \& Li, Y. (2025). GraphFVD: Property graph-based fine-grained vulnerability detection. Computers & Security, 151, 104350. https://doi.org/10.1016/j.cose.2025.104350 
+that also uses CPG, but in their case to create a vulnerability classifier 
 
  
 \begin{table}[htbp]
@@ -134,9 +170,9 @@ Following the goal of having comparable results, a stratified sample of 450 entr
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-AutoPatch CWE types & 23 \\
-Matching CVEfixes entries & \textbf{1,618} \\
-Coverage of extracted corpus & 35.1\% \\
+AutoPatch CWE types & 13 \\ % TODO: was 23 in original — AutoPatch CWE table (tab:autopatch_cwe_distribution) lists 13 unique CWE IDs
+Matching CVEfixes entries (of 4,607 method pairs) & \textbf{1,618} \\
+Coverage of method-pair corpus & 35.1\% \\
 \midrule
 CVE-based filter (exact CVE overlap) & 0 \\
 \bottomrule
@@ -152,7 +188,7 @@ AutoPatch's CVEs are drawn from late 2024 through 2025. Table~\ref{tab:overlap_f
 The final dataset was split into an index set for the retrieval knowledge base and a query set for testing at an 80/20 ratio per CWE category. 
 This yields 360 index entries and 90 query entries, 450 records in total, each CWE
 category equally composing both splits by 16.7\%.
-Table~\ref{tab:eval_cwe_distribution} shows the resulting CWE distribution.
+Table~\ref{tab:cwe_distribution} shows the resulting CWE distribution.
 
 \begin{table}[htbp]
 \centering
@@ -198,7 +234,7 @@ Table~\ref{tab:eval_cwe_distribution} shows the resulting CWE distribution.
 \end{table}
 
 
-From the CVE perspective, some CVEs alone accounts for the whole partition of a CWE. The Table \ref{tab:top_cve_distribution} shows some examples.
+From the CVE perspective, some CVEs alone account for the whole partition of a CWE. The Table \ref{tab:top_cve_distribution} shows some examples.
 \begin{table}[htbp]
 % \centering
 \caption{Frequency of Top CVEs Across Index, Query, and Combined Datasets}
@@ -225,3 +261,35 @@ CVE-2020-35538 & 9  & 2.5\%  & 3  & 3.3\%  & 12 & 2.7\%  \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+
+% I could confidently verify/attribute a subset of CVEs to a CWE either because your own chapter text already names them, or because I found their CWE in NVD/vendor advisories. For the remainder (mostly Linux kernel and library CVEs from the 2020–2023 CWE-416/CWE-476 range), I could not verify a specific CWE within reasonable search effort, and I've flagged those explicitly rather than guess — misattributing a CWE in a difficulty analysis would undermine the analysis itself.
+\subsection{Complexity Description}
+\paragraph{CWE-787: Out-of-Bounds Write :} occurs when a program writes data past the end, or before the beginning, of an intended memory buffer. This flaw can lead to memory corruption, process crashes, or the execution of arbitrary code. The testing sample consists of C++ implementation files from the TensorFlow and TensorFlow Lite runtime/kernel libraries, focusing on kernel operations, tensor management, custom audio operators, and model-building infrastructure.
+
+\paragraph{CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization / Race Condition :}Occurs when a program performs two or more operations concurrently, and the outcome depends on the non-deterministic sequence of execution. If shared resources (memory spaces, sockets, files) are accessed without proper synchronization primitives, concurrent threads can manipulate memory unexpectedly, leading to privilege escalation, data corruption, or crashes.
+
+The CWE-362 sample consists of 15 instances across 6 unique CVEs, originating predominantly from lower-level C code within the Linux Kernel (network stack \texttt{net/ipv4}, storage systems fs/ext4) and cryptographic/communication libraries (e.g., OpenSSL/SRTP).
+
+Rather than relying on naive global locks, the ground-truth patches exhibit high domain-specific synchronization complexity:
+
+CVE-2012-3552 consists of Domain-Specific Socket Locking and represents 53\% of the class sample. Fixes rely on socket-specific concurrency macros (\texttt{lock\_sock}/\texttt{release\_sock}) and kernel-level Read-Copy Update (\texttt{rcu\_dereference}, \texttt{rcu\_assign\_pointer}) primitives to safely manage \texttt{ip\_options} memory across concurrent socket writes.
+File System Read-Write Inconsistencies \& Semaphores (CVE-2012-4508, CVE-2015-8839) involve ext4 race conditions between page faults and file truncation (\texttt{fallocate}/\texttt{truncate}), requiring reader-writer semaphores (\texttt{i\_mmap\_sem}) or explicit inconsistency flags instead of adding simple mutexes.
+Structural Decoupling \& Flagging (CVE-2020-12652, CVE-2021-32686) is solved either by passing objects directly to eliminate state copies or by enforcing strict synchronization across concurrent SSL resource access paths without basic \texttt{lock}/\texttt{unlock} wrappers.
+
+
+\paragraph{CWE-20: Improper Input Validation :}
+Occurs when an application fails to validate, sanitize, or verify input before processing it, based on the expected structural, length, or character format requirements.
+The sample is composed of 15 evaluations of a single vulnerability (CVE-2021-26788) in C/C++. The fix pattern consists of inserting input-character bounds checks (e.g., validating hex strings via \texttt{isxdigit()}) to ensure that user-supplied input strings conform to expected formats before execution.
+
+\paragraph{CWE-190: Integer Overflow or Wraparound :}
+Occurs when an arithmetic calculation produces an integer value outside the representable range of the specified data type, typically resulting in undersized buffer allocations.
+The sample consists of 15 instances of CVE-2023-36326 evaluated in different pipeline configurations. The fix pattern requires inserting safe integer-arithmetic checks before dynamic memory operations (\texttt{malloc}, \texttt{realloc}) to prevent small, wrapped-integer sizes from being allocated for large data streams.
+
+\paragraph{CWE-416: Use After Free (UAF) :}
+Occurs when an application continues to use a memory pointer after it has been explicitly deallocated or freed. This can lead to arbitrary code execution, heap corruption, or diversion of execution paths.
+The sample contains multiple CVEs of C/C++ network stack and media-streaming components, including CVE-2016-3841 (Linux IPv6 socket lifecycle), CVE-2023-38703 (SRTP session cleanup), CVE-2023-3863, CVE-2019-11487, and CVE-2022-0156. The patch consists of resetting dangling pointers to \texttt{nullptr}, managing reference counts, or ensuring that asynchronous destructor routines do not access freed memory blocks.
+
+\paragraph{CWE-476: NULL Pointer Dereference :}
+Occurs when a program attempts to read or write memory using a pointer variable that evaluates to \texttt{nullptr}, leading to Denial of Service of the application.
+The sample is a multi-CVE split, which includes media processing frameworks and proxy servers, such as CVE-2019-19815 (GPAC multimedia handling), CVE-2020-10739 (Istio/Envoy proxy handling), CVE-2023-24832, and CVE-2018-20786. The patches consist of applying explicit null-check guards (\texttt{if (ptr == nullptr) return;}) or safe-access wrappers before accessing the fields.
