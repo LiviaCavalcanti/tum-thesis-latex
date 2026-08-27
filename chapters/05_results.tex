@@ -2,60 +2,57 @@
 
 \section{AutoPatch: Retriever Explotation Experiments}
 
-\subsection{ AutoPatch Dataset Results (n=225)}
+\subsection{ AutoPatch Dataset Results}
   % \textbf{Goal:} Validate that structural embeddings match CodeBERT performance.
-In table \ref{tab:retrieval_autopatch}, the Topological Structureembedder achieves the best performance across all metrics, reaching 0.8904 hit@1, surpassing both CodeBERT variants.
+In table \ref{tab:retrieval_autopatch}, the Topological Structure embedder achieves the best performance across all metrics, reaching 0.8904 hit@1, surpassing both CodeBERT variants.
 This suggests that the graph-only signal is expressive on this dataset, whereas CodeBERT's semantic signal is less relevant.
 
-The \textbf{CodeBERT (baseline)} row (no fine-tuning, no CPG slicing) collapses to 0.1533 hit@1, barely above random for a small candidate pool. 
-Raw CodeBERT similarity on the full code is not sufficient for the retrieval stage. \textbf{CodeBERT (seq)} and \textbf{CodeBERT (pat)} are close to each other (0.7534 vs.\ 0.7123 hit@1).
+\begin{table}[H]
+\centering
+\caption{Embedder Retrieval Performance Comparison for AutoPatch Dataset}\label{tab:retrieval_autopatch}
+\small
+\begin{tabular}{lrrrr}
+  \toprule
+  \textbf{Embedder} & \textbf{H@1} & \textbf{H@5} & \textbf{MRR} & \textbf{CWE R.} \\
+  \midrule
+  \multicolumn{5}{c}{\textit{Structure-Only}} \\
+  \midrule
+  \textbf{Combined} & \textbf{0.890} & \textbf{0.959} & \textbf{0.916} & \textbf{0.498} \\
+  GIN & 0.726 & 0.877 & 0.788 & 0.443 \\
+  WL & 0.699 & 0.795 & 0.736 & 0.439 \\
+  \midrule
+  \multicolumn{5}{c}{\textit{CodeBERT pretrained}} \\
+  \midrule
+  CodeBERT (baseline) & 0.153 & 0.220 & 0.183 & 0.293 \\
+  CodeBERT (seq) & 0.753 & 0.863 & 0.793 & 0.412 \\
+  CodeBERT (pat) & 0.712 & 0.836 & 0.768 & 0.415 \\
+  \bottomrule
+\end{tabular}
+\\[2pt]
+% {\tiny\textcolor{notecol}{Source: \texttt{experiments/output/checkpoint5/20260505\_141347\_experiment\_f59ab1/results.json}}}
+\end{table}
+
+  
+The CodeBERT (baseline) row (no fine-tuning, no CPG slicing) collapses to 0.1533 hit@1, barely above random for a small candidate pool. This suggests that raw CodeBERT similarity over the full code is insufficient for the retrieval stage. Semantic and Semantic+Structure embedders are close to each other (0.7534 vs.\ 0.7123 hit@1).
 
 
 % the opposite ordering from the CVEfixes CWE-level table, where \texttt{pattern} won overall. 
 % Taken together, this reinforces the point from the earlier discussion: which representation wins is dataset- and CWE-dependent, not a fixed ranking, so a single "best embedder" claim doesn't hold across datasets.
 
 
-  \vspace{0.3cm}
-  \begin{table}
-    \centering
-    \caption{Embedder Retrieval Performance Comparison for AutoPatch Dataset}\label{tab:retrieval_autopatch}
-    \small
-    \begin{tabular}{lrrrr}
-      \toprule
-      \textbf{Embedder} & \textbf{H@1} & \textbf{H@5} & \textbf{MRR} & \textbf{CWE R.} \\
-      \midrule
-      \multicolumn{5}{c}{\textit{Structure-Only}} \\
-      \midrule
-      \textbf{Combined} & \textbf{0.890} & \textbf{0.959} & \textbf{0.916} & \textbf{0.498} \\
-      GIN & 0.726 & 0.877 & 0.788 & 0.443 \\
-      WL & 0.699 & 0.795 & 0.736 & 0.439 \\
-      \midrule
-      \multicolumn{5}{c}{\textit{CodeBERT pretrained}} \\
-      \midrule
-      CodeBERT (baseline) & 0.153 & 0.220 & 0.183 & 0.293 \\
-      CodeBERT (seq) & 0.753 & 0.863 & 0.793 & 0.412 \\
-      CodeBERT (pat) & 0.712 & 0.836 & 0.768 & 0.415 \\
-      \bottomrule
-    \end{tabular}
-    \\[2pt]
-    {\tiny\textcolor{notecol}{Source: \texttt{experiments/output/checkpoint5/20260505\_141347\_experiment\_f59ab1/results.json}}}
-  \end{table}
-
-  
 \subsection{PCA and L2-normalization Ablation}
-To validate the proposed architecture, an ablation study was performed to understand the importance of L2-normalization and PCA layers.
+To validate the proposed architecture, an ablation study was conducted to assess the importance of the L2-normalization and PCA layers.
 Table \ref{tab:pca_l2} shows that dropping \textit{PCA, and L2} is detrimental across every embedder, collapsing hit@1 to 1.4\% or 0.0\%.
-This pipeline failure can be explained by the fact that without L2 normalization, FAISS inner product computes:
+This pipeline failure can be explained by the fact that, without L2 normalization, the FAISS inner product computes:
 
   $$\text{score}(q, d) = \mathbf{q} \cdot \mathbf{d} = \|\mathbf{q}\| \, \|\mathbf{d}\| \cos\theta$$
 
 so the score is dominated by the vector norms $\|\mathbf{q}\| \, \|\mathbf{d}\|$, rather than the angular similarity $\cos\theta$ that actually reflects the structural similarity.
-The result of this can be seen in Table \ref{tab:l2_similarity}.
+% The result of this can be seen in Table \ref{tab:l2_similarity}.
 
-This effect is worse for \textbf{GIN}, since its sum-pooling component means larger graphs produce larger-norm vectors, and removing the normalization, the retriever just ranks by graph size. \textbf{Combined} shows the same failure, since it inherits GIN's unnormalized scale in the concatenation. GIN explodes from 0.99 with L2 to 260{,}029 without. Whereas, Topological Structurereaches 416{,}081
+This effect is worse for GIN, since its sum-pooling component means that larger graphs yield higher-norm vectors; without normalization, the retriever simply ranks by graph size. Topological shows the same failure, since it inherits GIN's unnormalized scale in the concatenation. GIN explodes from 0.99 with L2 to 260{,}029 without. Whereas, Topological Structure reaches 416{,}081
 
 Therefore, L2 normalization is validated as part of the pipeline.
-\vspace{0.2em}
 %   {\small
 %   \renewcommand{\arraystretch}{1.35}
 %   \setlength{\tabcolsep}{5pt}
@@ -104,11 +101,12 @@ Therefore, L2 normalization is validated as part of the pipeline.
 
 \begin{table}
 \centering
+  \caption{Embedder Retrieval Ablation Study Performance for L2-Normalization and PCA}\label{tab:pca_l2}
   \begin{tabular}{l *{2}{c} c *{2}{c} c *{2}{c}}
     \toprule
-    & \multicolumn{2}{c}{\textbf{PCA + L2} {\footnotesize(baseline)}}
-    && \multicolumn{2}{c}{\textbf{No PCA, L2 only} {\footnotesize(Abl.\ A)}}
-    && \multicolumn{2}{c}{\textbf{PCA, no L2} {\footnotesize(Abl.\ B)}} \\
+    & \multicolumn{2}{c}{\textbf{PCA + L2}}
+    && \multicolumn{2}{c}{\textbf{No PCA, L2 only}}
+    && \multicolumn{2}{c}{\textbf{PCA, no L2}} \\
     \cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9}
     \textbf{Embedder}
       & hit@1 & MRR 
@@ -138,7 +136,6 @@ Therefore, L2 normalization is validated as part of the pipeline.
       && \cmiss{0.000} & 0.050 \\
     \bottomrule
   \end{tabular}
-  \caption{Embedder Retrieval Ablation Study Performance for L2-Normalization and PCA}\label{tab:pca_l2}
 \end{table}
   % \scriptsize L2 normalization is \textbf{essential} for the pipeline.
   %   Removing it causes complete retrieval failure across all 6 embedders.
@@ -146,25 +143,25 @@ Therefore, L2 normalization is validated as part of the pipeline.
 
 
 
-  \vspace{0.3em}
-  {\small
-  \renewcommand{\arraystretch}{1.25}
-  \begin{table}
-  \begin{tabular}{lrr}
-    \toprule
-    \textbf{Embedder} & \textbf{With L2} & \textbf{No L2} \\
-    \midrule
-    Topological Structure     & 0.0067   & \cmiss{416{,}081} \\
-    CodeBERT seq  & 0.01   & \cmiss{456} \\
-    GIN           & 0.99   & \cmiss{260{,}029} \\
-    \bottomrule
-  \end{tabular}
-  \caption{Mean Pair-wise similarity with and without L2-Normalization }\label{tab:l2_similarity}
-  \end{table}
-  }
+  % \vspace{0.3em}
+  % {\small
+  % \renewcommand{\arraystretch}{1.25}
+  % \begin{table}
+  % \begin{tabular}{lrr}
+  %   \toprule
+  %   \textbf{Embedder} & \textbf{With L2} & \textbf{No L2} \\
+  %   \midrule
+  %   Topological Structure     & 0.0067   & \cmiss{416{,}081} \\
+  %   CodeBERT seq  & 0.01   & \cmiss{456} \\
+  %   GIN           & 0.99   & \cmiss{260{,}029} \\
+  %   \bottomrule
+  % \end{tabular}
+  % \caption{Mean Pair-wise similarity with and without L2-Normalization }\label{tab:l2_similarity}
+  % \end{table}
+  % }
 
-For Topological Structureembedder, PCA is also an important component. Besides reducing dimensionality, it implicitly rebalances the relative contributions of GIN, WL, and NetLSD in the concatenated vector.
-Without it, whichever sembedder has the largest magnitude overweights the overall distance. It can be seen in the pairwise-similarity table with GIN being both the largest-magnitude embedder and the one Topological Structuredepends on most.
+For the Topological Structure embedder, PCA is also an important component. Besides reducing dimensionality, it implicitly rebalances the relative contributions of GIN, WL, and NetLSD in the concatenated vector.
+Without it, whichever sembedder has the largest magnitude overweights the overall distance. It can be seen in the pairwise-similarity table that GIN is both the largest-magnitude embedder and the one that Topological Structure depends on most.
 On the other hand, most embedders even show a slight improvement without PCA (CodeBERT seq: 75.3\% → 76.7\%; WL: 65.8\% → 67.1\%;).
 
 %   \vspace{0.3em}
@@ -201,8 +198,8 @@ On the other hand, most embedders even show a slight improvement without PCA (Co
 
 \subsection{Per-CWE Retrieval Breakdown}
 
-Table~\ref{tab:autopatch_per_cwe} presents a fine-grained breakdown of retrieval performance by vulnerability category.
-The Combined (Topological Structure) embedder achieves perfect CVE retrieval (100\%) on Use After Free (n=12) and Race Condition (n=5), whereas CodeBERT\_seq achieves only 66.7\% and 80\% respectively.
+Table~\ref{tab:autopatch_per_cwe} presents a breakdown of retrieval performance by vulnerability category.
+The Topological Structure embedder achieves perfect CVE retrieval (100\%) on Use After Free (n=12) and Race Condition (n=5), whereas Semantic+Structure achieves only 66.7\% and 80\%, respectively.
 This confirms that for memory-safety and concurrency vulnerabilities in the AutoPatch dataset, the structural graph topology provides a stronger discriminative signal than token-level semantics.
 
 \begin{table}[h]
@@ -229,14 +226,12 @@ This confirms that for memory-safety and concurrency vulnerabilities in the Auto
   {\tiny\textcolor{notecol}{Source: \texttt{cvefixes\_experiments/output/autopatch/20260816\_080855.../converted/*/query/results.jsonl}}}
 \end{table}
 
-Notably, the Combined embedder achieves its strong performance despite having lower average similarity scores (0.697) compared to CodeBERT\_seq (0.846).
-This indicates that the topological embeddings are better calibrated for the retrieval task---the similarity scores more accurately reflect true vulnerability-class membership rather than surface-level code similarity.
-In contrast, CodeBERT's inflated similarity scores suggest that semantically similar but structurally different code patterns may be conflated.
+Regardless of this performance, the Topological embedder has a lower average similarity score (0.697) than Semantic+Structure (0.846).
+This indicates that the topological embeddings are sufficient when the code is short, curated, and well represented in the dataset, whereas surface-level code similarity yields high similarity, thereby mixing the vulnerability patterns.
 
 \subsection{Variant Analysis}
 
-The AutoPatch dataset contains multiple \textit{variants} of each CVE: the original patch plus several LLM-generated re-implementations (DeepSeek, GPT-4o, Llama, o3-mini) and human-augmented versions.
-Table~\ref{tab:autopatch_variants} reveals that retrieval difficulty varies significantly by variant type.
+The AutoPatch dataset contains variants of each CVE, consisting of LLM-generated re-implementations (DeepSeek, GPT-4o, Llama, o3-mini) and a further augmented set that increases the dataset's variability. The retrieval difficulty varies by variant type as shown by Table~\ref{tab:autopatch_variants}.
 
 \begin{table}[h]
   \centering
@@ -257,9 +252,9 @@ Table~\ref{tab:autopatch_variants} reveals that retrieval difficulty varies sign
   \end{tabular}
 \end{table}
 
-The \texttt{augmented} variants, which were manually modified by humans to increase code diversity, exhibit dramatically lower retrieval accuracy (35.7\% CVE match vs.\ 81--92\% for LLM-generated variants).
-This suggests that the embedders rely on surface-level structural patterns that LLMs tend to preserve but humans intentionally vary.
-For a production vulnerability retrieval system, this finding is concerning: real-world code written by different developers may exhibit the same structural diversity as the \texttt{augmented} variants, leading to retrieval failures on novel implementations of known vulnerability patterns.
+The augmented variants, which used targeted augmentation strategies for each CVE type to increase code diversity, have lower retrieval accuracy (35.7\% CVE match vs.\ 81-92\% for LLM-generated variants).
+This suggests that the embedders rely on surface-level structural patterns that LLMs tend to preserve.
+For a production vulnerability retrieval system, this may suggest that real-world code written by different developers may exhibit retrieval failures on novel implementations of known vulnerability patterns, since they have the same structural diversity as the augmented variants.
 
 \subsection{Cross-Dataset Comparison: AutoPatch vs.\ CVEfixes}
 
@@ -441,176 +436,6 @@ Similarly, applying the hunk metric evaluation to the Topological Structure retr
 It occurs because the patches simply reproduce the vulnerable input. 
 Analyzing the pipeline a step earlier, the retrieval performance is poor with only a 29\% CWE-match rate. %, which suggests that it is important to have a good retrieval. 
 Consequently, even though the agent workflow verifies the correctness of the retrieved CVE for the code snippet under analysis, downstream LLM patch generation cannot easily recover from initial retrieval errors, corroborating the importance of robust (context?) retrieval for effective automated repair. 
-
-% Because the dataset also contains the file, we have done a comparison of the performance using the file and the method as input. 
-% \begin{table}[htbp]
-%     % 1. Add your table title/name here
-%   \caption{Comparison of CVE Retrieval Performance using file and method as input} 
-  
-%   % 2. Add a label RIGHT AFTER the caption for cross-referencing
-%   \label{tab:cvefixes_file_method}
-% \centering
-% \caption{Performance Comparison across Embedders}
-% \label{tab:embedder_metrics}
-% \begin{tabular}{llcccc}
-% \toprule
-% \textbf{Embedder} & \textbf{Metric} & \textbf{Method} & \textbf{File} & \textbf{Delta} & \textbf{Direction} \\
-% \midrule
-% \multirow{5}{*}{codebert\_pattern} 
-%   & hit@1       & 0.678 & 0.889 & +0.211 & $\uparrow$ \\
-%   & hit@5       & 0.789 & 0.889 & +0.100 & $\uparrow$ \\
-%   & hit@10      & 0.789 & 0.889 & +0.100 & $\uparrow$ \\
-%   & mrr         & 0.720 & 0.889 & +0.169 & $\uparrow$ \\
-%   & cwe\_recall & 0.619 & 0.650 & +0.031 & $\uparrow$ \\
-% \midrule
-% \multirow{5}{*}{codebert\_seq} 
-%   & hit@1       & 0.722 & 0.889 & +0.167 & $\uparrow$ \\
-%   & hit@5       & 0.778 & 0.889 & +0.111 & $\uparrow$ \\
-%   & hit@10      & 0.789 & 0.889 & +0.100 & $\uparrow$ \\
-%   & mrr         & 0.741 & 0.889 & +0.148 & $\uparrow$ \\
-%   & cwe\_recall & 0.627 & 0.605 & -0.022 & $\downarrow$ \\
-% \midrule
-% \multirow{5}{*}{combined} 
-%   & hit@1       & 0.333 & 0.889 & +0.556 & $\uparrow$ \\
-%   & hit@5       & 0.656 & 1.000 & +0.344 & $\uparrow$ \\
-%   & hit@10      & 0.811 & 1.000 & +0.189 & $\uparrow$ \\
-%   & mrr         & 0.454 & 0.944 & +0.491 & $\uparrow$ \\
-%   & cwe\_recall & 0.384 & 0.750 & +0.366 & $\uparrow$ \\
-% \bottomrule
-% \end{tabular}
-% \end{table}
-
-% The results are in the Table~\ref{tab:cvefixes_file_method}. 
-% They show that file-level graphs outperform the method-level graphs, especially for the combined embedder for which $\text{hit@1}$ jumps from 0.333 to 0.889 ($+0.556$), and mrr jumps from 0.454 to 0.944 ($+0.491$).
-% \texttt{CodeBERT\_pattern} $\text{hit@1}$ increases from 0.678 to 0.889 ($+0.211$).
-% \texttt{CodeBERT\_seq} has a more modest $\text{hit@1}$ improvement from 0.722 to 0.889 ($+0.167$).
-% These improvements show that the extra content encoded in the file-level graph brings important context, which may include global variables, imports, and cross-method, resulting in structures that lead to better vulnerability identification.
-% These improvements make the final performance of the embedders equivalent. 
-% This allows us to conclude that enough context information allows a simple embedder of graph topographic description to perform equivalently to a semantic-level pretrained model.
-
-% The file-level experiment's high performance (67.5% hit@1) was due to selection bias, not algorithmic superiority.
-
-% The Numbers:
-% Experiment	n_query	CVE Hit@1	Reality
-% File-level	8	~67.5%	Only 8/90 queries had file-level graphs
-% Method-level	67	~28%	Broader coverage
-% New sweep	89	16.9%	Full dataset coverage
-% Why the Dramatic Drop?
-% File-level bottleneck: Only 8 out of 90 queries successfully exported file-level GraphML files. The other 82 lacked file-
-
-% However, it is important to highlight that the longer inputs require longer processing time. 
-% This is particularly important when using Joern, as the graph processing is laborious and resource-greedy.
-% Because the CVE Fixes dataset is built by real-world code, it contains long 
-% \begin{table}[h]
-%   \centering
-%   \small
-%   \begin{tabular}{lrrr}
-%     \toprule
-%     \textbf{CWE ID} & \textbf{Total} & \textbf{$<$500 Lines} & \textbf{Percentage} \\
-%     \midrule
-%     CWE-190 & 15 & 6 & 40.00\% \\
-%     CWE-20  & 15 & 1 & 6.67\% \\
-%     CWE-362 & 15 & 0 & 0.00\% \\
-%     CWE-416 & 15 & 1 & 6.67\% \\
-%     CWE-476 & 15 & 2 & 13.33\% \\
-%     CWE-787 & 15 & 8 & 53.33\% \\
-%     \midrule
-%     \textbf{TOTAL} & \textbf{90} & \textbf{18} & \textbf{20.00\%} \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-
-
-\subsection{Patch Powered by Codex-5.3} 
-% \begin{table}[htbp]
-%   \centering
-%   \small
-%   \setlength{\tabcolsep}{4.5pt}
-%   \caption{Evaluation summary comparing Codex-5.3 Baseline against Tool Calling Agent (Without Retrieval) across CWEs.}
-%   \label{tab:codex_vs_tool_calling}
-%   \begin{tabular}{llcccccccc}
-%     \toprule
-%     \thead{Method} & \thead{CWE} & \thead{N} & \thead{Exact} & \thead{BLEU-4} & \thead{BERT\\$\text{F}_1$} & \thead{ROUGE-L\\$\text{F}_1$} & \thead{Hunk\\$\text{F}_1$} & \thead{Token\\Jaccard} & \thead{Char\\Ratio} \\
-%     \midrule
-%     \multicolumn{10}{l}{\textit{Codex-5.3 Baseline}} \\
-%     & CWE-190 & 15 & 0 & 0.2599 & 0.1629 & 0.4016 & 0.6980 & 0.2640 & 0.2621 \\
-%     & CWE-20  & 15 & 0 & 0.1466 & 0.3476 & 0.3416 & 0.8342 & 0.2626 & 0.1488 \\
-%     & CWE-362 & 15 & 0 & 0.2360 & 0.3523 & 0.3793 & 0.9051 & 0.3403 & 0.2559 \\
-%     & CWE-416 & 15 & 0 & 0.0492 & 0.3018 & 0.2350 & 0.8644 & 0.1925 & 0.0580 \\
-%     & CWE-476 & 14 & 0 & 0.0214 & 0.1981 & 0.1695 & 0.8241 & 0.1582 & 0.0377 \\
-%     & CWE-787 & 15 & 0 & 0.0436 & 0.0693 & 0.2158 & 0.0347 & 0.2243 & 0.1210 \\
-%     \cmidrule(lr){2-10}
-%     & \textbf{Overall} & \textbf{89} & \textbf{0} & \textbf{0.1273} & \textbf{0.2391} & \textbf{0.2918} & \textbf{0.6919} & \textbf{0.2412} & \textbf{0.1485} \\
-%     \midrule
-%     \multicolumn{10}{l}{\textit{Tool Calling Agent (Without Retrieval)}} \\
-%     & CWE-190 & 15 & 5 & 0.7505 & 0.6964 & 0.7895 & 0.6071 & 0.7700 & 0.7713 \\
-%     & CWE-20  & 15 & 2 & 0.8478 & 0.9073 & 0.9240 & 0.8634 & 0.6986 & 0.8549 \\
-%     & CWE-362 & 15 & 6 & 0.9817 & 0.9565 & 0.9917 & 0.9975 & 0.9946 & 0.9741 \\
-%     & CWE-416 & 15 & 6 & 0.8958 & 0.8835 & 0.9175 & 0.9071 & 0.9214 & 0.9092 \\
-%     & CWE-476 & 14 & 7 & 0.8900 & 0.9334 & 0.9235 & 0.8436 & 0.9213 & 0.8971 \\
-%     & CWE-787 & 15 & 0 & 0.8694 & 0.5104 & 0.9245 & 0.0000 & 0.7800 & 0.7894 \\
-%     \cmidrule(lr){2-10}
-%     & \textbf{Overall} & \textbf{89} & \textbf{26} & \textbf{0.8723} & \textbf{0.8132} & \textbf{0.9117} & \textbf{0.7015} & \textbf{0.8468} & \textbf{0.8657} \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-
-% \begin{table}[htbp]
-%   \centering
-%   \small
-%   \caption{Comparison of Performance Across Methods by CWE Category GPT-5.3-Codex.}
-%   \label{tab:cwe_comparison_all_methods}
-%   \begin{tabular}{llcccc}
-%     \toprule
-%     \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-190}} 
-%       & Codex-5.3 Baseline                & \cmiss{0.1629} & 0.4016 & \chit{0.6980} \\
-%       & Tool Calling Agent (w/o Retr.)    & 0.6964 & 0.7895 & 0.6071 \\
-%       & CodeBERT Seq                      & 0.6954 & \chit{0.7912} & 0.6164 \\
-%       & CodeBERT Pattern                  & 0.6955 & 0.7897 & 0.6148 \\
-%       & Topological Structure                         & 0.6943 & 0.7875 & 0.6073 \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-20}} 
-%       & Codex-5.3 Baseline                & 0.3476 & 0.3416 & 0.8342 \\
-%       & Tool Calling Agent (w/o Retr.)    & 0.9073 & 0.9240 & 0.8634 \\
-%       & CodeBERT Seq                      & 0.9108 & 0.9291 & \chit{0.8643} \\
-%       & CodeBERT Pattern                  & 0.9108 & 0.9266 & 0.8636 \\
-%       & Topological Structure                         & 0.9108 & \chit{0.9282} & 0.8641 \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-362}} 
-%       & Codex-5.3 Baseline                & 0.3523 & 0.3793 & 0.9051 \\
-%       & Tool Calling Agent (w/o Retr.)    & 0.9565 & 0.9917 & 0.9975 \\
-%       & CodeBERT Seq                      & \chit{0.9743} & 0.9942 & \chit{0.9988} \\
-%       & CodeBERT Pattern                  & 0.9140 & 0.9369 & 0.9884 \\
-%       & Topological Structure                         & 0.9669 & \chit{0.9968} & 0.9981 \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-416}} 
-%       & Codex-5.3 Baseline                & 0.3018 & 0.2350 & 0.8644 \\
-%       & Tool Calling Agent (w/o Retr.)    & 0.8835 & 0.9175 & 0.9071 \\
-%       & CodeBERT Seq                      & \chit{0.9387} & \chit{0.9717} & \chit{0.9337} \\
-%       & CodeBERT Pattern                  & 0.9179 & 0.9602 & 0.8990 \\
-%       & Topological Structure                         & 0.9369 & 0.9691 & 0.9249 \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-476}} 
-%       & Codex-5.3 Baseline                & 0.1981 & 0.1695 & 0.8241 \\
-%       & Tool Calling Agent (w/o Retr.)    & 0.9334 & 0.9235 & 0.8436 \\
-%       & CodeBERT Seq                      & \chit{0.9283} & \chit{0.9167} & \chit{0.8315} \\
-%       & CodeBERT Pattern                  & 0.9153 & 0.8990 & 0.8009 \\
-%       & Topological Structure                         & 0.8514 & 0.8432 & 0.8292 \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-787}} 
-%       & Codex-5.3 Baseline                & 0.0693 & 0.2158 & 0.0347 \\
-%       & Tool Calling Agent (w/o Retr.)    & 0.5104 & 0.9245 & 0.0000 \\
-%       & CodeBERT Seq                      & 0.5227 & 0.9350 & 0.1282 \\
-%       & CodeBERT Pattern                  & \chit{0.5241} & \chit{0.9370} & \chit{0.1894} \\
-%       & Topological Structure                         & 0.5165 & 0.9139 & 0.0000 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
 
 
 \begin{table}[H]
@@ -984,60 +809,6 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
 \end{tabular}
 \end{table}
 
-
-% ### 1. Output/Pipeline failures (~30% of cases)
-% The agent simply couldn't produce a valid patch:
-% - **`parse_error`**: CVE-2012-4508, CVE-2021-32686, CVE-2023-36326 — agent output not parseable as a diff
-% - **Unresolved markers**: CVE-2019-18885, CVE-2020-15211, CVE-2022-2318 — `<<<<<<<` or `__PLACEHOLDER_BLOCKS__` left in output
-% - **File destruction**: CVE-2020-10739, CVE-2022-0156, CVE-2020-28163 (gpt-4o) — entire file replaced with a single line of garbage
-
-% This is a **tooling/output-format** issue, not understanding. The agent's tool-call for applying the patch fails and it falls back to invalid output.
-
-% ---
-
-% ### 2. Partial fix — right type, wrong scope (~25%)
-% The agent understands what kind of fix is needed but only patches the visible/obvious call sites:
-% - **CVE-2020-12652**: changed function signatures to pass `iocp`, but never edited the handler *bodies* to remove the re-fetch — the race window remains
-% - **CVE-2016-3841** (gpt-4o): applied RCU changes on 3 of ~6 paths; `sock_kfree_s` still present on `sticky_done`/`done` paths
-% - **CVE-2015-8839**: fixed direct-IO path but left page-fault/punch-hole/writeback paths untouched
-
-% This is a **context window / multi-file reasoning** problem. The fix requires seeing all concurrent access paths simultaneously.
-
-% ---
-
-% ### 3. Wrong abstraction — plausible but incorrect fix (~25%)
-% The agent applies a semantically related but wrong change:
-% - **CVE-2023-24832**: changed `llvm_unreachable` → `hermes_fatal` (diagnostic hardening) instead of guarding `bytecodeFunction_` before dereference
-% - **CVE-2020-35538**: added a `cinfo->master == NULL` check that is *always false* at that state — dead code, root cause (alignment computation) untouched  
-% - **CVE-2022-0696**: swapped comparison operand, not adding a new NULL check
-% - **CVE-2023-38703**: renamed lock macros + redundant NULL assignments, never restructuring UAF lifetime
-
-% The agent recognizes the *symptom area* but applies a surface-level change nearby rather than the actual root cause.
-
-% ---
-
-% ### 4. Successful fixes (~15–20%)
-% All successes share one property: **the fix is localized to a single function with a clear mechanical transformation**:
-% - CVE-2011-1768: reorder two `register_*` calls
-% - CVE-2012-3552, CVE-2016-3841 (gpt-5.3-codex): RCU wrapping — systematic but in one file
-% - CVE-2022-2318: swap `add_timer`/`del_timer` → `sk_reset_timer`/`sk_stop_timer` throughout one file
-% - CVE-2021-26788: add two `isxdigit()` checks in one function
-
-% ---
-
-% ### Is it model or difficulty?
-
-% Both — but the split is revealing:
-
-% | Issue | Root cause |
-% |---|---|
-% | Parse/output failures | **Pipeline** — diff application tool misbehaving |
-% | Partial fixes | **Difficulty** — multi-file/multi-path bugs are genuinely hard; gpt-4o and gpt-5.3-codex both fail these |
-% | Wrong abstraction | **Model reasoning** — the model hallucinates a plausible-sounding but wrong fix; consistent across models |
-% | gpt-4o more file-destructions | **Model output format** — gpt-4o more prone to producing degenerate diffs |
-% | gpt-5.3-codex more ERRORs | **Timeout/judge issues** — 5 ERROR verdicts vs 1 for gpt-4o, suggesting longer outputs hitting judge timeouts |
-
-% The hardest class is **multi-path concurrency bugs (CWE-362)**: only 2/6 valid across both runs. Single-file lifetime fixes (CWE-416) and NULL-deref fixes (CWE-476) succeed only when the vulnerable site is directly in the retrieved context file.
 
 
 
