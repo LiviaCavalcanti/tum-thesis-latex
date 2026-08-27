@@ -1377,9 +1377,10 @@ Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs
 
 \paragraph{GPT-4o.} Once again, the tool-calling pipeline with retrieval has the highest costs, \$0.24--0.26 per entry on average. The model baseline without tools averages \$0.05 per entry, while the tool-calling baseline without retrieval costs \$0.22 per entry. This indicates that the agentic interaction pattern is the main cost reason, even though the retrieval context itself probably contributes to the costs since the prompt tokens used in each run sum up to millions.
 
-\paragraph{DeepSeek-V4-Flash.} As expected, DeepSeek offers the most cost-effective option at \$0.009--0.024 per entry across all configurations. The model baseline costs only \$0.003 per entry, while tool-calling variants with retrieval average \$0.022--0.024 per entry. However, as discussed in Section~\ref{tab:cvefixes_overall_patch_generation_summary_deepseek}, the generation pipeline with DeepSeek experienced output formatting issues that limited the patch generation rate. Therefore, the pipeline might include fallbacks and Human-in-the-Loop verifications if this model is deployed in production. The DeepSeek performance is an example that raw cost efficiency must be weighed against functional reliability.
+\paragraph{DeepSeek-V4-Flash.} As expected, DeepSeek offers the most cost-effective option with an average of \$0.022--0.024 per entry across all configurations of Agent with tools and retrieval. The model baseline costs only \$0.003 per entry. However, as discussed in Section~\ref{tab:cvefixes_overall_patch_generation_summary_deepseek}, the generation pipeline with DeepSeek experienced output formatting issues that limited the patch generation rate. Therefore, the pipeline might include fallbacks and Human-in-the-Loop verifications if this model is deployed in production. The DeepSeek performance is an example that raw cost efficiency must be weighed against functional reliability.
 
-Analyzing the Figure \ref{img:cost_bertscore_cvefixes}, Tool-calling variants of DeepSeek achieve BERTScore $\sim0.80$ at only \$0.009/entry, dominating the cost-efficiency trade-off.  GPT-5.3-Codex presents the highest BERTScore ($\sim0.825$) with the Semantic retrieval pipeline at \$0.075/entry. GPT-4o delivers performance similar to GPT-5.3-Codex but is twice as expensive (\$0.16-0.17/entry). The model baselines are low-cost but low-performing, reinforcing the previously found indication that the patching task requires tooling to succeed. Similarly, the cost of one prompt with the code, represented by the squares, can be even higher than if you use the retriever that filters the context to be passed, even though the cost is not translated into the BERTScore-F1 metric.
+Analyzing the Figure \ref{img:cost_bertscore_cvefixes}, GPT-5.3-Codex presents the highest BERTScore ($\sim0.825$) with the Semantic retrieval pipeline at \$0.075/entry. GPT-4o delivers performance similar to GPT-5.3-Codex but is twice as expensive (\$0.16-0.17/entry). The model baselines are low-cost but low-performing, reinforcing the previously found indication that the patching task requires tooling to succeed. Similarly, the cost of one prompt with the code, represented by the squares, can be even higher than if you use the retriever that filters the context to be passed, even though the cost is not translated into the BERTScore-F1 metric.
+
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{img/costs/cost_vs_quality.png}
@@ -1387,6 +1388,7 @@ Analyzing the Figure \ref{img:cost_bertscore_cvefixes}, Tool-calling variants of
     \label{img:cost_bertscore_cvefixes}
 \end{figure}
 
+Notice that the figure also includes an ablation study of the performance of the pipelines when we use, instead of an agent with tools, only a prompt with the retrieved CWE context.
 
 \begin{table}[H]
   \centering
@@ -1426,7 +1428,7 @@ The AutoPatch dataset presents a simpler patch-generation challenge than CVEfixe
 
 \subsection{GPT-5.3-Codex}
 
-Table~\ref{tab:autopatch_overall_pipeline_performance_gpt_codex} summarizes the overall pipeline performance for GPT-5.3-Codex. All three retrieval variants achieve high completion rates (88 - 100\%) and strong LLM Judge validity (70 - 85\%). The \textit{Topology} retrieval strategy achieves the highest completion rate (100\%) and Judge validity (85.3\%), followed by \textit{Semantic}  at 96\% completion and 82.7\% validity. The \textit{Semantic+Structure}  variant, despite lower completion (88\%), still achieves 70.3\% validity. Token-based metrics (BLEU-4, ROUGE-L) are very similar across variants ($\approx$0.83 and $\approx$0.90, respectively), indicating that when patches are correctly generated for this dataset, they are textually similar to ground truth regardless of the retrieval strategy.
+Table~\ref{tab:autopatch_overall_pipeline_performance_gpt_codex} summarizes the overall pipeline performance for GPT-5.3-Codex. All three retrieval variants achieve high completion rates (88 - 100\%) and strong LLM Judge validity (70 - 85\%). The \textit{Topology} retrieval strategy achieves the highest completion rate (100\%) and Judge validity (85.3\%), followed by \textit{Semantic}  at 96\% completion and 82.7\% validity. The \textit{Semantic+Structure}  variant, despite lower completion (88\%), still achieves 70.3\% validity. Token-based metrics (BLEU-4, ROUGE-L) are very similar across these variants ($\approx$0.83 and $\approx$0.90, respectively), indicating that when patches are correctly generated for this dataset, they are textually similar to ground truth regardless of the retrieval strategy.
 
 \begin{figure}
     \centering
@@ -1437,28 +1439,8 @@ Table~\ref{tab:autopatch_overall_pipeline_performance_gpt_codex} summarizes the 
 
 Figure~\ref{img:autopatch_gptcodex_bertscore} shows the BERTScore distributions across CWE categories for GPT-5.3-Codex. 
 The confidence intervals overlap across all retrieval variants, reiterating the previous observation that no single embedding strategy dominates regarding semantic similarity. 
-This statistical equivalence, combined with the high Judge validity rates, suggests that for localized single-function fixes, the choice of retrieval embedding has minimal impact on patch quality when using a sufficiently capable model.
+This statistical equivalence, combined with the high Judge validity rates, suggests that for localized single-function fixes, the choice of retrieval embedding has a low impact on patch quality when using a sufficiently capable model.
 
-There are also paired cases where retrieval was effectively the same, but outcomes diverged. For example, some same-CVE examples still flipped from valid to invalid, which suggests the generation trajectory mattered. In cases like CVE-2025-21702, both runs retrieved the same CVE with the same similarity, yet the generated patch quality differed. That is hard to explain purely by retrieval.
-
-Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex} breaks down performance by vulnerability category. Memory Safety (CWE-416, CWE-476) and Concurrency (CWE-362, CWE-667) have the largest sample sizes (22-31 patches each). Resource Management patches show moderate performance across all metrics. Numeric/Type vulnerabilities (CWE-190, CWE-787) have a lower BERTScore ($\approx$0.31 - 0.32) despite high BLEU-4 ($\approx$0.87--0.89). This may indicate that, because the data stems from an augmentation with different models, generating patches results in refactoring, or that the dataset's ground truth includes helpers that are neither generated in the patch nor passed as input to vulnerable code. See the example in Appendix \ref{chapter:appendix_example_autopatch}.
-
-Despite achieving a higher retrieval CWE match rate of 94.7\%, the Topological retriever has a lower LLM-judge valid rate than Semantic+Structure (CWE match rate of 84\%), 30 INVALID / 45 VALID, and 22 INVALID / 51 VALID / 2 ERROR, respectively. In paired comparisons, some Semantic+Structure retrieval cases flip to invalid with the Topological retriever because the generated patch contains a misleading fix pattern, introduces compile errors, or applies the wrong kind of guard. For example:
-\begin{itemize}
-    \item CVE-2024-57262: Semantic+Structure retrieved the same CVE and produced a valid patch; Topological retrieved CVE-2025-21815 with higher similarity, but the patch introduced a compile error.
-    \item CVE-2025-21702: both retrieved the same CVE, but Topological generated a zero-limit guard that did not address the use-after-free/resource-lifetime root cause.
-    \item CVE-2025-21801: Topological had higher similarity but produced a locking patch with double-unlock/stray-code issues.
- 
-\end{itemize}
-Class-level drops support that: combined is much worse on NULL Pointer Dereference validity (18.2\% vs Semantic+Structure’s 45.5\%) and worse on Integer Overflow or Wraparound (66.7\% vs 77.8\%). Improper locking remains at 92.3\%, indicating this is not a universal degradation. Instead, it is concentrated in vulnerability classes where the exact local semantic fix matters more than broad structural similarity.
-It may suggest that this difference in performance of the Semantic+Structure sequence seems to retrieve examples whose code-level edit semantics are more useful to the patching agent; it may also be due to variations in the generation process, since the agent is non-deterministic by nature. This requires further investigation.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=1\linewidth]{img/patching/ci_gpt4_bertscore.png}
-    \caption{BERTScore confidence intervals for GPT-4o patching on AutoPatch, grouped by CWE category.}
-    \label{img:autopatch_gpt4o_bertscore}
-\end{figure}
 \begin{table}[H]
   \centering
   \caption{GPT-5.3-Codex: Overall pipeline performance on the autopatch dataset}
@@ -1473,6 +1455,8 @@ It may suggest that this difference in performance of the Semantic+Structure seq
     \bottomrule
   \end{tabular}
 \end{table}
+
+Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex} breaks down performance by vulnerability category. Memory Safety (CWE-416, CWE-476) and Concurrency (CWE-362, CWE-667) have the largest sample sizes (22-31 patches each). Resource Management patches show mediocre performance across all metrics. Numeric/Type vulnerabilities (CWE-190, CWE-787) have a lower BERTScore ($\approx$0.31 - 0.32) despite high BLEU-4 ($\approx$0.87--0.89). The low BERTScore may stem from the use of different augmentation models for dataset creation, imprinting their styles on the code. When generating patches using an LLM-powered agent results in refactoring, or the dataset's ground truth includes helpers that are neither generated in the patch nor passed as input to vulnerable code, the tokens in the evaluation differ. See the example in Appendix \ref{chapter:appendix_example_autopatch}. Hence, the importance of the validity metric, which conveys the most relevant measure for the deployment feasibility of this pipeline.
 
 \begin{table}[H]
   \centering
@@ -1503,24 +1487,8 @@ It may suggest that this difference in performance of the Semantic+Structure seq
 
 \subsection{GPT-4o}
 
-Table~\ref{tab:autopatch_overall_pipeline_performance_gpt4o} presents GPT-4o's performance on the same AutoPatch dataset. Compared to GPT-5.3-Codex, GPT-4o exhibits lower completion rates (72 - 80\%) and reduced LLM Judge validity (50 - 65\%). 
-The \textit{Topology} pipeline achieves the highest completion (77.3\%) but the lowest validity among retrieval-augmented methods (56.8\%). This drop in performance may be a consequence, suggesting that higher completion does not guarantee functional correctness. The \textit{Tool-only} baseline without retrieval shows 80\% completion but only 50\% validity, with lower token-based metrics (BLEU-4: 0.66, ROUGE-L: 0.73) and high variance (BERTScore std: 0.244).
-
-Figure~\ref{img:autopatch_gpt4o_bertscore} reveals performance heterogeneity for GPT-4o, different than Codex. The Tool-only baseline exhibits the largest confidence intervals, with certain CWE categories yielding a BERTScore of 0 (e.g., NULL Pointer Dereference) due to output formatting errors, such as unclosed SEARCH\&REPLACE blocks or retrieving only placeholder text instead of the code. In contrast, retrieval pipeline variants maintain more consistent performance across categories.
-
-Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o} shows the GPT-4o's category-level performance variance. The Tool-only baseline struggles particularly with Concurrency vulnerabilities (BLEU-4: 0.42, BERTScore: 0.27), whereas retrieval pipelines achieve BLEU-4> 0.85 in the same category. Memory Safety patches show the best performance with retrieval methods achieving BERTScore $>$ 0.58.
-
-\paragraph{Model Comparison.}
-Codex achieves 15 - 35\% higher LLM Judge validity across all retrieval variants compared to GPT-4o. This gap is larger for the Topology retriever (85.3\% vs 56.8\%), whereas less pronounced for Semantic+Structure (70.3\% vs 63.0\%). 
-This gap between GPT-5.3-Codex and GPT-4o on the AutoPatch dataset suggests that model capability is the dominant factor for localized, single-function vulnerability patches. Additionally, prompt enrichment via the retrieval of similar CWEs yields very low performance returns when the base model is powerful enough.
-
-Conversely, for GPT-4o, the prompt enrichment via retrieval provides a relevant boost. In this case, all three retrieval variants outperform the Tool-only baseline by 6 - 15 percentage points on Judge validity. This indicates that context compensates model limitations by grounding the generation in relevant vulnerability patterns.
-
-\paragraph{Cost Analysis.}
-Table~\ref{tab:generation_cost_summary_condensed} summarizes the patch generation costs for AutoPatch. GPT-5.3-Codex is more cost-efficient, with an average of \$0.018-0.020 per patch versus \$0.039--0.042 for GPT-4o with retrieval. The Tool-only GPT-4o baseline has the highest per-entry cost (\$0.224), which may indicate that when there is no retrieval context to guide generation, the model compensates by using more tokens and loops, and, as seen previously, this is not enough to deliver performance. RAG pipelines reduce GPT-4o costs by 5-6$\times$ compared to the no-retrieval baseline while simultaneously improving patch quality. 
-Compared to the CVEfixes dataset (Table~\ref{tab:cvefixes_generation_cost_summary}), AutoPatch generation costs are 3 to 6$\times$ lower per entry for equivalent configurations. 
-This is probably due to the reduced complexity of the dataset, which consists of single-function and requires localized fixes compared to the multi-file vulnerability patches that require substantially larger context windows and more reasoning steps.
-
+Table~\ref{tab:autopatch_overall_pipeline_performance_gpt4o} presents the GPT-4o patch agent's performance on the AutoPatch dataset. Compared to GPT-5.3-Codex, GPT-4o has lower completion rates (72 - 80\%) and LLM Judge validity (50 - 65\%). 
+The \textit{Topology} pipeline achieves the highest completion (77.3\%) but the lowest validity among retrieval-augmented methods (56.8\%). This drop in performance shows that higher completion does not guarantee functional correctness. Another example of this behavior is the \textit{Tool-only} baseline without retrieval that shows 80\% completion but only 50\% validity, with lower token-based metrics (BLEU-4: 0.66, ROUGE-L: 0.73) and high variance (BERTScore std: 0.244).
 
 \begin{table}[H]
   \centering
@@ -1537,6 +1505,20 @@ This is probably due to the reduced complexity of the dataset, which consists of
     \bottomrule
   \end{tabular}
 \end{table}
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{img/patching/ci_gpt4_bertscore.png}
+    \caption{BERTScore confidence intervals for GPT-4o patching on AutoPatch, grouped by CWE category.}
+    \label{img:autopatch_gpt4o_bertscore}
+\end{figure}
+
+
+Figure~\ref{img:autopatch_gpt4o_bertscore} reveals semantic performance heterogeneity for GPT-4o, different when compared to Codex. The Tool-only baseline exhibits the largest confidence intervals, with certain CWE categories yielding a BERTScore of 0 (e.g., NULL Pointer Dereference) due to output formatting errors, such as unclosed SEARCH\&REPLACE blocks or the retrieval of only placeholder text instead of the code. In contrast, retrieval pipeline variants maintain more consistent performance across categories.
+
+Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o} shows the GPT-4o's category-level performance variance. The Tool-only baseline struggles especially with Concurrency vulnerabilities (BLEU-4: 0.42, BERTScore: 0.27), whereas retrieval pipelines achieve BLEU-4> 0.85 in the same category. Memory Safety patches show the best performance with retrieval methods achieving BERTScore $>$ 0.58.
+
 
 \begin{table}[H]
   \centering
@@ -1569,6 +1551,31 @@ This is probably due to the reduced complexity of the dataset, which consists of
     \bottomrule
   \end{tabular}
 \end{table}
+
+
+Despite achieving a higher retrieval CWE match rate of 94.7\%, the Topological retriever has a lower LLM-judge valid rate than Semantic+Structure (CWE match rate of 84\%), 30 INVALID / 45 VALID, and 22 INVALID / 51 VALID / 2 ERROR, respectively. In paired comparisons, some Semantic+Structure retrieval cases flip to invalid with the Topological retriever because the generated patch contains a misleading fix pattern, introduces compile errors, or applies the wrong kind of guard. For example:
+\begin{itemize}
+    \item CVE-2024-57262: Semantic+Structure retrieved the same CVE and produced a valid patch; Topological retrieved CVE-2025-21815 with higher similarity, but the patch introduced a compile error.
+    \item CVE-2025-21702: both retrieved the same CVE, but Topological generated a zero-limit guard that did not address the use-after-free/resource-lifetime root cause.
+    \item CVE-2025-21801: Topological had higher similarity but produced a locking patch with double-unlock/stray-code issues.
+ 
+\end{itemize}
+Class-level drops support that the Topological pipeline is much worse on NULL Pointer Dereference validity (18.2\% vs Semantic+Structure’s 45.5\%) and worse on Integer Overflow or Wraparound (66.7\% vs 77.8\%). Improper locking remains at 92.3\%, indicating that this degradation does not affect all classes. Instead, it is concentrated in vulnerability classes where the exact local semantic fix matters more than broad structural similarity.
+It may suggest that the Semantic+Structure pipeline retrieves examples whose code-level edit semantics are more useful to the patching agent; although it may also be due to variations in the generation process, since the agent is non-deterministic by nature. The performance variation due to the LLM mechanic requires further investigation that might be conducted in upcoming studies.
+
+
+\paragraph{Model Comparison.}
+Codex achieves 15 - 35\% higher LLM Judge validity across all retrieval variants compared to GPT-4o. This gap is larger for the Topology retriever (85.3\% vs 56.8\%), whereas less pronounced for Semantic+Structure (70.3\% vs 63.0\%). 
+This gap between GPT-5.3-Codex and GPT-4o on the AutoPatch dataset suggests that model capability is the dominant factor for localized, single-function vulnerability patches. Additionally, prompt enrichment via the retrieval of similar CWEs yields very low performance returns when the base model is powerful enough.
+
+Conversely, for GPT-4o, the prompt enrichment via retrieval provides a relevant boost. In this case, all three retrieval variants outperform the Tool-only baseline by 6 - 15 percentage points on Judge validity. This indicates that context compensates model limitations by grounding the generation in relevant vulnerability patterns.
+
+\paragraph{Cost Analysis.}
+Table~\ref{tab:generation_cost_summary_condensed} summarizes the patch generation costs for AutoPatch. GPT-5.3-Codex is more cost-efficient, with an average of \$0.018-0.020 per patch versus \$0.039--0.042 for GPT-4o with retrieval. The Tool-only GPT-4o baseline has the highest per-entry cost (\$0.224), which may indicate that when there is no retrieval context to guide generation, the model compensates by using more tokens and loops, and, as seen previously, this is not enough to deliver performance. RAG pipelines reduce GPT-4o costs by 5-6$\times$ compared to the no-retrieval baseline while simultaneously improving patch quality. 
+Compared to the CVEfixes dataset (Table~\ref{tab:cvefixes_generation_cost_summary}), AutoPatch generation costs are 3 to 6$\times$ lower per entry for equivalent configurations. 
+This is probably due to the reduced complexity of the dataset, which consists of single-function and requires localized fixes compared to the multi-file vulnerability patches that require substantially larger context windows and more reasoning steps.
+
+
 
 % uv run python3 utils/aggregate_autopatch_summary.py cvefixes_experiments/output/autopatch/20260816_080855_autopatch_retrieval_patching_5d203b_gpt4/ --out cvefixes_experiments/output/autopatch/20260816_080855_autopatch_retrieval_patching_5d203b_gpt4/autopatch_summary.tex
 % \begin{table}[H]
