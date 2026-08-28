@@ -4,8 +4,6 @@
 
 \subsection{ AutoPatch Dataset Results}
   % \textbf{Goal:} Validate that structural embeddings match CodeBERT performance.
-In table \ref{tab:retrieval_autopatch}, the Topological Structure embedder achieves the best performance across all metrics, reaching 0.8904 hit@1, surpassing both CodeBERT variants.
-This suggests that the graph-only signal is expressive on this dataset, whereas CodeBERT's semantic signal is less relevant.
 
 \begin{table}[H]
 \centering
@@ -17,7 +15,7 @@ This suggests that the graph-only signal is expressive on this dataset, whereas 
   \midrule
   \multicolumn{5}{c}{\textit{Structure-Only}} \\
   \midrule
-  \textbf{Combined} & \textbf{0.890} & \textbf{0.959} & \textbf{0.916} & \textbf{0.498} \\
+  \textbf{Topological Structure} & \textbf{0.890} & \textbf{0.959} & \textbf{0.916} & \textbf{0.498} \\
   GIN & 0.726 & 0.877 & 0.788 & 0.443 \\
   WL & 0.699 & 0.795 & 0.736 & 0.439 \\
   \midrule
@@ -28,29 +26,8 @@ This suggests that the graph-only signal is expressive on this dataset, whereas 
   CodeBERT (pat) & 0.712 & 0.836 & 0.768 & 0.415 \\
   \bottomrule
 \end{tabular}
-\\[2pt]
 % {\tiny\textcolor{notecol}{Source: \texttt{experiments/output/checkpoint5/20260505\_141347\_experiment\_f59ab1/results.json}}}
 \end{table}
-
-  
-The CodeBERT (baseline) row (no fine-tuning, no CPG slicing) collapses to 0.1533 hit@1, barely above random for a small candidate pool. This suggests that raw CodeBERT similarity over the full code is insufficient for the retrieval stage. Semantic and Semantic+Structure embedders are close to each other (0.7534 vs.\ 0.7123 hit@1).
-
-
-% the opposite ordering from the CVEfixes CWE-level table, where \texttt{pattern} won overall. 
-% Taken together, this reinforces the point from the earlier discussion: which representation wins is dataset- and CWE-dependent, not a fixed ranking, so a single "best embedder" claim doesn't hold across datasets.
-
-
-\subsection{PCA and L2-normalization Ablation}
-To validate the proposed architecture, an ablation study was conducted to assess the importance of the L2-normalization and PCA layers.
-Table \ref{tab:pca_l2} shows that dropping \textit{PCA, and L2} is detrimental across every embedder, collapsing hit@1 to 1.4\% or 0.0\%.
-This pipeline failure can be explained by the fact that, without L2 normalization, the FAISS inner product computes:
-
-  $$\text{score}(q, d) = \mathbf{q} \cdot \mathbf{d} = \|\mathbf{q}\| \, \|\mathbf{d}\| \cos\theta$$
-
-so the score is dominated by the vector norms $\|\mathbf{q}\| \, \|\mathbf{d}\|$, rather than the angular similarity $\cos\theta$ that actually reflects the structural similarity.
-% The result of this can be seen in Table \ref{tab:l2_similarity}.
-
-This effect is worse for GIN, since its sum-pooling component means that larger graphs yield higher-norm vectors; without normalization, the retriever simply ranks by graph size. Topological shows the same failure, since it inherits GIN's unnormalized scale in the concatenation. GIN explodes from 0.99 with L2 to 260{,}029 without. Whereas, Topological Structure reaches 416{,}081
 
 Therefore, L2 normalization is validated as part of the pipeline.
 %   {\small
@@ -62,13 +39,6 @@ Therefore, L2 normalization is validated as part of the pipeline.
 %     \toprule
 %     & \multicolumn{3}{c}{\textbf{PCA + L2} {\footnotesize(baseline)}}
 %     && \multicolumn{3}{c}{\textbf{No PCA, L2 only} {\footnotesize(Abl.\ A)}}
-%     && \multicolumn{3}{c}{\textbf{PCA, no L2} {\footnotesize(Abl.\ B)}} \\
-%     \cmidrule{2-4} \cmidrule{6-8} \cmidrule{10-12}
-%     \textbf{Embedder}
-%       & hit@1 & MRR & CWE
-%       && hit@1 & MRR & CWE
-%       && hit@1 & MRR & CWE \\
-%     \midrule
 %     \rowcolor{c1!12}
 %     Combined
 %       & \chit{84.9\%} & \chit{.890} & \chit{.501}
@@ -96,8 +66,11 @@ Therefore, L2 normalization is validated as part of the pipeline.
 %       && \cmiss{0.0\%} & .014 & .060 \\
 %     \bottomrule
 %   \end{tabular}
-%   \caption{Embedder Retrieval Ablation Study Performance for L2-Normalization and PCA}\label{tab:pca_l2}
+%   \caption{Legacy embedder retrieval ablation table (not compiled)}\label{tab:pca_l2_legacy}
 % \end{table}}
+In table \ref{tab:retrieval_autopatch}, the Topological Structure embedder achieves the best performance across all metrics, reaching 0.8904 hit@1, surpassing both CodeBERT variants.
+This suggests that the graph-only signal is expressive on this dataset, whereas CodeBERT's semantic signal is less relevant.
+
 
 \begin{table}
 \centering
@@ -114,11 +87,11 @@ Therefore, L2 normalization is validated as part of the pipeline.
       && hit@1 & MRR \\
     \midrule
     \rowcolor{c1!12}
-    Combined
+    Topological Structure
       & \chit{0.822} & \chit{0.860}
       && \cwarn{0.808} & 0.844 
       && \cmiss{0.136} & 0.060 \\
-    CodeBERT seq
+    Structure
       & 0.877 & 0.899
       && 0.877 & 0.899
       && \cmiss{0.740} & 0.792 \\
@@ -162,7 +135,7 @@ Therefore, L2 normalization is validated as part of the pipeline.
 
 For the Topological Structure embedder, PCA is also an important component. Besides reducing dimensionality, it implicitly rebalances the relative contributions of GIN, WL, and NetLSD in the concatenated vector.
 Without it, whichever sembedder has the largest magnitude overweights the overall distance. It can be seen in the pairwise-similarity table that GIN is both the largest-magnitude embedder and the one that Topological Structure depends on most.
-On the other hand, most embedders even show a slight improvement without PCA (CodeBERT seq: 75.3\% → 76.7\%; WL: 65.8\% → 67.1\%;).
+On the other hand, most embedders even show a slight improvement without PCA (Structure: 75.3\% → 76.7\%; WL: 65.8\% → 67.1\%;).
 
 %   \vspace{0.3em}
 %   % {\scriptsize\color{black!55}
@@ -208,7 +181,7 @@ This confirms that for memory-safety and concurrency vulnerabilities in the Auto
   \small
   \begin{tabular}{l r r r r r r}
     \toprule
-    \textbf{CWE Category} & \textbf{n} & \multicolumn{2}{c}{\textbf{Combined}} & \multicolumn{2}{c}{\textbf{CodeBERT\_seq}} & \textbf{$\Delta$} \\
+    \textbf{CWE Category} & \textbf{n} & \multicolumn{2}{c}{\textbf{Topological Structure}} & \multicolumn{2}{c}{\textbf{Structure}} & \textbf{$\Delta$} \\
     \cmidrule(lr){3-4} \cmidrule(lr){5-6}
     & & CVE & CWE & CVE & CWE & CVE \\
     \midrule
@@ -235,7 +208,7 @@ The AutoPatch dataset contains variants of each CVE, consisting of LLM-generated
 
 \begin{table}[h]
   \centering
-  \caption{Retrieval Performance by Code Variant Type (CodeBERT\_seq)}\label{tab:autopatch_variants}
+  \caption{Retrieval Performance by Code Variant Type (Structure)}\label{tab:autopatch_variants}
   \small
   \begin{tabular}{l r r r}
     \toprule
@@ -256,46 +229,7 @@ The augmented variants, which used targeted augmentation strategies for each CVE
 This suggests that the embedders rely on surface-level structural patterns that LLMs tend to preserve.
 For a production vulnerability retrieval system, this may suggest that real-world code written by different developers may exhibit retrieval failures on novel implementations of known vulnerability patterns, since they have the same structural diversity as the augmented variants.
 
-\subsection{Cross-Dataset Comparison: AutoPatch vs.\ CVEfixes}
-
-A striking result emerges when comparing embedder rankings across datasets.
-On AutoPatch, the Combined (topological) embedder dominates with 89\% hit@1, while on CVEfixes (Section~\ref{sec:cvefixes-retrieval}), CodeBERT\_pattern achieves 65.17\% overall CWE accuracy while Combined collapses to 23.60\%.
-This reversal can be attributed to several factors:
-
-\begin{enumerate}
-  \item \textbf{Dataset construction:} AutoPatch contains synthetically augmented code with controlled variations, preserving core graph topology.
-        CVEfixes contains real-world multi-file patches with domain-specific identifiers that CodeBERT's vocabulary captures.
-  \item \textbf{Vulnerability complexity:} CVEfixes race conditions (CWE-362) often involve domain-specific locking primitives (e.g., \texttt{ip\_setup\_cork}) that the regex-based pattern embedder cannot match.
-        AutoPatch locking patterns use standard primitives (\texttt{mutex\_lock}, \texttt{spin\_lock}).
-  \item \textbf{Index composition:} AutoPatch queries draw from a pool of structurally similar augmentations of the same CVE, whereas CVEfixes queries must distinguish among genuinely different vulnerability instances.
-\end{enumerate}
-
-This cross-dataset divergence confirms that no single embedder architecture dominates across all vulnerability retrieval scenarios.
-Topological embeddings excel when the core code structure is preserved, while semantic embeddings are necessary when vulnerability patterns require domain-specific vocabulary understanding.
-
 \section{CVEFixes: Embedder Retrieval Performance}\label{sec:cvefixes-retrieval}
-\begin{table}[h]
-  \centering
-  \small
-  \begin{tabular}{lrrr}
-    \toprule
-    \textbf{Category / Metric} & \textbf{codebert\_seq} & \textbf{codebert\_pattern} & \textbf{combined} \\
-    \midrule
-    CWE-362 & \textbf{8/15 (53.33\%)} & 7/15 (46.67\%) & 3/15 (20.00\%) \\
-    CWE-476 & 5/14 (35.71\%) & \textbf{6/14 (42.86\%)} & 1/14 (7.14\%) \\
-    CWE-416 & 7/15 (46.67\%) & \textbf{10/15 (66.67\%)} & 3/15 (20.00\%) \\
-    CWE-20  & \textbf{14/15 (93.33\%)} & \textbf{14/15 (93.33\%)} & 5/15 (33.33\%) \\
-    CWE-190 & \textbf{10/15 (66.67\%)} & \textbf{10/15 (66.67\%)} & 8/15 (53.33\%) \\
-    CWE-787 & 4/15 (26.67\%) & \textbf{11/15 (73.33\%)} & 1/15 (6.67\%) \\
-    \midrule
-    \textbf{Overall CWE Accuracy} & 48/89 (53.93\%) & \textbf{58/89 (65.17\%)} & 21/89 (23.60\%) \\
-    \textbf{Overall CVE Accuracy} & 44/89 (49.44\%) & \textbf{48/89 (53.93\%)} & 15/89 (16.85\%) \\
-    \bottomrule
-  \end{tabular}
-  \caption{Embedder Retrieval Performance Comparison Across CWE Categories and Overall Metrics}\label{tab:retrieval_embeddings}
-\end{table}
-
-Analyzing the ranking score distribution per retriever reveals that retrieval difficulty varies significantly across Common Weakness Enumerations (CWEs), with each model demonstrating specific categorical strengths. % TODO: link this with the description to be done in the data section 
 Overall, the CodeBERT-based retrievers outperform the Topological Structure embedding model. This suggests that for these real-world scenarios, the underlying semantic signal carries more weight than the aggregated code topological structure representations crafted under the settings used in this work.
 
 \paragraph{Semantic + Structure Performance}
@@ -368,7 +302,7 @@ Broad refactoring or multi-file architectural changes, such as locking macros or
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{img/retrieval/codebert_pattern_cve_map_by_cve.png}
-    \caption{CodeBERT Pattern CVE mAP}
+    \caption{Semantic+Structure CVE mAP}
     \label{img:codebert_pattern_cve_map}
 \end{figure}
 
@@ -393,7 +327,7 @@ With that, the MAP rises from $\sim0.26$ (Semantic) to $\sim0.73$ (Structure + S
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{img/retrieval/codebert_seq_cve_map_by_cve.png}
-    \caption{CodeBERT Sequence CVE mAP}
+    \caption{Structure CVE mAP}
     \label{img:codebert_seq_cve_map}
 \end{figure}
 
@@ -401,7 +335,7 @@ With that, the MAP rises from $\sim0.26$ (Semantic) to $\sim0.73$ (Structure + S
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{img/retrieval/combined_cve_map_by_cve.png}
-    \caption{Topological Structure (Combined) CVE mAP}
+    \caption{Topological Structure CVE mAP}
     \label{img:combined_cve_map}
 \end{figure}
 
@@ -413,6 +347,25 @@ This happens because the code contains an arithmetic operation node that feeds d
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %=============================%
+
+\section{Cross-Dataset Comparison: AutoPatch vs.\ CVEfixes}
+
+When comparing embedder rankings across datasets, distinct patterns emerge.
+On AutoPatch, the topological embedder dominates with 89\% hit@1, while on CVEfixes (Section~\ref{sec:cvefixes-retrieval}), Semantic+Similarity achieves 65.17\% overall CWE accuracy while Topological Structure collapses to 23.60\%.
+Possible justifications for this are:
+
+\begin{enumerate}
+  \item Even though AutoPatch is primarily built from a crawler on real repositories, it is mostly composed of synthetically augmented code with controlled variations, probably highly preserving core graph topology.
+    Whereas CVEfixes contains real-world multi-file patches with few interventions to adapt the format to the dataset storage structure, containing domain-specific identifiers that CodeBERT's vocabulary captures.
+  \item CVEfixes vulnerabilities demand greater expertise; for example, the race conditions (CWE-362) often involve domain-specific locking primitives (e.g., \texttt{ip\_setup\_cork}) that the regex-based pattern embedder cannot match.
+        On the other hand, AutoPatch locking patterns use standard primitives (\texttt{mutex\_lock}, \texttt{spin\_lock}) more commonly found in codebases, making them more generalizable and easier to identify and patch.
+  \item By construction, AutoPatch queries draw from structurally similar augmentations of the same CVE, whereas CVEfixes embedders must emerge patterns that distinguish queries among different vulnerability instances, a harder task.
+\end{enumerate}
+
+This indicates that the choice of embedder architecture may depend on the pipeline application context, since no single approach dominates across all vulnerability retrieval scenarios.
+The general interpretation of the results is that topological embeddings excel when the core code structure is preserved, whereas semantic embeddings are necessary when vulnerability patterns require domain-specific vocabulary.
+
+
 
 \section{CVEFixes: Patching Experiments}
 Given the patch retrieval performance, an analysis of downstream patch generation is necessary to assess the entire pipeline. To evaluate different LLM-powered architectures, two configurations of the agentic pipeline were compared. They share the same parameters: the model, the retrieved example, the target code, and the dataset split. 
@@ -434,7 +387,7 @@ These results indicate that evaluating prompt variations and control-flow strate
 
 Similarly, applying the hunk metric evaluation to the Topological Structure retriever pipeline, we observe a high rate of incorrect patches (\texttt{hunk\_added\_f1 $\thickapprox$ 0.02}). 
 It occurs because the patches simply reproduce the vulnerable input. 
-Analyzing the pipeline a step earlier, the retrieval performance is poor with only a 29\% CWE-match rate. %, which suggests that it is important to have a good retrieval. 
+Analyzing the pipeline a step earlier, the retrieval performance is poor with only a 29\% CWE-match rate, which suggests that good retrieval is important.
 Consequently, even though the agent workflow verifies the correctness of the retrieved CVE for the code snippet under analysis, downstream LLM patch generation cannot easily recover from initial retrieval errors, corroborating the importance of robust (context?) retrieval for effective automated repair. 
 
 
@@ -450,43 +403,43 @@ Consequently, even though the agent workflow verifies the correctness of the ret
     \multirow{5}{*}{\textbf{CWE-190}} 
       & Codex-5.3 Baseline                 & \cmiss{$0.163 \pm 0.197^*$} & 0.402 & \chit{$0.698 \pm 0.251^*$} \\
       & Tool Calling Agent (w/o Retr.)    & $0.696 \pm 0.369$ & 0.790 & $0.607 \pm 0.492$ \\
-      & CodeBERT Seq                      & $0.695 \pm 0.371$ & \chit{0.791} & $0.616 \pm 0.483$ \\
-      & CodeBERT Pattern                  & $0.696 \pm 0.369$ & $0.790 \pm 0.287$ & $0.615 \pm 0.483$ \\
+      & Structure                         & $0.695 \pm 0.371$ & \chit{0.791} & $0.616 \pm 0.483$ \\
+      & Semantic+Structure                & $0.696 \pm 0.369$ & $0.790 \pm 0.287$ & $0.615 \pm 0.483$ \\
       & Topological Structure             & $0.694 \pm 0.369$ & 0.788 & $0.607 \pm 0.489$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
       & Codex-5.3 Baseline                 & $0.348 \pm 0.242^*$ & 0.342 & $0.834 \pm 0.080^{\ddagger}$ \\
       & Tool Calling Agent (w/o Retr.)    & $0.907 \pm 0.160$ & 0.924 & $0.863 \pm 0.234$ \\
-      & CodeBERT Seq                      & $0.911 \pm 0.156$ & 0.929 & \chit{$0.864 \pm 0.234$} \\
-      & CodeBERT Pattern                  & $0.911 \pm 0.156$ & $0.927 \pm 0.070$ & $0.864 \pm 0.234$ \\
+      & Structure                         & $0.911 \pm 0.156$ & 0.929 & \chit{$0.864 \pm 0.234$} \\
+      & Semantic+Structure                & $0.911 \pm 0.156$ & $0.927 \pm 0.070$ & $0.864 \pm 0.234$ \\
       & Topological Structure             & $0.911 \pm 0.156$ & \chit{0.928} & $0.864 \pm 0.234$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
       & Codex-5.3 Baseline                 & $0.352 \pm 0.234^*$ & 0.379 & $0.905 \pm 0.065^{\S}$ \\
       & Tool Calling Agent (w/o Retr.)    & $0.957 \pm 0.088$ & 0.992 & $0.998 \pm 0.003$ \\
-      & CodeBERT Seq                      & \chit{$0.974 \pm 0.071$} & 0.994 & \chit{$0.999 \pm 0.002$} \\
-      & CodeBERT Pattern                  & $0.914 \pm 0.214$ & $0.937 \pm 0.203$ & $0.988 \pm 0.034$ \\
+      & Structure                         & \chit{$0.974 \pm 0.071$} & 0.994 & \chit{$0.999 \pm 0.002$} \\
+      & Semantic+Structure                & $0.914 \pm 0.214$ & $0.937 \pm 0.203$ & $0.988 \pm 0.034$ \\
       & Topological Structure             & $0.967 \pm 0.087$ & \chit{0.997} & $0.998 \pm 0.003$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
       & Codex-5.3 Baseline                 & $0.302 \pm 0.210^*$ & 0.235 & $0.864 \pm 0.108^{\mathparagraph}$ \\
       & Tool Calling Agent (w/o Retr.)    & $0.884 \pm 0.287$ & 0.918 & $0.907 \pm 0.267$ \\
-      & CodeBERT Seq                      & \chit{$0.939 \pm 0.209$} & \chit{0.972} & \chit{$0.934 \pm 0.240$} \\
-      & CodeBERT Pattern                  & $0.918 \pm 0.248$ & $0.960 \pm 0.103$ & $0.899 \pm 0.311$ \\
+      & Structure                         & \chit{$0.939 \pm 0.209$} & \chit{0.972} & \chit{$0.934 \pm 0.240$} \\
+      & Semantic+Structure                & $0.918 \pm 0.248$ & $0.960 \pm 0.103$ & $0.899 \pm 0.311$ \\
       & Topological Structure             & $0.937 \pm 0.209$ & 0.969 & $0.925 \pm 0.264$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
       & Codex-5.3 Baseline                 & $0.198 \pm 0.153^*$ & 0.170 & $0.824 \pm 0.230^*$ \\
       & Tool Calling Agent (w/o Retr.)    & $0.933 \pm 0.183$ & 0.924 & $0.844 \pm 0.361$ \\
-      & CodeBERT Seq                      & \chit{$0.928 \pm 0.190$} & \chit{0.917} & \chit{$0.832 \pm 0.372$} \\
-      & CodeBERT Pattern                  & $0.915 \pm 0.205$ & $0.899 \pm 0.208$ & $0.801 \pm 0.400$ \\
+      & Structure                         & \chit{$0.928 \pm 0.190$} & \chit{0.917} & \chit{$0.832 \pm 0.372$} \\
+      & Semantic+Structure                & $0.915 \pm 0.205$ & $0.899 \pm 0.208$ & $0.801 \pm 0.400$ \\
       & Topological Structure             & $0.851 \pm 0.318$ & 0.843 & $0.829 \pm 0.371$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
       & Codex-5.3 Baseline                 & $0.069 \pm 0.075^{\ddagger}$ & 0.216 & $0.035 \pm 0.037^{\S}$ \\
       & Tool Calling Agent (w/o Retr.)    & $0.510 \pm 0.057$ & 0.925 & $0.000 \pm 0.000$ \\
-      & CodeBERT Seq                      & $0.523 \pm 0.046$ & 0.935 & $0.128 \pm 0.249$ \\
-      & CodeBERT Pattern                  & \chit{$0.524 \pm 0.044$} & \chit{$0.937 \pm 0.042$} & \chit{$0.189 \pm 0.270$} \\
+      & Structure                         & $0.523 \pm 0.046$ & 0.935 & $0.128 \pm 0.249$ \\
+      & Semantic+Structure                & \chit{$0.524 \pm 0.044$} & \chit{$0.937 \pm 0.042$} & \chit{$0.189 \pm 0.270$} \\
       & Topological Structure             & $0.517 \pm 0.052$ & 0.914 & $0.000 \pm 0.000$ \\
     \bottomrule
   \end{tabular}
@@ -509,50 +462,50 @@ Consequently, even though the agent workflow verifies the correctness of the ret
     \multirow{5}{*}{\textbf{CWE-190}} 
       & Codex-5.3 Baseline                 & -- & \cmiss{$0.163 \pm 0.196^*$} & 0.402 & \chit{$0.698 \pm 0.251^*$} \\
       & Tool Calling Baseline              & 3  & $0.734 \pm 0.431^*$ & $0.928 \pm 0.115^*$ & $0.689 \pm 0.513^*$ \\
-      & CodeBERT Seq                       & 2  & $0.615 \pm 0.535^*$ & $0.893 \pm 0.144^*$ & $0.533 \pm 0.661^*$ \\
-      & CodeBERT Pattern                   & 4  & $0.624 \pm 0.420^*$ & $0.808 \pm 0.253^*$ & $0.559 \pm 0.494^*$ \\
+      & Structure                          & 2  & $0.615 \pm 0.535^*$ & $0.893 \pm 0.144^*$ & $0.533 \pm 0.661^*$ \\
+      & Semantic+Structure                 & 4  & $0.624 \pm 0.420^*$ & $0.808 \pm 0.253^*$ & $0.559 \pm 0.494^*$ \\
       & Topological Structure              & -- & $0.694 \pm 0.369$ & 0.787 & $0.607 \pm 0.489$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
       & Codex-5.3 Baseline                 & -- & $0.348 \pm 0.242^*$ & 0.342 & $0.834 \pm 0.080^{\ddagger}$ \\
       & Tool Calling Baseline              & 5  & $0.800 \pm 0.246^*$ & $0.894 \pm 0.097^*$ & $0.755 \pm 0.365^*$ \\
-      & CodeBERT Seq                       & 4  & \chit{$0.907 \pm 0.068^*$} & \chit{$0.945 \pm 0.045^{\dagger}$} & \chit{$0.934 \pm 0.067^*$} \\
-      & CodeBERT Pattern                   & 4  & $0.780 \pm 0.276^*$ & $0.929 \pm 0.119^*$ & $0.775 \pm 0.437^*$ \\
+      & Structure                          & 4  & \chit{$0.907 \pm 0.068^*$} & \chit{$0.945 \pm 0.045^{\dagger}$} & \chit{$0.934 \pm 0.067^*$} \\
+      & Semantic+Structure                 & 4  & $0.780 \pm 0.276^*$ & $0.929 \pm 0.119^*$ & $0.775 \pm 0.437^*$ \\
       & Topological Structure              & -- & $0.911 \pm 0.156$ & 0.928 & $0.864 \pm 0.234$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
       & Codex-5.3 Baseline                 & -- & $0.352 \pm 0.234^*$ & 0.379 & $0.905 \pm 0.065^{\S}$ \\
       & Tool Calling Baseline              & 9  & $0.972 \pm 0.083^{\dagger}$ & $0.997 \pm 0.005^{\S}$ & $0.998 \pm 0.003^{\S}$ \\
-      & CodeBERT Seq                       & 7  & $0.965 \pm 0.094^*$ & $0.996 \pm 0.006^{\S}$ & \chit{$0.998 \pm 0.004^{\S}$} \\
-      & CodeBERT Pattern                   & 5  & \chit{$1.000 \pm 0.000^{\S}$} & \chit{$1.000 \pm 0.000^{\S}$} & $0.999 \pm 0.001^{\S}$ \\
+      & Structure                          & 7  & $0.965 \pm 0.094^*$ & $0.996 \pm 0.006^{\S}$ & \chit{$0.998 \pm 0.004^{\S}$} \\
+      & Semantic+Structure                 & 5  & \chit{$1.000 \pm 0.000^{\S}$} & \chit{$1.000 \pm 0.000^{\S}$} & $0.999 \pm 0.001^{\S}$ \\
       & Topological Structure              & -- & $0.967 \pm 0.087$ & 0.997 & $0.998 \pm 0.003$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
       & Codex-5.3 Baseline                 & -- & $0.302 \pm 0.210^*$ & 0.235 & $0.864 \pm 0.107^{\mathparagraph}$ \\
       & Tool Calling Baseline              & 7  & $0.874 \pm 0.292^*$ & $0.941 \pm 0.123^*$ & $0.850 \pm 0.375^*$ \\
-      & CodeBERT Seq                       & 7  & \chit{$0.882 \pm 0.295^*$} & \chit{$0.948 \pm 0.118^*$} & \chit{$0.869 \pm 0.339^*$} \\
-      & CodeBERT Pattern                   & 5  & $0.723 \pm 0.385^*$ & $0.768 \pm 0.346^*$ & $0.780 \pm 0.438^*$ \\
+      & Structure                          & 7  & \chit{$0.882 \pm 0.295^*$} & \chit{$0.948 \pm 0.118^*$} & \chit{$0.869 \pm 0.339^*$} \\
+      & Semantic+Structure                 & 5  & $0.723 \pm 0.385^*$ & $0.768 \pm 0.346^*$ & $0.780 \pm 0.438^*$ \\
       & Topological Structure              & -- & $0.937 \pm 0.209$ & 0.969 & $0.925 \pm 0.264$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
       & Codex-5.3 Baseline                 & -- & $0.198 \pm 0.152^*$ & 0.170 & $0.824 \pm 0.230^*$ \\
       & Tool Calling Baseline              & 9  & $0.898 \pm 0.225^*$ & $0.932 \pm 0.189^*$ & $0.778 \pm 0.441^*$ \\
-      & CodeBERT Seq                       & 9  & $0.826 \pm 0.350^*$ & $0.835 \pm 0.337^*$ & \chit{$0.879 \pm 0.331^*$} \\
-      & CodeBERT Pattern                   & 7  & \chit{$0.963 \pm 0.099^*$} & \chit{$0.992 \pm 0.017^{\S}$} & $0.856 \pm 0.377^*$ \\
+      & Structure                          & 9  & $0.826 \pm 0.350^*$ & $0.835 \pm 0.337^*$ & \chit{$0.879 \pm 0.331^*$} \\
+      & Semantic+Structure                 & 7  & \chit{$0.963 \pm 0.099^*$} & \chit{$0.992 \pm 0.017^{\S}$} & $0.856 \pm 0.377^*$ \\
       & Topological Structure              & -- & $0.851 \pm 0.318$ & 0.843 & $0.829 \pm 0.371$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
       & Codex-5.3 Baseline                 & -- & $0.069 \pm 0.075^{\ddagger}$ & 0.216 & $0.035 \pm 0.036^{\S}$ \\
       & Tool Calling Baseline              & 8  & $0.437 \pm 0.179^*$ & $0.796 \pm 0.312^*$ & $0.003 \pm 0.010^{\S}$ \\
-      & CodeBERT Seq                       & 8  & \chit{$0.531 \pm 0.059^{\ddagger}$} & $0.925 \pm 0.039^{\S}$ & $0.145 \pm 0.270^*$ \\
-      & CodeBERT Pattern                   & 11 & $0.466 \pm 0.155^*$ & $0.844 \pm 0.274^*$ & \chit{$0.195 \pm 0.270^*$} \\
+      & Structure                          & 8  & \chit{$0.531 \pm 0.059^{\ddagger}$} & $0.925 \pm 0.039^{\S}$ & $0.145 \pm 0.270^*$ \\
+      & Semantic+Structure                 & 11 & $0.466 \pm 0.155^*$ & $0.844 \pm 0.274^*$ & \chit{$0.195 \pm 0.270^*$} \\
       & Topological Structure              & -- & $0.516 \pm 0.052$ & 0.914 & $0.000 \pm 0.000$ \\
     \bottomrule
 \end{tabular}
   \vspace{1ex}
   \raggedright
   \scriptsize
-  \dag\ \textbf{Confidence \& Support Notes:} Values represent $\text{Mean} \pm \text{SD}$. Total evaluated records per method: $N = 41$ for Tool Calling Baseline, $N = 37$ for CodeBERT Seq, and $N = 36$ for CodeBERT Pattern. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
+  \dag\ \textbf{Confidence \& Support Notes:} Values represent $\text{Mean} \pm \text{SD}$. Total evaluated records per method: $N = 41$ for Tool Calling Baseline, $N = 37$ for Structure, and $N = 36$ for Semantic+Structure. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
   \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^{\dagger}$ Fair Confidence ($80\%-85\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
 \end{table}
 
@@ -560,33 +513,28 @@ Consequently, even though the agent workflow verifies the correctness of the ret
 \begin{table}[h]
   \centering
   \small
-  \begin{tabular}{lrrr}
+  \caption{CVEFixes: GPT-5.3-Codex LLM Judge Summary by Pipeline (filtered subset)}
+  \label{tab:llmjudge_codex53}
+  \begin{tabular}{lrrrrrrr}
     \toprule
-    \textbf{Category / Metric} & \textbf{Pattern} & \textbf{Sequence} & \textbf{Combined} \\
+    \textbf{Pipeline} & \textbf{Source $N$} & \textbf{Generated} & \textbf{Judge $N$} & \textbf{Valid} & \textbf{Invalid} & \textbf{Errors} \\
     \midrule
-    CWE-190 & 0/1 (0.0\%)  & 0/1 (0.0\%)     & 0/1 (0.0\%) \\
-    CWE-20  & 0/1 (0.0\%)  & \textbf{1/1 (100.0\%)} & \textbf{1/1 (100.0\%)} \\
-    CWE-362 & \textbf{4/12 (33.3\%)} & 2/6 (33.3\%)   & 1/6 (16.7\%) \\
-    CWE-416 & \textbf{3/7 (42.9\%)}  & \textbf{3/7 (42.9\%)}   & 2/7 (28.6\%) \\
-    CWE-476 & 2/12 (16.7\%) & 3/9 (33.3\%)    & \textbf{4/9 (44.4\%)} \\
-    CWE-787 & 0/1 (0.0\%)  & 0/1 (0.0\%)     & 0/1 (0.0\%) \\
-    \midrule
-    \textbf{Total Valid Rate} & \textbf{9/34 (26.5\%)} & \textbf{9/25 (36.0\%)} & \textbf{8/25 (32.0\%)} \\
-    \textbf{Total Invalid}    & 16/34 (47.1\%) & 11/25 (44.0\%) & 16/25 (64.0\%) \\
-    \textbf{Total Errors}     & 9/34 (26.5\%)  & 5/25 (20.0\%)  & 1/25 (4.0\%) \\
+    Semantic+Structure & 89 & 81 & 34 & 9 & 16 & 9 \\
+    Structure & 89 & 84 & 25 & 9 & 11 & 5 \\
+    Topological Structure & 89 & 86 & 25 & 8 & 16 & 1 \\
     \bottomrule
   \end{tabular}
-  \caption{LLM Judge Validation Performance Across Embedder Approaches (Judge: Opus, Generator: Codex-5.3)}
-  \label{tab:llmjudge_codex53}
+  \\[2pt]
+  {\scriptsize The displayed judge subset is not the full 89-query run.}
 \end{table}
 Codex-5.3 baseline consistently shows low performance across all the CWE categories, indicating that prompting alone is insufficient when patching.
 Pipelines without retrieval, or those relying only on topological data, can achieve near-perfect lexical alignment, indicated by Hunk F1 scores above 0.95 in C code, while only resolving 20\% of actual CVEs. 
 % TODO: check LLM as a judge for the tools only baseline is good, so we can still conclude that the tools only is better pipeline, for simplicity
 They successfully reproduce exact syntactic surface edits, but, as the LLM as a judge, low metrics show, fail to resolve the root security vulnerability. 
 
-The tool calling agent, Codebert seq, and CodeBERT Pattern show similar performance, indicating that a good prompt pipeline with tooling might be enough to get a good performance when using such a powerful model.
+The tool calling agent, Structure, and Semantic+Structure show similar performance, indicating that a good prompt pipeline with tooling might be enough to get a good performance when using such a powerful model.
 
-CWE-787 (Out-of-bounds Write) is the hardest class across all the strategies. Despite having the highest amount of small files ($52.41\%$ are $<500$ lines), it yields 0.0\% valid patches across all three LLM Judge evaluations.
+CWE-787 (Out-of-bounds Write) is the hardest class across all the strategies. Despite having the highest amount of small files ($52.41\%$ are $<500$ lines), it yields 0.0\% valid patches in the three evaluations summarized in Table~\ref{tab:llmjudge_codex53}.
 % investigate the reason behind High Rouge shows 
 Conversely, CWE-362 (Race Conditions) has 0.0\% files under 500 lines, yet achieves strong retrieval alignment (Hunk F1 $0.9853$) and up to 33.3\% valid patch rates.
 This suggests that patch generation difficulty is more related to semantic vulnerability type than to raw code length.
@@ -595,32 +543,66 @@ This suggests that patch generation difficulty is more related to semantic vulne
   \small
   \setlength{\tabcolsep}{4pt} % Reduces horizontal padding between columns
   \caption{Patch generation summary by embedding variant / mode -- by language Codex-5.3}
-  \label{tab:patch_analysis_summary_by_language}
-  \begin{tabular}{llrrrrrrrr}
+  \label{tab:patch_analysis_summary_by_language_codex}
+  \textit{(a) Completion and retrieval}
+
+  \begin{tabular}{llrrrrr}
     \toprule
-    \textbf{Mode} & \textbf{Lang.} & \textbf{N} & \textbf{BLEU-4} & \makecell{\bfseries BERT F$_1$} & \makecell{\bfseries Hunk F$_1$} \\
+    \textbf{Mode} & \textbf{Lang.} & \textbf{$N$} & \makecell{\bfseries Success\\(\%)} & \makecell{\bfseries CVE Match\\(\%)} & \makecell{\bfseries CWE Match\\(\%)} & \makecell{\bfseries Retrieval\\Similarity} \\
     \midrule
     \multirow{2}{*}{Codex Baseline} 
-      & C   & 65 & 0.052 & 0.324 & 0.845 \\
-      & C++ & 24  & 0.062 & 0.210 & 0.364 \\
+      & C   & 65 & 100.0 & -- & -- & -- \\
+      & C++ & 24  & 100.0 & -- & -- & -- \\
     \midrule
     \multirow{2}{*}{Tool Calling (No Retr.)} 
-      & C   & 65 & 0.907 & 0.963 & 0.953 \\
-      & C++ & 24 & 0.853 & 0.654 & 0.310 \\
+      & C   & 65 & 100.0 & -- & -- & -- \\
+      & C++ & 24 & 100.0 & -- & -- & -- \\
     \midrule
-    \multirow{2}{*}{CodeBERT Pattern} 
-      & C   & 65 & 0.770 & 0.865 & 0.934 \\
-      & C++ & 24 & 0.853 & 0.654 & 0.310 \\
+    \multirow{2}{*}{Semantic+Structure} 
+      & C   & 65 & 96.9 & 83.1 & 87.7 & 0.933 \\
+      & C++ & 24 & 100.0 & 100.0 & 100.0 & 0.960 \\
     \midrule
-    \multirow{2}{*}{CodeBERT Seq} 
-      & C   & 65 & 0.919 & 0.977 & 0.957 \\
-      & C++ & 24 & 0.856 & 0.654 & 0.310 \\
+    \multirow{2}{*}{Structure} 
+      & C   & 65 & 95.4 & 86.2 & 89.2 & 0.919 \\
+      & C++ & 24 & 100.0 & 100.0 & 100.0 & 0.963 \\
     \midrule
-    \multirow{2}{*}{Combined} 
-      & C   & 65 & 0.908 & 0.964 & 0.958 \\
-      & C++ & 24 & 0.833 & 0.604 & 0.212 \\
+    \multirow{2}{*}{Topological Structure} 
+      & C   & 65 & 98.5 & 20.0 & 29.2 & 0.930 \\
+      & C++ & 24 & 91.7 & 8.3 & 8.3 & 0.858 \\
     \bottomrule
   \end{tabular}
+  \\[0.75em]
+  \textit{(b) Lexical patch quality}
+
+  \begin{tabular}{llrrr}
+    \toprule
+    \textbf{Mode} & \textbf{Lang.} & \textbf{BLEU-4} & \makecell{\bfseries BERTScore\\F$_1$} & \makecell{\bfseries Hunk\\F$_1$} \\
+    \midrule
+    \multirow{2}{*}{Codex Baseline}
+      & C   & 0.052 & 0.324 & 0.845 \\
+      & C++ & 0.062 & 0.210 & 0.364 \\
+    \midrule
+    \multirow{2}{*}{Tool Calling (No Retr.)}
+      & C   & 0.907 & 0.963 & 0.953 \\
+      & C++ & 0.853 & 0.654 & 0.310 \\
+    \midrule
+    \multirow{2}{*}{Semantic+Structure}
+      & C   & 0.770 & 0.865 & 0.934 \\
+      & C++ & 0.853 & 0.654 & 0.310 \\
+    \midrule
+    \multirow{2}{*}{Structure}
+      & C   & 0.919 & 0.977 & 0.957 \\
+      & C++ & 0.856 & 0.654 & 0.310 \\
+    \midrule
+    \multirow{2}{*}{Topological Structure}
+      & C   & 0.908 & 0.964 & 0.958 \\
+      & C++ & 0.833 & 0.604 & 0.212 \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  \begin{minipage}{\linewidth}
+    \scriptsize Source $N$ is the number of queries in the run. Dashes denote retrieval-specific measures that are not applicable to no-retrieval baselines. Lexical metrics are reported over successfully generated patches where available.
+  \end{minipage}
 \end{table}
 
 Strong retrieval directly enables better downstream patch generation, but evaluating this success reveals a blind spot in standard evaluation metrics. 
@@ -676,7 +658,7 @@ This is a structural limitation that needs further investigation.
 \begin{table}[H]
   \centering
   \caption{Condensed Generation Cost Summary Across All Experiments}
-  \label{tab:generation_cost_summary_condensed}
+  \label{tab:generation_cost_summary_condensed_cvefixes}
   \begin{tabular}{llrrrrrr}
     \toprule
 Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
@@ -718,13 +700,13 @@ Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \m
 
 The results in Table \ref{tab:cwe_comparison_gpt4o} follow similar patterns to those observed in Table \ref{tab:cwe_comparison_all_methods}. Tool Calling Agent, both with and without retrieval for CodeBERT variations, outperformed the prompt-only GPT-4o baseline. Comparing token-level metrics, prompt-only BERTScore/ROUGE scores hover in the 0.10–0.35 range, while Tool Calling raises them to 0.60–0.99.
 
-Similar to Codex, CWE-787 (Out-of-Bound) vulnerability shows the weakest performance. While BERTScore and ROUGE-L remain stable, Hunk $\text{F}_1$ collapses to almost zero across all methods (0.01–0.18). This suggests that the failures on CWE-787 are intrinsic to the task difficulty due to factors like the dataset sample or the complexity of the patch required for that specific CWE.
+Similar to Codex, CWE-787 (Out-of-bounds Write) shows the weakest performance. While BERTScore and ROUGE-L remain stable, Hunk $\text{F}_1$ collapses to almost zero across all methods (0.01--0.18). This suggests that the failures on CWE-787 are intrinsic to the task difficulty due to factors like the dataset sample or the complexity of the patch required for that specific CWE.
 
-Conversely, most Tool Calling methods excel at CWE-362 (Race Conditions), achieving ~0.98–0.99.2, similar to scores seen previously (~0.97–0.99). On the other hand, while the individual Tool Calling methods perform very similarly in Table \ref{tab:cwe_comparison_gpt4o}, the \texttt{Combined} retrieval pipeline showed a drop in performance. For example, in CWE-416, it scored a 0.9369 BERTScore and 0.9691 ROUGE-L, with GPT-5.3-Codex, whereas with GPT-4o it fell to 0.2671 and 0.3390, respectively. Comparatively, it is worse than the Tool Calling (without retrieval) CodeBERT Seq/Pattern Tool Calling patches across almost every single category. 
+Conversely, most Tool Calling methods excel at CWE-362 (Race Conditions), achieving approximately 0.98--0.99, similar to scores seen previously (approximately 0.97--0.99). On the other hand, while the individual Tool Calling methods perform very similarly in Table \ref{tab:cwe_comparison_gpt4o}, the \texttt{Combined} retrieval pipeline showed a drop in performance. For example, in CWE-416, it scored 0.9369 BERTScore and 0.9691 ROUGE-L with GPT-5.3-Codex, whereas with GPT-4o it fell to 0.2671 and 0.3390, respectively. Comparatively, it is worse than the Tool Calling (without retrieval) CodeBERT Seq/Pattern Tool Calling patches across almost every single category.
 
 
-GPT-4o presents competitive performance when considering tool calling and CodeBERT seq. For example, in CWE-416, the Tool Calling (without retrieval) achieves a 0.9814 Hunk $\text{F}_1$, which is actually better than the Codex-5.3 table's maximum of 0.9337. 
-Prompt-only performs badly regardless of the model. This suggests that Complex code repair strictly requires iterative tool use. The Topological Structure low performance here indicates that the GPT-5.3-Codex recovers from the retrieval errors, whereas with GPT-4o, despite the available tools, it actually hurts the performance
+GPT-4o presents competitive performance when considering tool calling and Structure. For example, in CWE-416, the Tool Calling (without retrieval) achieves a 0.9814 Hunk $\text{F}_1$, which is actually better than the Codex-5.3 table's maximum of 0.9337. 
+Prompt-only performs badly regardless of the model. This suggests that complex code repair requires iterative tool use. The Topological Structure low performance here indicates that GPT-5.3-Codex recovers from retrieval errors, whereas with GPT-4o, despite the available tools, it actually hurts performance.
 
 Overall, the underlying patterns of the task remain identical. For simplicity, one should prioritize Tool Calling w/o retrieval and avoid Patching with prompting without tools. Might also watch for failures for specific vulnerabilities, such as CWE-787, that break hunk alignment. If going for a less powerful model than GPT-5.3-Codex, as exemplified by GPT-4o, one might expect some drop in performance.
 \begin{table}[H]
@@ -739,43 +721,43 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
     \multirow{5}{*}{\textbf{CWE-190}} 
       & GPT-4o Baseline  & 0.103 $\pm$ 0.109$^{\mathparagraph}$ & 0.372 $\pm$ 0.247$^*$ & 0.174 $\pm$ 0.290$^*$ \\
       & Tool Calling (w/o Retrieval) & 0.609 $\pm$ 0.379 & 0.695 $\pm$ 0.331 & 0.497 $\pm$ 0.524 \\
-      & CodeBERT\_seq & 0.638 $\pm$ 0.413 & 0.717 $\pm$ 0.354 & 0.616 $\pm$ 0.492 \\
-      & CodeBERT\_pattern & \chit{0.685 $\pm$ 0.405$^*$} & \chit{0.763 $\pm$ 0.350$^*$} & \chit{0.681 $\pm$ 0.459$^*$} \\
+      & Structure & 0.638 $\pm$ 0.413 & 0.717 $\pm$ 0.354 & 0.616 $\pm$ 0.492 \\
+      & Semantic+Structure & \chit{0.685 $\pm$ 0.405$^*$} & \chit{0.763 $\pm$ 0.350$^*$} & \chit{0.681 $\pm$ 0.459$^*$} \\
       & Topological Structure & 0.425 $\pm$ 0.380$^*$ & 0.552 $\pm$ 0.361$^*$ & 0.483 $\pm$ 0.466$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
       & GPT-4o Baseline  & 0.434 $\pm$ 0.289$^*$ & 0.429 $\pm$ 0.302$^*$ & 0.131 $\pm$ 0.216$^*$ \\
       & Tool Calling (w/o Retrieval) & \chit{0.938 $\pm$ 0.061} & \chit{0.859 $\pm$ 0.124} & 0.914 $\pm$ 0.077 \\
-      & CodeBERT\_seq & 0.721 $\pm$ 0.447 & 0.707 $\pm$ 0.431 & 0.905 $\pm$ 0.080 \\
-      & CodeBERT\_pattern & 0.641 $\pm$ 0.482$^*$ & 0.636 $\pm$ 0.471$^*$ & \chit{0.915 $\pm$ 0.063$^{\ddagger}$} \\
+      & Structure & 0.721 $\pm$ 0.447 & 0.707 $\pm$ 0.431 & 0.905 $\pm$ 0.080 \\
+      & Semantic+Structure & 0.641 $\pm$ 0.482$^*$ & 0.636 $\pm$ 0.471$^*$ & \chit{0.915 $\pm$ 0.063$^{\ddagger}$} \\
       & Topological Structure  & 0.662 $\pm$ 0.460$^*$ & 0.666 $\pm$ 0.450$^*$ & 0.883 $\pm$ 0.108$^\dagger$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
       & GPT-4o Baseline  & 0.275 $\pm$ 0.232$^*$ & 0.295 $\pm$ 0.182$^*$ & 0.015 $\pm$ 0.023$^{\S}$ \\
       & Tool Calling (w/o Retrieval) & 0.729 $\pm$ 0.445 & 0.743 $\pm$ 0.448 & 0.975 $\pm$ 0.044 \\
-      & CodeBERT\_seq & \chit{0.990 $\pm$ 0.031} & \chit{0.997 $\pm$ 0.004} & \chit{0.997 $\pm$ 0.004} \\
-      & CodeBERT\_pattern & 0.945 $\pm$ 0.110$^*$ & 0.994 $\pm$ 0.006$^{\S}$ & 0.997 $\pm$ 0.004$^{\S}$ \\
+      & Structure & \chit{0.990 $\pm$ 0.031} & \chit{0.997 $\pm$ 0.004} & \chit{0.997 $\pm$ 0.004} \\
+      & Semantic+Structure & 0.945 $\pm$ 0.110$^*$ & 0.994 $\pm$ 0.006$^{\S}$ & 0.997 $\pm$ 0.004$^{\S}$ \\
       & Topological Structure (Tool Calling) & 0.446 $\pm$ 0.412$^*$ & 0.435 $\pm$ 0.451$^*$ & 0.933 $\pm$ 0.074$^{\ddagger}$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
       & GPT-4o Baseline  & 0.357 $\pm$ 0.149$^*$ & 0.217 $\pm$ 0.108$^\dagger$ & 0.085 $\pm$ 0.172$^*$ \\
       & Tool Calling (w/o Retrieval) & 0.830 $\pm$ 0.346 & 0.872 $\pm$ 0.207 & 0.791 $\pm$ 0.443 \\
-      & CodeBERT\_seq & 0.717 $\pm$ 0.449 & 0.761 $\pm$ 0.413 & 0.885 $\pm$ 0.292 \\
-      & CodeBERT\_pattern & \chit{0.914 $\pm$ 0.288$^*$} & \chit{0.916 $\pm$ 0.272$^*$} & \chit{0.981 $\pm$ 0.057$^{\ddagger}$} \\
+      & Structure & 0.717 $\pm$ 0.449 & 0.761 $\pm$ 0.413 & 0.885 $\pm$ 0.292 \\
+      & Semantic+Structure & \chit{0.914 $\pm$ 0.288$^*$} & \chit{0.916 $\pm$ 0.272$^*$} & \chit{0.981 $\pm$ 0.057$^{\ddagger}$} \\
       & Topological Structure & 0.267 $\pm$ 0.424$^*$ & 0.339 $\pm$ 0.431$^*$ & 0.821 $\pm$ 0.318$^*$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
       & GPT-4o Baseline  & 0.213 $\pm$ 0.196$^*$ & 0.215 $\pm$ 0.173$^*$ & 0.089 $\pm$ 0.203$^*$ \\
       & Tool Calling (w/o Retrieval) & 0.766 $\pm$ 0.379 & 0.758 $\pm$ 0.408 & 0.836 $\pm$ 0.345 \\
-      & CodeBERT\_seq & 0.807 $\pm$ 0.354 & 0.795 $\pm$ 0.349 & 0.766 $\pm$ 0.409 \\
-      & CodeBERT\_pattern & \chit{0.907 $\pm$ 0.213$^*$} & \chit{0.892 $\pm$ 0.216$^*$} & 0.783 $\pm$ 0.413$^*$ \\
+      & Structure & 0.807 $\pm$ 0.354 & 0.795 $\pm$ 0.349 & 0.766 $\pm$ 0.409 \\
+      & Semantic+Structure & \chit{0.907 $\pm$ 0.213$^*$} & \chit{0.892 $\pm$ 0.216$^*$} & 0.783 $\pm$ 0.413$^*$ \\
       & Topological Structure & 0.613 $\pm$ 0.473$^*$ & 0.632 $\pm$ 0.498$^*$ & \chit{0.850 $\pm$ 0.345$^*$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
       & GPT-4o Baseline  & 0.355 $\pm$ 0.185 & 0.414 $\pm$ 0.355 & 0.038 $\pm$ 0.113 \\
       & Tool Calling (w/o Retrieval) & \chit{0.510 $\pm$ 0.063} & \chit{0.876 $\pm$ 0.090} & 0.000 $\pm$ 0.000 \\
-      & CodeBERT\_seq & 0.471 $\pm$ 0.160 & 0.845 $\pm$ 0.271 & \chit{0.045 $\pm$ 0.099} \\
-      & CodeBERT\_pattern & 0.435 $\pm$ 0.193$^*$ & 0.803 $\pm$ 0.355$^*$ & 0.043 $\pm$ 0.113$^{\P}$ \\
+      & Structure & 0.471 $\pm$ 0.160 & 0.845 $\pm$ 0.271 & \chit{0.045 $\pm$ 0.099} \\
+      & Semantic+Structure & 0.435 $\pm$ 0.193$^*$ & 0.803 $\pm$ 0.355$^*$ & 0.043 $\pm$ 0.113$^{\P}$ \\
       & Topological Structure & 0.471 $\pm$ 0.160$^*$ & 0.849 $\pm$ 0.242$^*$ & 0.017 $\pm$ 0.040$^{\S}$ \\
     \bottomrule
 \end{tabular}
@@ -783,30 +765,26 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
   \vspace{0.5em}
   \begin{minipage}{\linewidth}
     \small
-    \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$ across evaluated records ($N = 66$ for GPT-4o Baseline and CodeBERT\_pattern, $N = 61$ for Topological Structure and standard baselines; CWE-190 $n_{base}=15, n_{top}=11, n_{pat}=13$; CWE-20 $n_{base}=15, n_{top}=10, n_{pat}=9$; CWE-362 $n_{base}=15, n_{top}=11, n_{pat}=9$; CWE-416 $n_{base}=10, n_{top}=9, n_{pat}=12$; CWE-476 $n_{base}=11, n_{top}=8, n_{pat}=10$; CWE-787 $n_{top}=12, n_{pat}=13$). Best mean values per metric within each CWE category are highlighted with \texttt{\textbackslash chit\{...\}}. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
+    \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$ across evaluated records ($N = 66$ for GPT-4o Baseline and Semantic+Structure, $N = 61$ for Topological Structure and standard baselines; CWE-190 $n_{base}=15, n_{top}=11, n_{pat}=13$; CWE-20 $n_{base}=15, n_{top}=10, n_{pat}=9$; CWE-362 $n_{base}=15, n_{top}=11, n_{pat}=9$; CWE-416 $n_{base}=10, n_{top}=9, n_{pat}=12$; CWE-476 $n_{base}=11, n_{top}=8, n_{pat}=10$; CWE-787 $n_{top}=12, n_{pat}=13$). Best mean values per metric within each CWE category are highlighted with \texttt{\textbackslash chit\{...\}}. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
     \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^\dagger$ Moderate Confidence ($80\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
   \end{minipage}
 \end{table}
 
 \begin{table}[H]
-\centering
-\caption{CVEFixes: LLM Judge Summary (25 records) - GPT-4o Patching Results}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Metric / CWE (Total Cases)} & \textbf{Topological Structure (4o)} & \textbf{Pattern} & \textbf{Seq} \\
-\midrule
-\textbf{CWE-20} (1) & 0 & 0 & 0 \\
-\textbf{CWE-190} (1) & 0 & 0 & 0 \\
-\textbf{CWE-362} (6) & 1 (16.7\%) & 1 (16.7\%) & 0 (0.0\%) \\
-\textbf{CWE-416} (7) & 0 (0.0\%) & 0 (0.0\%) & 1 (14.3\%) \\
-\textbf{CWE-476} (9) & 1 (11.1\%) & 0 (0.0\%) & 1 (11.1\%) \\
-\textbf{CWE-787} (1) & 0 & 0 & 0 \\
-\midrule
-\textbf{Total Valid} (25) & 2 (8.0\%) & 1 (4.0\%) & 2 (8.0\%) \\
-\textbf{Total Invalid} (25) & 23 & 24 & 23 \\
-
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{CVEFixes: GPT-4o LLM Judge Summary by Pipeline}
+  \label{tab:llmjudge_gpt4o}
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    \textbf{Pipeline} & \textbf{Source $N$} & \textbf{Generated} & \textbf{Judge $N$} & \textbf{Valid} & \textbf{Invalid} & \textbf{Errors} \\
+    \midrule
+    Topological Structure & 89 & 61 & 25 & 2 & 23 & 0 \\
+    Semantic+Structure & 89 & 66 & 82 & 4 & 78 & 0 \\
+    Structure & 89 & 60 & 77 & 6 & 70 & 1 \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\scriptsize The judge output is smaller than the source run because the resume key deduplicates repeated records with identical empty patches. Valid percentages are computed over the persisted judge count: 8.0\%, 4.9\%, and 7.8\%, respectively.}
 \end{table}
 
 
@@ -820,10 +798,10 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
     \toprule
     Source & N & Success (\%) & CVE Match (\%) & CWE Match (\%) & Avg. Retrieval Sim. & Avg. Turns & LLM Judge Valid (\%) & BLEU-4 & BERTScore F1 & ROUGE-1 F1 & ROUGE-2 F1 & ROUGE-L F1 & Hunk F1 \\
     \midrule
-    codebert\_pattern/single\_turn & 89 & 78.7 & 49.4 & 54.0 & 0.161 & 1.00 & 0.0 & 0.146 & 0.342 & 0.416 & 0.254 & 0.310 & 0.661 \\
-    codebert\_pattern/tool\_calling & 89 & 74.2 & 49.4 & 54.0 & 0.641 & 4.18 & 0.0 & 0.920 & 0.854 & 0.953 & 0.944 & 0.948 & 0.755 \\
-    codebert\_seq/single\_turn & 89 & 67.4 & 49.4 & 54.0 & 0.137 & 1.00 & 1.1 & 0.088 & 0.246 & 0.328 & 0.225 & 0.269 & 0.687 \\
-    codebert\_seq/tool\_calling & 89 & 67.4 & 49.4 & 54.0 & 0.572 & 4.45 & 23.6 & 0.809 & 0.910 & 0.873 & 0.835 & 0.872 & 0.903 \\
+    Semantic+Structure/single\_turn & 89 & 78.7 & 49.4 & 54.0 & 0.161 & 1.00 & 0.0 & 0.146 & 0.342 & 0.416 & 0.254 & 0.310 & 0.661 \\
+    Semantic+Structure/tool\_calling & 89 & 74.2 & 49.4 & 54.0 & 0.641 & 4.18 & 0.0 & 0.920 & 0.854 & 0.953 & 0.944 & 0.948 & 0.755 \\
+    Semantic/single\_turn & 89 & 67.4 & 49.4 & 54.0 & 0.137 & 1.00 & 1.1 & 0.088 & 0.246 & 0.328 & 0.225 & 0.269 & 0.687 \\
+    Semantic/tool\_calling & 89 & 67.4 & 49.4 & 54.0 & 0.572 & 4.45 & 23.6 & 0.809 & 0.910 & 0.873 & 0.835 & 0.872 & 0.903 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -831,48 +809,74 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
 \begin{table}[H]
   \centering
   \small
-  \setlength{\tabcolsep}{4pt} % Reduces horizontal padding between columns
+  \setlength{\tabcolsep}{2pt}
   \caption{CVEFixes: Patch generation summary by embedding variant / mode -- by language GPT-4o}
-  \label{tab:patch_analysis_summary_by_language}
-  \begin{tabular}{llrrrrrrrr}
+  \label{tab:patch_analysis_summary_by_language_gpt4o}
+  \textit{(a) Completion and retrieval}
+
+  \begin{tabular}{llrrrrr}
     \toprule
-    \textbf{Mode} & \textbf{Lang.} & \textbf{N} & \makecell{\bfseries Succ.(\%)} & \makecell{\bfseries CVE(\%)} & \makecell{\bfseries CWE(\%)} & \makecell{\bfseries Retr.Sim.} & \textbf{BLEU-4} & \makecell{\bfseries BERT F$_1$} & \makecell{\bfseries Hunk F$_1$} \\
+    \textbf{Mode} & \textbf{Lang.} & \textbf{$N$} & \makecell{\bfseries Success\\(\%)} & \makecell{\bfseries CVE Match\\(\%)} & \makecell{\bfseries CWE Match\\(\%)} & \makecell{\bfseries Retrieval\\Similarity} \\
     \midrule
-    \multicolumn{10}{l}{\textit{codebert\_pattern}} \\
-    \hspace{1em} Single Turn & C   & 65 & 73.8 & 56.9 & 63.1 & 0.120 & 0.082 & 0.292 & 0.829 \\
-    \hspace{1em} Single Turn & C++ & 24 & 91.7 & 29.2 & 29.2 & 0.273 & 0.309 & 0.466 & 0.235 \\
-    \hspace{1em} Tool Calling& C   & 65 & 70.8 & 56.9 & 63.1 & 0.611 & 0.941 & 0.963 & 0.986 \\
-    \hspace{1em} Tool Calling& C++ & 24 & 83.3 & 29.2 & 29.2 & 0.722 & 0.873 & 0.611 & 0.238 \\
+    \multicolumn{7}{l}{Semantic+Structure} \\
+    \hspace{1em} Single Turn & C   & 65 & 73.8 & 56.9 & 63.1 & 0.120 \\
+    \hspace{1em} Single Turn & C++ & 24 & 91.7 & 29.2 & 29.2 & 0.273 \\
+    \hspace{1em} Tool Calling& C   & 65 & 70.8 & 56.9 & 63.1 & 0.611 \\
+    \hspace{1em} Tool Calling& C++ & 24 & 83.3 & 29.2 & 29.2 & 0.722 \\
     \midrule
-    \multicolumn{10}{l}{\textit{codebert\_seq}} \\
-    \hspace{1em} Single Turn & C   & 65 & 66.2 & 56.9 & 63.1 & 0.098 & 0.064 & 0.252 & 0.864 \\
-    \hspace{1em} Single Turn & C++ & 24 & 70.8 & 29.2 & 29.2 & 0.242 & 0.152 & 0.229 & 0.215 \\
-    \hspace{1em} Tool Calling& C   & 65 & 67.7 & 56.9 & 63.1 & 0.565 & 0.796 & 0.904 & 0.925 \\
-    \hspace{1em} Tool Calling& C++ & 24 & 66.7 & 29.2 & 29.2 & 0.591 & 0.879 & 0.942 & 0.779 \\
+    \multicolumn{7}{l}{Semantic} \\
+    \hspace{1em} Single Turn & C   & 65 & 66.2 & 56.9 & 63.1 & 0.098 \\
+    \hspace{1em} Single Turn & C++ & 24 & 70.8 & 29.2 & 29.2 & 0.242 \\
+    \hspace{1em} Tool Calling& C   & 65 & 67.7 & 56.9 & 63.1 & 0.565 \\
+    \hspace{1em} Tool Calling& C++ & 24 & 66.7 & 29.2 & 29.2 & 0.591 \\
     \bottomrule
   \end{tabular}
+  \\[0.75em]
+  \textit{(b) Lexical patch quality}
+
+  \begin{tabular}{llrrr}
+    \toprule
+    \textbf{Mode} & \textbf{Lang.} & \textbf{BLEU-4} & \makecell{\bfseries BERTScore\\F$_1$} & \makecell{\bfseries Hunk\\F$_1$} \\
+    \midrule
+      \multicolumn{5}{l}{Sem.+Struc.} \\
+    Single Turn & C   & 0.082 & 0.292 & 0.829 \\
+    Single Turn & C++ & 0.309 & 0.466 & 0.235 \\
+    Tool Calling& C   & 0.941 & 0.963 & 0.986 \\
+    Tool Calling& C++ & 0.873 & 0.611 & 0.238 \\
+    \midrule
+    \multicolumn{5}{l}{Semantic} \\
+    Single Turn & C   & 0.064 & 0.252 & 0.864 \\
+    Single Turn & C++ & 0.152 & 0.229 & 0.215 \\
+    Tool Calling& C   & 0.796 & 0.904 & 0.925 \\
+    Tool Calling& C++ & 0.879 & 0.942 & 0.779 \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  \begin{minipage}{\linewidth}
+    \scriptsize Source $N$ is the number of queries in the run. Lexical metrics are reported over successfully generated patches; the table values retain the full language-level summaries available for this run.
+  \end{minipage}
 \end{table}
 
-\subsection{Patch Powered by DeepSeek-4-Flash}
+\subsection{Patch Powered by DeepSeek-V4-Flash}
 \begin{table}[H]
   \centering
   \small
   \setlength{\tabcolsep}{4pt}
-  \caption{CVEFixes: Overall Patch Generation Summary for DeepSeek-4-Flash by Embedding Variant and Mode}
+  \caption{CVEFixes: Overall Patch Generation Summary for DeepSeek-V4-Flash by Embedding Variant and Mode}
   \label{tab:patch_analysis_summary_deepseek}
   \begin{tabular}{llccccccc}
     \toprule
     \textbf{Method} & \textbf{Mode} & \textbf{N} & \makecell{\bfseries Succ.\\\bfseries(\%)} & \makecell{\bfseries CVE\\\bfseries Match (\%)} & \makecell{\bfseries CWE\\\bfseries Match (\%)} & \makecell{\bfseries Retr.\\\bfseries Sim.} & \makecell{\bfseries Avg.\\\bfseries Turns} & \makecell{\bfseries LLM Judge\\\bfseries Valid (\%)} \\
     \midrule
-    \multirow{2}{*}{\textbf{CodeBERT Pattern}} 
+    \multirow{2}{*}{\textbf{Semantic+Structure}}
     & Single Turn  & 89 & 33.7 & 53.9 & 60.6 & 0.149 & 1.00 & 1.1 \\
     & Tool Calling & 89 & 40.4 & 53.9 & 60.6 & 0.399 & 5.40 & 27.0 \\
     \midrule
-    \multirow{2}{*}{\textbf{CodeBERT Seq}}     
+    \multirow{2}{*}{\textbf{Semantic}}
     & Single Turn  & 89 & 28.1 & 49.4 & 54.0 & 0.115 & 1.00 & 0.0 \\
     & Tool Calling & 89 & 41.6 & 49.4 & 54.0 & 0.390 & 5.55 & 25.8 \\
     \midrule
-    \multirow{2}{*}{\textbf{Combined}}         
+    \multirow{2}{*}{\textbf{Topological Structure}}
     & Single Turn  & 89 & 33.7 & 16.8 & 23.6 & 0.083 & 1.00 & 0.0 \\
     & Tool Calling & 89 & 46.1 & 16.8 & 23.6 & 0.432 & 5.36 & 6.7 \\
     \midrule
@@ -881,55 +885,97 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
   \end{tabular}
 \end{table}
 
-Tables \ref{tab:patch_analysis_summary_deepseek} and \ref{tab:patch_analysis_summary_by_cwe_deepseek} show the patching performance of the DeepSeek-4-Flash model. As previously remarked, they reinforce the need for agentic multi-turn workflows for automated program repair. 
+Tables \ref{tab:patch_analysis_summary_deepseek} and \ref{tab:patch_analysis_summary_by_cwe_DeepSeek-V4-Flash} show the patching performance of the DeepSeek-V4-Flash model. As previously remarked, they reinforce the need for agentic multi-turn workflows for automated program repair.
 
-Prompt-only generation fails to produce functionally valid code. Despite achieving token-based evaluation success rates of 28.1\% to 33.7\%, the prompt-only LLM Judge Valid rates hover between 0.0\% and 1.1\%. On the other hand, the multi-turn Tool Calling pipeline powered by  DeepSeek shows higher functional validity. The \textit{CodeBERT Pattern} and \textit{CodeBERT Sequence} retrieval methods achieve valid rates of 27.0\% and 25.8\%, respectively, outperforming baseline Tool Calling without retrieval (21.3\%). This demonstrates that for pipelines powered by less powerful models, such as DeepSeek, enriching the context with the semantic and structural root causes of vulnerabilities via RAG can increase performance. Whereas relying on the model generation capacity may result in syntactically plausible edits being predicted. Nevertheless, it is notable that performance is lower than that of proprietary OpenAI models from previous subsections. Therefore, it reinforces the need for compensation in engineering effort when the pipeline uses open-weight models.  
+Prompt-only generation fails to produce functionally valid code. Despite achieving token-based evaluation success rates of 28.1\% to 33.7\%, the prompt-only LLM Judge Valid rates hover between 0.0\% and 1.1\%. On the other hand, the multi-turn Tool Calling pipeline powered by  DeepSeek shows higher functional validity. The \textit{Semantic+Structure} and \textit{Structure} retrieval methods achieve valid rates of 27.0\% and 25.8\%, respectively, outperforming baseline Tool Calling without retrieval (21.3\%). This demonstrates that for pipelines powered by less powerful models, such as DeepSeek, enriching the context with the semantic and structural root causes of vulnerabilities via RAG can increase performance. Whereas relying on the model generation capacity may result in syntactically plausible edits being predicted. Nevertheless, it is notable that performance is lower than that of proprietary OpenAI models from previous subsections. Therefore, it reinforces the need for compensation in engineering effort when the pipeline uses open-weight models.  
 
 % Additionally, DeepSeek exhibits a higher iteration overhead compared to Codex and GPT-4o. The model averages 5.2 to 5.5 turns per patch generation, suggesting a more exploratory and error-prone reasoning process before converging on a final solution. 
 
-Furthermore, the \textit{Combined} retrieval strategy has the LLM Judge functional validity of 6.7\%. Repeating the behavior observed in GPT-4o, DeepSeek struggles to recover the vulnerability identification errors of the retriever, which composes with the errors of the model itself.
+Furthermore, the \textit{Topological Structure} retrieval strategy has the LLM Judge functional validity of 6.7\%. Repeating the behavior observed in GPT-4o, DeepSeek struggles to recover the vulnerability identification errors of the retriever, which composes with the errors of the model itself.
 
-Vulnerability-specific patterns are also reproduced under the DeepSeek experiment. As seen in Table \ref{tab:patch_analysis_summary_by_cwe_deepseek}, Tool Calling with Pattern retrieval achieves 73.3\% syntax success and a 93.3\% verify rate on CWE-787. Yet, high performance does not translate to LLM as a Judge's functional validity for out-of-bounds writes. DeepSeek's performance confirms the overall evaluation that reliable automated vulnerability patching demands agentic, iterative tool use coupled with isolated, targeted retrieval, even though further exploration on the agentic workflow is required to meet reliable performance for production code.
+Vulnerability-specific patterns are also reproduced under the DeepSeek experiment. As seen in Table \ref{tab:patch_analysis_summary_by_cwe_DeepSeek-V4-Flash}, Tool Calling with Pattern retrieval achieves 73.3\% syntax success and a 93.3\% verify rate on CWE-787. Yet, high performance does not translate to LLM as a Judge's functional validity for out-of-bounds writes. DeepSeek's performance confirms the overall evaluation that reliable automated vulnerability patching demands agentic, iterative tool use coupled with isolated, targeted retrieval, even though further exploration on the agentic workflow is required to meet reliable performance for production code.
 
 \begin{table}[H]
   \centering
   \small
-  \setlength{\tabcolsep}{4pt}
-  \caption{CVEFixes: Patch generation summary by embedding variant / mode -- by language DeepSeek-4V-Flash}
-  \label{tab:patch_analysis_summary_by_language_deepseek}
+  \setlength{\tabcolsep}{2pt}
+  \caption{CVEFixes: Patch generation summary by embedding variant / mode -- by language DeepSeek-V4-Flash}
+  \label{tab:patch_analysis_summary_by_language_deepseek_v4}
+  \textit{(a) Completion and retrieval}
+
   \begin{tabular}{llrrrrr}
     \toprule
-    \textbf{Mode} & \textbf{Lang.} & \textbf{N} & \makecell{\bfseries Success\\(\%)} & \makecell{\bfseries CVE Match\\(\%)} & \makecell{\bfseries CWE Match\\(\%)} & \makecell{\bfseries Avg. Retr.\\\bfseries Sim.} \\
+    \textbf{Mode} & \textbf{Lang.} & \textbf{$N$} & \makecell{\bfseries Success\\(\%)} & \makecell{\bfseries CVE Match\\(\%)} & \makecell{\bfseries CWE Match\\(\%)} & \makecell{\bfseries Retrieval\\Similarity} \\
     \midrule
-    \multirow{2}{*}{CodeBERT Pattern (Single Turn)} 
-      & C   & 65 & 31.1 & 52.3 & 61.5 & 0.097 \\
-      & C++ & 24 & 50.0 & 58.3 & 58.3 & 0.289 \\
+    \multirow{2}{*}{Semantic+Structure (Single Turn)} 
+      & C   & 65 & 29.2 & 52.3 & 61.5 & 0.097 \\
+      & C++ & 24 & 45.8 & 58.3 & 58.3 & 0.289 \\
     \midrule
-    \multirow{2}{*}{CodeBERT Pattern (Tool Calling)} 
-      & C   & 65 & 34.4 & 52.3 & 61.5 & 0.322 \\
-      & C++ & 24 & 68.2 & 58.3 & 58.3 & 0.608 \\
+    \multirow{2}{*}{Semantic+Structure (Tool Calling)} 
+      & C   & 65 & 32.3 & 52.3 & 61.5 & 0.322 \\
+      & C++ & 24 & 62.5 & 58.3 & 58.3 & 0.608 \\
     \midrule
-    \multirow{2}{*}{CodeBERT Seq (Single Turn)} 
+    \multirow{2}{*}{Semantic (Single Turn)} 
       & C   & 65 & 20.0 & 56.9 & 63.1 & 0.074 \\
       & C++ & 24 & 50.0 & 29.2 & 29.2 & 0.225 \\
     \midrule
-    \multirow{2}{*}{CodeBERT Seq (Tool Calling)} 
+    \multirow{2}{*}{Semantic (Tool Calling)} 
       & C   & 65 & 36.9 & 56.9 & 63.1 & 0.360 \\
       & C++ & 24 & 54.2 & 29.2 & 29.2 & 0.473 \\
     \midrule
-    \multirow{2}{*}{Combined (Single Turn)} 
+    \multirow{2}{*}{Topological Structure (Single Turn)} 
       & C   & 65 & 32.3 & 20.0 & 29.2 & 0.048 \\
       & C++ & 24 & 37.5 & 8.3 & 8.3 & 0.176 \\
     \midrule
-    \multirow{2}{*}{Combined (Tool Calling)} 
+    \multirow{2}{*}{Topological Structure (Tool Calling)} 
       & C   & 65 & 40.0 & 20.0 & 29.2 & 0.388 \\
       & C++ & 24 & 62.5 & 8.3 & 8.3 & 0.552 \\
     \midrule
     \multirow{2}{*}{Tool Calling (No Retr.)} 
-      & C   & 65 & 42.6 & 52.3 & 61.5 & 0.393 \\
-      & C++ & 24 & 54.5 & 58.3 & 58.3 & 0.512 \\
+      & C   & 65 & 40.0 & 52.3 & 61.5 & 0.393 \\
+      & C++ & 24 & 50.0 & 58.3 & 58.3 & 0.512 \\
     \bottomrule
   \end{tabular}
+  \\[0.75em]
+  \textit{(b) Lexical patch quality}
+
+  \begin{tabular}{llrrr}
+    \toprule
+    \textbf{Mode} & \textbf{Lang.} & \textbf{BLEU-4} & \makecell{\bfseries BERTScore\\F$_1$} & \makecell{\bfseries Hunk\\F$_1$} \\
+    \midrule
+    \multirow{2}{*}{Semantic+Structure (Single Turn)}
+      & C   & 0.310 & 0.376 & 0.790 \\
+      & C++ & 0.593 & 0.644 & 0.236 \\
+    \midrule
+    \multirow{2}{*}{Semantic+Structure (Tool Calling)}
+      & C   & 0.864 & 0.829 & 0.821 \\
+      & C++ & 0.839 & 0.579 & 0.342 \\
+    \midrule
+    \multirow{2}{*}{Semantic (Single Turn)}
+      & C   & 0.324 & 0.314 & 0.756 \\
+      & C++ & 0.409 & 0.268 & 0.371 \\
+    \midrule
+    \multirow{2}{*}{Semantic (Tool Calling)}
+      & C   & 0.919 & 0.899 & 0.870 \\
+      & C++ & 0.832 & 0.608 & 0.467 \\
+    \midrule
+    \multirow{2}{*}{Topological Structure (Single Turn)}
+      & C   & 0.132 & 0.128 & 0.798 \\
+      & C++ & 0.422 & 0.272 & 0.109 \\
+    \midrule
+    \multirow{2}{*}{Topological Structure (Tool Calling)}
+      & C   & 0.902 & 0.880 & 0.839 \\
+      & C++ & 0.843 & 0.652 & 0.400 \\
+    \midrule
+    \multirow{2}{*}{Tool Calling (No Retr.)}
+      & C   & -- & -- & -- \\
+      & C++ & -- & -- & -- \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  \begin{minipage}{\linewidth}
+    \scriptsize Source $N$ is the number of queries in the run. Lexical metrics are means over successfully evaluated patches; their language-specific supports vary by run. The no-retrieval baseline lacks a persisted evaluation file, so its unavailable metrics are shown as --.
+  \end{minipage}
 \end{table}
 
 % Table 1: Overall Summary
@@ -945,14 +991,14 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
     \cmidrule(lr){3-5}
     Embedding / Mode & $N$ & Success & CVE & CWE & Avg. Sim. & Avg. Turns & LLM Valid (\%) \\
     \midrule
-    CodeBERT Pattern (Single-turn) & 89 & 33.7 & 53.9 & 60.6 & 0.149 & 1.00 & 1.1 \\
-    CodeBERT Pattern (Tool-calling) & 89 & 40.4 & 53.9 & 60.6 & 0.399 & 5.40 & 27.0 \\
+    Semantic+Structure (Single-turn) & 89 & 33.7 & 53.9 & 60.6 & 0.149 & 1.00 & 1.1 \\
+    Semantic+Structure (Tool-calling) & 89 & 40.4 & 53.9 & 60.6 & 0.399 & 5.40 & 27.0 \\
     \addlinespace
-    CodeBERT Seq (Single-turn)     & 89 & 28.1 & 49.4 & 54.0 & 0.115 & 1.00 & 0.0 \\
-    CodeBERT Seq (Tool-calling)    & 89 & 41.6 & 49.4 & 54.0 & 0.390 & 5.55 & 25.8 \\
+    Semantic (Single-turn)        & 89 & 28.1 & 49.4 & 54.0 & 0.115 & 1.00 & 0.0 \\
+    Semantic (Tool-calling)       & 89 & 41.6 & 49.4 & 54.0 & 0.390 & 5.55 & 25.8 \\
     \addlinespace
-    Combined (Single-turn)         & 89 & 33.7 & 16.8 & 23.6 & 0.083 & 1.00 & 0.0 \\
-    Combined (Tool-calling)        & 89 & 46.1 & 16.8 & 23.6 & 0.432 & 5.36 & 6.7 \\
+    Topological Structure (Single-turn) & 89 & 33.7 & 16.8 & 23.6 & 0.083 & 1.00 & 0.0 \\
+    Topological Structure (Tool-calling) & 89 & 46.1 & 16.8 & 23.6 & 0.432 & 5.36 & 6.7 \\
     \addlinespace
     Tool-calling (No Retrieval)    & 89 & 42.7 & 53.9 & 60.6 & 0.425 & 5.22 & 21.3 \\
     \bottomrule
@@ -969,7 +1015,7 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
     \toprule
     Embedding / Mode & CWE & $N$ & Success (\%) & Avg. Turns & Verify Rate (\%) & Violation Rate (\%) \\
     \midrule
-    \multirow{6}{*}{CodeBERT Pattern} 
+    \multirow{6}{*}{Semantic+Structure}
       & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
       & CWE-20  & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
       & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
@@ -977,7 +1023,7 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
       & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
       & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
     \midrule
-    \multirow{6}{*}{CodeBERT Seq} 
+    \multirow{6}{*}{Semantic}
       & CWE-190 & 15 & 13.3 & 6.00 & 80.0 & 6.7 \\
       & CWE-20  & 15 & 26.7 & 5.73 & 93.3 & 0.0 \\
       & CWE-362 & 15 & 46.7 & 5.53 & 93.3 & 6.7 \\
@@ -985,7 +1031,7 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
       & CWE-476 & 14 & 64.3 & 5.21 & 85.7 & 0.0 \\
       & CWE-787 & 15 & 53.3 & 5.47 & 100.0 & 6.7 \\
     \midrule
-    \multirow{6}{*}{Combined} 
+    \multirow{6}{*}{Topological Structure}
       & CWE-190 & 15 & 20.0 & 5.80 & 86.7 & 0.0 \\
       & CWE-20  & 15 & 33.3 & 5.53 & 100.0 & 0.0 \\
       & CWE-362 & 15 & 60.0 & 5.07 & 93.3 & 20.0 \\
@@ -1008,181 +1054,25 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
 \begin{table}[H]
   \centering
   \small
-  \caption{Comparison of Performance Across Methods by CVEFixes CWE Category (DeepSeek Baseline Evaluation).}
-  \label{tab:cwe_comparison_deepseek}
-  \begin{tabular}{llccc}
+  \caption{CVEFixes: DeepSeek-V4-Flash LLM Judge summary by pipeline.}
+  \label{tab:deepseek_judge_summary}
+  \begin{tabular}{lrrrrrr}
     \toprule
-    \textbf{\makecell{CWE\\Category}} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
+    \textbf{Pipeline} & \textbf{Source $N$} & \textbf{Generated} & \textbf{Judge $N$} & \textbf{Valid} & \textbf{Invalid} & \textbf{Errors} \\
     \midrule
-    \multirow{5}{*}{\textbf{CWE-190}} 
-      & DeepSeek Baseline & 0.152 $\pm$ 0.127$^\dagger$ & 0.366 $\pm$ 0.233$^*$ & 0.224 $\pm$ 0.330$^*$ \\
-      & Tool Calling (w/o Retrieval) & 0.716 $\pm$ 0.445$^*$ & 0.790 $\pm$ 0.353$^*$ & \chit{0.777 $\pm$ 0.402$^*$} \\
-      & CodeBERT\_seq & 0.615 $\pm$ 0.535$^*$ & 0.893 $\pm$ 0.144$^*$ & 0.533 $\pm$ 0.661$^*$ \\
-      & CodeBERT\_pattern & 0.624 $\pm$ 0.420$^*$ & 0.808 $\pm$ 0.253$^*$ & 0.559 $\pm$ 0.494$^*$ \\
-      & Topological Structure & \chit{0.734 $\pm$ 0.431$^*$} & \chit{0.928 $\pm$ 0.115$^*$} & 0.689 $\pm$ 0.513$^*$ \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-20}} 
-      & DeepSeek Baseline & 0.410 $\pm$ 0.289$^*$ & 0.407 $\pm$ 0.274$^*$ & 0.170 $\pm$ 0.236$^*$ \\
-      & Tool Calling (w/o Retrieval) & 0.877 $\pm$ 0.197$^*$ & 0.932 $\pm$ 0.085$^\dagger$ & 0.844 $\pm$ 0.302$^*$ \\
-      & CodeBERT\_seq & \chit{0.907 $\pm$ 0.068$^*$} & \chit{0.945 $\pm$ 0.045$^\dagger$} & \chit{0.934 $\pm$ 0.067$^*$} \\
-      & CodeBERT\_pattern & 0.780 $\pm$ 0.276$^*$ & 0.929 $\pm$ 0.119$^*$ & 0.775 $\pm$ 0.437$^*$ \\
-      & Topological Structure & 0.800 $\pm$ 0.246$^*$ & 0.894 $\pm$ 0.097$^*$ & 0.755 $\pm$ 0.365$^*$ \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-362}} 
-      & DeepSeek Baseline & 0.366 $\pm$ 0.269$^*$ & 0.342 $\pm$ 0.287$^*$ & 0.009 $\pm$ 0.017$^{\S}$ \\
-      & Tool Calling (w/o Retrieval) & 0.969 $\pm$ 0.088$^\dagger$ & 0.994 $\pm$ 0.016$^{\S}$ & 0.999 $\pm$ 0.003$^{\S}$ \\
-      & CodeBERT\_seq & 0.965 $\pm$ 0.094$^*$ & 0.996 $\pm$ 0.006$^{\S}$ & 0.998 $\pm$ 0.004$^{\S}$ \\
-      & CodeBERT\_pattern & \chit{1.000 $\pm$ 0.000$^{\S}$} & \chit{1.000 $\pm$ 0.000$^{\S}$} & \chit{0.999 $\pm$ 0.001$^{\S}$} \\
-      & Topological Structure & 0.972 $\pm$ 0.083$^{\mathparagraph}$ & 0.997 $\pm$ 0.005$^{\S}$ & 0.998 $\pm$ 0.003$^{\S}$ \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-416}} 
-      & DeepSeek Baseline & 0.449 $\pm$ 0.079$^{\mathparagraph}$ & 0.280 $\pm$ 0.073$^{\ddagger}$ & 0.081 $\pm$ 0.183$^*$ \\
-      & Tool Calling (w/o Retrieval) & \chit{1.000 $\pm$ 0.000$^{\S}$} & \chit{0.991 $\pm$ 0.010$^{\ddagger}$} & \chit{0.997 $\pm$ 0.004$^{\S}$} \\
-      & CodeBERT\_seq & 0.882 $\pm$ 0.295$^*$ & 0.948 $\pm$ 0.118$^*$ & 0.869 $\pm$ 0.339$^*$ \\
-      & CodeBERT\_pattern & 0.723 $\pm$ 0.385$^*$ & 0.768 $\pm$ 0.346$^*$ & 0.780 $\pm$ 0.438$^*$ \\
-      & Topological Structure & 0.874 $\pm$ 0.292$^*$ & 0.941 $\pm$ 0.123$^*$ & 0.850 $\pm$ 0.375$^*$ \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-476}} 
-      & DeepSeek Baseline & 0.307 $\pm$ 0.235$^*$ & 0.237 $\pm$ 0.225$^*$ & 0.097 $\pm$ 0.276$^*$ \\
-      & Tool Calling (w/o Retrieval) & 0.915 $\pm$ 0.217$^*$ & 0.934 $\pm$ 0.189$^*$ & \chit{0.889 $\pm$ 0.329$^*$} \\
-      & CodeBERT\_seq & 0.826 $\pm$ 0.350$^*$ & 0.835 $\pm$ 0.337$^*$ & 0.879 $\pm$ 0.331$^*$ \\
-      & CodeBERT\_pattern & \chit{0.963 $\pm$ 0.099$^*$} & \chit{0.992 $\pm$ 0.017$^{\S}$} & 0.856 $\pm$ 0.377$^*$ \\
-      & Topological Structure & 0.898 $\pm$ 0.225$^*$ & 0.932 $\pm$ 0.189$^*$ & 0.778 $\pm$ 0.441$^*$ \\
-    \midrule
-    \multirow{5}{*}{\textbf{CWE-787}} 
-      & DeepSeek Baseline & 0.049 $\pm$ 0.057$^{\S}$ & 0.214 $\pm$ 0.168$^*$ & 0.045 $\pm$ 0.048$^{\S}$ \\
-      & Tool Calling (w/o Retrieval) & 0.457 $\pm$ 0.131$^*$ & 0.825 $\pm$ 0.266$^*$ & 0.015 $\pm$ 0.040$^{\S}$ \\
-      & CodeBERT\_seq & \chit{0.531 $\pm$ 0.059$^{\ddagger}$} & \chit{0.925 $\pm$ 0.039$^{\S}$} & 0.145 $\pm$ 0.270$^*$ \\
-      & CodeBERT\_pattern & 0.466 $\pm$ 0.155$^*$ & 0.844 $\pm$ 0.274$^*$ & \chit{0.195 $\pm$ 0.270$^*$} \\
-      & Topological Structure & 0.437 $\pm$ 0.179$^*$ & 0.796 $\pm$ 0.312$^*$ & 0.003 $\pm$ 0.010$^{\S}$ \\
+    Semantic+Structure (Tool Calling) & 89 & 36 & 89 & 24 & 62 & 3 \\
+    Semantic (Tool Calling) & 89 & 37 & 89 & 23 & 65 & 1 \\
+    Topological Structure (Tool Calling) & 89 & 41 & 89 & 6 & 65 & 18 \\
+    Tool Calling (No Retrieval) & 89 & 38 & 89 & 19 & 69 & 1 \\
     \bottomrule
-\end{tabular}
-  \vspace{0.5em}
-  \begin{minipage}{\linewidth}
-    \small
-    \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$ across evaluated records ($N = 83$ for DeepSeek Baseline, $N = 46$ for Tool Calling (w/o Retrieval), $N = 37$ for CodeBERT\_seq, $N = 36$ for CodeBERT\_pattern, $N = 41$ for Topological Structure; CWE-190 $n_{ds}=15, n_{tc}=6, n_{top}=3, n_{seq}=2, n_{pat}=4$; CWE-20 $n_{ds}=15, n_{tc}=9, n_{top}=5, n_{seq}=4, n_{pat}=4$; CWE-362 $n_{ds}=15, n_{tc}=8, n_{top}=9, n_{seq}=7, n_{pat}=5$; CWE-416 $n_{ds}=11, n_{tc}=3, n_{top}=7, n_{seq}=7, n_{pat}=5$; CWE-476 $n_{ds}=12, n_{tc}=9, n_{top}=9, n_{seq}=9, n_{pat}=7$; CWE-787 $n_{ds}=15, n_{tc}=11, n_{top}=8, n_{seq}=8, n_{pat}=11$). Best mean values per metric within each CWE category are highlighted with \texttt{\textbackslash chit\{...\}}. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
-    \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^\dagger$ Moderate Confidence ($80\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
-  \end{minipage}
+  \end{tabular}
+  \\[2pt]
+  {\scriptsize Source: local CVEFixes \texttt{patch\_analysis.json} summaries; lexical metrics are unavailable for these DeepSeek runs.}
 \end{table}
-% \begin{table}[H]
-%   \centering
-%   \small
-%   \caption{Comparison of Performance Across Methods by CVEFixes CWE Category GPT-4o.}
-%   \label{tab:cwe_comparison_gpt4o}
-%   \begin{tabular}{llccc}
-%     \toprule
-%     \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-190}} 
-%       & GPT-4o Baseline  & 0.1568 & 0.3536 & 0.6489 \\
-%       & Tool Calling (w/o Retrieval) & \chit{0.6852} & \chit{0.7632} & \chit{0.6811} \\
-%       & CodeBERT\_seq & -- & -- & -- \\
-%       & CodeBERT\_pattern & 0.9590 & 0.9990 & 0.9960 \\
-%       & Topological Structure (Tool Calling)         & 0.4245 & 0.5518 & 0.4834 \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-20}} 
-%       & GPT-4o Baseline  & 0.3202 & 0.3058 & 0.7748 \\
-%       & Tool Calling (w/o Retrieval) & 0.6406 & 0.6358 & \chit{0.9147} \\
-%       & CodeBERT\_seq & 0.9510 & 0.8780 & 0.8180 \\
-%       & CodeBERT\_pattern & -- & -- & -- \\
-%       & Topological Structure (Tool Calling)         & 0.6620 & 0.6655 & 0.8825 \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-362}} 
-%       & GPT-4o Baseline  & 0.2727 & 0.2469 & 0.8777 \\
-%       & Tool Calling (w/o Retrieval) & 0.9448 & 0.9944 & 0.9968 \\
-%       & CodeBERT\_seq & 1.0000 & 1.0000 & 1.0000 \\
-%       & CodeBERT\_pattern & 0.9590 & 0.9980 & 0.9990 \\
-%       & Topological Structure (Tool Calling)         & 0.4456 & 0.4349 & 0.9325 \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-416}} 
-%       & GPT-4o Baseline  & 0.2329 & 0.1721 & 0.8441 \\
-%       & Tool Calling (w/o Retrieval) & \chit{0.9138} & \chit{0.9163} & \chit{0.9814} \\
-%       & CodeBERT\_seq & 0.8490 & 0.8480 & 0.9840 \\
-%       & CodeBERT\_pattern & 0.9260 & 0.9290 & 0.9830 \\
-%       & Topological Structure (Tool Calling)         & 0.2671 & 0.3390 & 0.8207 \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-476}} 
-%       & GPT-4o Baseline  & 0.3383 & 0.3417 & 0.7352 \\
-%       & Tool Calling (w/o Retrieval) & \chit{0.9071} & \chit{0.8922} & 0.7827 \\
-%       & CodeBERT\_seq & 0.9010 & 0.8500 & 0.8830 \\
-%       & CodeBERT\_pattern & 0.9740 & 0.9120 & 0.8760 \\
-%       & Topological Structure (Tool Calling)         & 0.6131 & 0.6318 & \chit{0.8496} \\
-%     \midrule
-%     \multirow{5}{*}{\textbf{CWE-787}} 
-%       & GPT-4o Baseline  & 0.3554 & 0.4136 & 0.0382 \\
-%       & Tool Calling (w/o Retrieval) & 0.4346 & 0.8025 & 0.0433 \\
-%       & CodeBERT\_seq & -- & -- & -- \\
-%       & CodeBERT\_pattern & 0.5060 & 0.9030 & 0.0000 \\
-%       & Topological Structure (Tool Calling)         & 0.4705 & \chit{0.8489} & 0.0169 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-% \begin{table}[t]
-%   \centering
-%   \caption{Patch generation summary by embedding variant / mode -- by CWE}
-%   \label{tab:patch_analysis_summary_by_cwe}
-%   \begin{tabular}{llrrrrrrrrrrr}
-%     \toprule
-%     Source & CWE & N & Success (\%) & Avg. Turns & Verify Rate (\%) & Violation Rate (\%) & BLEU-4 & BERTScore F1 & ROUGE-1 F1 & ROUGE-2 F1 & ROUGE-L F1 & Hunk F1 \\
-%     \midrule
-%     codebert\_pattern/single\_turn & CWE-190 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.005 & 0.126 & 0.196 & 0.063 & 0.145 & 0.826 \\
-%     codebert\_pattern/single\_turn & CWE-20 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.204 & 0.428 & 0.548 & 0.262 & 0.346 & 0.773 \\
-%     codebert\_pattern/single\_turn & CWE-362 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.022 & 0.368 & 0.275 & 0.141 & 0.215 & 0.873 \\
-%     codebert\_pattern/single\_turn & CWE-416 & 15 & 60.0 & 1.00 & 0.0 & 0.0 & 0.075 & 0.307 & 0.374 & 0.172 & 0.239 & 0.874 \\
-%     codebert\_pattern/single\_turn & CWE-476 & 14 & 50.0 & 1.00 & 0.0 & 0.0 & 0.276 & 0.250 & 0.480 & 0.365 & 0.390 & 0.661 \\
-%     codebert\_pattern/single\_turn & CWE-787 & 15 & 100.0 & 1.00 & 0.0 & 0.0 & 0.336 & 0.505 & 0.636 & 0.546 & 0.537 & 0.057 \\
-%     codebert\_pattern/tool\_calling & CWE-190 & 15 & 86.7 & 3.80 & 100.0 & 33.3 & 0.999 & 0.959 & 0.999 & 0.999 & 0.999 & 0.996 \\
-%     codebert\_pattern/tool\_calling & CWE-20 & 15 & 60.0 & 4.47 & 100.0 & 20.0 & -- & -- & -- & -- & -- & -- \\
-%     codebert\_pattern/tool\_calling & CWE-362 & 15 & 60.0 & 4.67 & 93.3 & 33.3 & 0.996 & 0.959 & 0.998 & 0.998 & 0.998 & 0.999 \\
-%     codebert\_pattern/tool\_calling & CWE-416 & 15 & 80.0 & 4.00 & 100.0 & 33.3 & 0.921 & 0.926 & 0.932 & 0.924 & 0.929 & 0.983 \\
-%     codebert\_pattern/tool\_calling & CWE-476 & 14 & 71.4 & 4.21 & 100.0 & 14.3 & 0.850 & 0.974 & 0.915 & 0.908 & 0.912 & 0.876 \\
-%     codebert\_pattern/tool\_calling & CWE-787 & 15 & 86.7 & 3.93 & 100.0 & 60.0 & 0.829 & 0.506 & 0.920 & 0.892 & 0.903 & 0.000 \\
-%     codebert\_seq/single\_turn & CWE-190 & 15 & 73.3 & 1.00 & 0.0 & 0.0 & 0.000 & 0.083 & 0.128 & 0.041 & 0.108 & 0.849 \\
-%     codebert\_seq/single\_turn & CWE-20 & 15 & 46.7 & 1.00 & 0.0 & 0.0 & -- & -- & -- & -- & -- & -- \\
-%     codebert\_seq/single\_turn & CWE-362 & 15 & 66.7 & 1.00 & 0.0 & 0.0 & 0.012 & 0.373 & 0.252 & 0.136 & 0.202 & 0.871 \\
-%     codebert\_seq/single\_turn & CWE-416 & 15 & 60.0 & 1.00 & 0.0 & 0.0 & 0.143 & 0.277 & 0.382 & 0.217 & 0.270 & 0.897 \\
-%     codebert\_seq/single\_turn & CWE-476 & 14 & 71.4 & 1.00 & 0.0 & 0.0 & 0.176 & 0.313 & 0.400 & 0.267 & 0.312 & 0.776 \\
-%     codebert\_seq/single\_turn & CWE-787 & 15 & 86.7 & 1.00 & 0.0 & 0.0 & 0.136 & 0.226 & 0.499 & 0.464 & 0.460 & 0.125 \\
-%     codebert\_seq/tool\_calling & CWE-190 & 15 & 73.3 & 4.20 & 100.0 & 40.0 & -- & -- & -- & -- & -- & -- \\
-%     codebert\_seq/tool\_calling & CWE-20 & 15 & 53.3 & 4.93 & 100.0 & 33.3 & 0.737 & 0.951 & 0.878 & 0.769 & 0.878 & 0.818 \\
-%     codebert\_seq/tool\_calling & CWE-362 & 15 & 60.0 & 4.53 & 100.0 & 66.7 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
-%     codebert\_seq/tool\_calling & CWE-416 & 15 & 66.7 & 4.60 & 100.0 & 40.0 & 0.842 & 0.849 & 0.850 & 0.846 & 0.848 & 0.984 \\
-%     codebert\_seq/tool\_calling & CWE-476 & 14 & 71.4 & 4.21 & 100.0 & 28.6 & 0.798 & 0.901 & 0.853 & 0.847 & 0.850 & 0.883 \\
-%     codebert\_seq/tool\_calling & CWE-787 & 15 & 80.0 & 4.20 & 100.0 & 20.0 & -- & -- & -- & -- & -- & -- \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-% todo: format the table  and add the deepseek table with std
-% add completion plot comparison 
-% combined`
-
-
-
 \subsection{CVEfixes Generation Cost Analysis}
 % https://developers.openai.com/api/docs/pricing?_sm_nck=1
 % https://platform.claude.com/docs/en/about-claude/pricing
 % https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/deepseek/
-Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs for the CVEfixes dataset experiments across different models and pipeline configurations. 
-
-\paragraph{GPT-5.3-Codex.} Codex baseline costs \$0.03 per entry, while tool-calling without retrieval averages \$0.06 per entry. The retrieval-augmented tool-calling variants average \$0.08--0.10 per entry. This is approximately 2.5 times cheaper than GPT-4o for comparable configurations (see below), being, therefore, more cost-efficient on CVEFixes. This cost advantage, combined with stronger performance metrics (Section~\ref{tab:cwe_generation_comparison_deepseek}), makes it the preferred choice for production deployments.
-
-\paragraph{GPT-4o.} Once again, the tool-calling pipeline with retrieval has the highest costs, \$0.24--0.26 per entry on average. The model baseline without tools averages \$0.05 per entry, while the tool-calling baseline without retrieval costs \$0.22 per entry. This indicates that the agentic interaction pattern is the main cost reason, even though the retrieval context itself probably contributes to the costs since the prompt tokens used in each run sum up to millions.
-
-\paragraph{DeepSeek-V4-Flash.} As expected, DeepSeek offers the most cost-effective option with an average of \$0.022--0.024 per entry across all configurations of Agent with tools and retrieval. The model baseline costs only \$0.003 per entry. However, as discussed in Section~\ref{tab:cvefixes_overall_patch_generation_summary_deepseek}, the generation pipeline with DeepSeek experienced output formatting issues that limited the patch generation rate. Therefore, the pipeline might include fallbacks and Human-in-the-Loop verifications if this model is deployed in production. The DeepSeek performance is an example that raw cost efficiency must be weighed against functional reliability.
-
-Analyzing the Figure \ref{img:cost_bertscore_cvefixes}, GPT-5.3-Codex presents the highest BERTScore ($\sim0.825$) with the Semantic retrieval pipeline at \$0.075/entry. GPT-4o delivers performance similar to GPT-5.3-Codex but is twice as expensive (\$0.16-0.17/entry). The model baselines are low-cost but low-performing, reinforcing the previously found indication that the patching task requires tooling to succeed. Similarly, the cost of one prompt with the code, represented by the squares, can be even higher than if you use the retriever that filters the context to be passed, even though the cost is not translated into the BERTScore-F1 metric.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=1\linewidth]{img/costs/cost_vs_quality.png}
-    \caption{CVEFixes Patching Cost vs. BERTScore as quality measure.}
-    \label{img:cost_bertscore_cvefixes}
-\end{figure}
-
-Notice that the figure also includes an ablation study of the performance of the pipelines when we use, instead of an agent with tools, only a prompt with the retrieved CWE context.
-
 \begin{table}[H]
   \centering
   \caption{CVEfixes: Generation Cost Summary Across Models and Configurations}
@@ -1215,12 +1105,32 @@ Notice that the figure also includes an ablation study of the performance of the
   \end{tabular}
 \end{table}
 
+Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs for the CVEfixes dataset experiments across different models and pipeline configurations. 
+
+\paragraph{GPT-5.3-Codex.} Codex baseline costs \$0.03 per entry, while tool-calling without retrieval averages \$0.06 per entry. The retrieval-augmented tool-calling variants average \$0.08--0.10 per entry. This is approximately 2.5 times cheaper than GPT-4o for comparable configurations (see below), being, therefore, more cost-efficient on CVEFixes. This cost advantage, combined with stronger performance metrics (Table~\ref{tab:cwe_comparison_all_methods}), makes it the preferred choice for production deployments.
+
+\paragraph{GPT-4o.} Once again, the tool-calling pipeline with retrieval has the highest costs, \$0.24--0.26 per entry on average. The model baseline without tools averages \$0.05 per entry, while the tool-calling baseline without retrieval costs \$0.22 per entry. This indicates that the agentic interaction pattern is the main cost reason, even though the retrieval context itself probably contributes to the costs since the prompt tokens used in each run sum up to millions.
+
+\paragraph{DeepSeek-V4-Flash.} As expected, DeepSeek offers the most cost-effective option with an average of \$0.022--0.024 per entry across all configurations of Agent with tools and retrieval. The model baseline costs only \$0.003 per entry. However, as discussed in Table~\ref{tab:patch_analysis_summary_deepseek}, the generation pipeline with DeepSeek experienced output-formatting issues that limited the patch generation rate. Therefore, the pipeline might include fallbacks and Human-in-the-Loop verifications if this model is deployed in production. The DeepSeek performance is an example that raw cost efficiency must be weighed against functional reliability.
+
+Analyzing the Figure \ref{img:cost_bertscore_cvefixes}, GPT-5.3-Codex presents the highest BERTScore ($\sim0.825$) with the Semantic retrieval pipeline at \$0.075/entry. GPT-4o delivers performance similar to GPT-5.3-Codex but is twice as expensive (\$0.16-0.17/entry). The model baselines are low-cost but low-performing, reinforcing the previously found indication that the patching task requires tooling to succeed. Similarly, the cost of one prompt with the code, represented by the squares, can be even higher than if you use the retriever that filters the context to be passed, even though the cost is not translated into the BERTScore-F1 metric.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{img/patching/cost_vs_quality.png}
+    \caption{CVEFixes Patching Cost vs. BERTScore as quality measure.}
+    \label{img:cost_bertscore_cvefixes}
+\end{figure}
+
+Notice that the figure also includes an ablation study of the performance of the pipelines when we use, instead of an agent with tools, only a prompt with the retrieved CWE context.
+
+
 \section{Generation: AutoPatch Dataset}
 
 The AutoPatch dataset presents a simpler patch-generation challenge than CVEfixes, as vulnerabilities are generally limited to single functions and involve localized, few-line repairs. This reduced complexity results in higher performance and allows for a cleaner evaluation of the patching pipeline's effectiveness.
 
 % TODO: change all the names to the new ones
-\paragraph{Terminology.} Throughout this section, we refer to three retrieval strategies by their embedding characteristics: \textit{Semantic+Structure} (CodeBERT Pattern), which combines semantic code embeddings with structural graph features; \textit{Semantic} (CodeBERT Seq), which uses sequential code embeddings; and \textit{Topology} (Combined), which relies primarily on graph-topological similarity.
+\paragraph{Terminology.} Throughout this section, we refer to three retrieval strategies by their embedding characteristics: \textit{Semantic+Structure}, which combines semantic code embeddings with structural graph features; \textit{Structure}, which uses sequential code embeddings; and \textit{Topological Structure}, which relies primarily on graph-topological similarity.
 
 \subsection{GPT-5.3-Codex}
 
@@ -1245,9 +1155,9 @@ This statistical equivalence, combined with the high Judge validity rates, sugge
     \toprule
     Source & N & \makecell{Completion \\ \%} & BLEU-4 & BERTScore F1 & ROUGE-L F1 & \makecell{LLM\\ Judge\\ Valid} \\
     \midrule
-    CodeBERT Pattern & 75 & 88.0 & 0.828 $\pm$ 0.000 & 0.525 $\pm$ 0.127 & 0.900 $\pm$ 0.106 & 70.3 \\
-    CodeBERT Seq & 75 & 96.0 & 0.827 $\pm$ 0.000 & 0.527 $\pm$ 0.124 & 0.900 $\pm$ 0.100 & 82.7 \\
-    Combined & 75 & 100.0 & 0.829 $\pm$ 0.000 & 0.521 $\pm$ 0.126 & 0.898 $\pm$ 0.100 & 85.3 \\
+    Semantic+Structure & 75 & 88.0 & 0.828 $\pm$ 0.000 & 0.525 $\pm$ 0.127 & 0.900 $\pm$ 0.106 & 70.3 \\
+    Structure & 75 & 96.0 & 0.827 $\pm$ 0.000 & 0.527 $\pm$ 0.124 & 0.900 $\pm$ 0.100 & 82.7 \\
+    Topological Structure & 75 & 100.0 & 0.829 $\pm$ 0.000 & 0.521 $\pm$ 0.126 & 0.898 $\pm$ 0.100 & 85.3 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1262,17 +1172,17 @@ Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex} breaks down perform
     \toprule
     Source & Category & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
     \midrule
-    \multirow{4}{*}{CodeBERT Pattern} & Memory Safety & 22 & 0.842 & 0.539 & 0.917 \\
+    \multirow{4}{*}{Semantic+Structure} & Memory Safety & 22 & 0.842 & 0.539 & 0.917 \\
     & Concurrency & 28 & 0.799 & 0.518 & 0.867 \\
     & Numeric/Type & 10 & 0.865 & 0.314 & 0.911 \\
     & Resource Mgmt & 8 & 0.711 & 0.487 & 0.812 \\
     \midrule
-    \multirow{4}{*}{CodeBERT Seq} & Memory Safety & 25 & 0.828 & 0.539 & 0.906 \\
+    \multirow{4}{*}{Structure} & Memory Safety & 25 & 0.828 & 0.539 & 0.906 \\
     & Concurrency & 30 & 0.792 & 0.515 & 0.862 \\
     & Numeric/Type & 10 & 0.868 & 0.317 & 0.918 \\
     & Resource Mgmt & 7 & 0.743 & 0.515 & 0.831 \\
     \midrule
-    \multirow{4}{*}{Combined} & Memory Safety & 26 & 0.830 & 0.537 & 0.902 \\
+    \multirow{4}{*}{Topological Structure} & Memory Safety & 26 & 0.830 & 0.537 & 0.902 \\
     & Concurrency & 31 & 0.804 & 0.514 & 0.873 \\
     & Numeric/Type & 11 & 0.889 & 0.315 & 0.931 \\
     & Resource Mgmt & 7 & 0.743 & 0.515 & 0.831 \\
@@ -1293,9 +1203,9 @@ The \textit{Topology} pipeline achieves the highest completion (77.3\%) but the 
     \toprule
     Source & N & \makecell{Completion\\ \%} & BLEU-4 & BERTScore F1 & ROUGE-L F1 & \makecell{LLM \\Judge \\ Valid} \\
     \midrule
-    CodeBERT Pattern & 75 & 72.0 & 0.820 $\pm$ 0.000 & 0.559 $\pm$ 0.111 & 0.903 $\pm$ 0.079 & 63.0 \\
-    CodeBERT Seq & 75 & 73.3 & 0.818 $\pm$ 0.000 & 0.549 $\pm$ 0.147 & 0.896 $\pm$ 0.126 & 65.3 \\
-    Combined & 75 & 77.3 & 0.832 $\pm$ 0.000 & 0.539 $\pm$ 0.127 & 0.911 $\pm$ 0.086 & 56.8 \\
+    Semantic+Structure & 75 & 72.0 & 0.820 $\pm$ 0.000 & 0.559 $\pm$ 0.111 & 0.903 $\pm$ 0.079 & 63.0 \\
+    Structure & 75 & 73.3 & 0.818 $\pm$ 0.000 & 0.549 $\pm$ 0.147 & 0.896 $\pm$ 0.126 & 65.3 \\
+    Topological Structure & 75 & 77.3 & 0.832 $\pm$ 0.000 & 0.539 $\pm$ 0.127 & 0.911 $\pm$ 0.086 & 56.8 \\
     Tool-only & 20 & 80.0 & 0.660 $\pm$ 0.000 & 0.434 $\pm$ 0.244 & 0.729 $\pm$ 0.361 & 50.0 \\
     \bottomrule
   \end{tabular}
@@ -1323,17 +1233,17 @@ Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o} shows the GPT-4o's cate
     \toprule
     Source & Category & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
     \midrule
-    \multirow{4}{*}{CodeBERT Pattern} & Memory Safety & 21 & 0.815 & 0.584 & 0.903 \\
+    \multirow{4}{*}{Semantic+Structure} & Memory Safety & 21 & 0.815 & 0.584 & 0.903 \\
     & Concurrency & 21 & 0.855 & 0.537 & 0.912 \\
     & Numeric/Type & 6 & 0.736 & 0.490 & 0.842 \\
     & Resource Mgmt & 6 & 0.849 & 0.595 & 0.915 \\
     \midrule
-    \multirow{4}{*}{CodeBERT Seq} & Memory Safety & 16 & 0.872 & 0.591 & 0.936 \\
+    \multirow{4}{*}{Structure} & Memory Safety & 16 & 0.872 & 0.591 & 0.936 \\
     & Concurrency & 22 & 0.850 & 0.642 & 0.892 \\
     & Numeric/Type & 10 & 0.888 & 0.337 & 0.938 \\
     & Resource Mgmt & 7 & 0.783 & 0.550 & 0.841 \\
     \midrule
-    \multirow{4}{*}{Combined} & Memory Safety & 17 & 0.895 & 0.582 & 0.948 \\
+    \multirow{4}{*}{Topological Structure} & Memory Safety & 17 & 0.895 & 0.582 & 0.948 \\
     & Concurrency & 25 & 0.914 & 0.524 & 0.962 \\
     & Numeric/Type & 10 & 0.878 & 0.322 & 0.932 \\
     & Resource Mgmt & 6 & 0.743 & 0.573 & 0.835 \\
@@ -1361,10 +1271,58 @@ Table~\ref{tab:generation_cost_summary_condensed} summarizes the patch generatio
 Compared to the CVEfixes dataset (Table~\ref{tab:cvefixes_generation_cost_summary}), AutoPatch generation costs are 3 to 6$\times$ lower per entry for equivalent configurations. 
 This is probably due to the reduced complexity of the dataset, which consists of single-function and requires localized fixes compared to the multi-file vulnerability patches that require substantially larger context windows and more reasoning steps.
 
+DeepSeek-V4-Flash is by far the cheapest option on AutoPatch, averaging \$0.0035--0.0036 per entry across all three retrieval variants (Sem.+Struc, Semantic, Topology) with tool calling -- roughly 5$\times$ cheaper than GPT-5.3-Codex and 10--12$\times$ cheaper than GPT-4o for the equivalent configuration, despite generating a comparable number of total tokens ($\sim$1.5M across 101 queries) due to its lower per-token pricing (\$0.19/\$0.51 per 1M input/output tokens). Unlike on CVEfixes, where DeepSeek exhibited severe output-formatting issues (Section~\ref{tab:cvefixes_generation_cost_summary}), on the simpler AutoPatch task it reaches 60.6--71.7\% LLM Judge validity across the three retrieval variants, closer to GPT-4o's range (50--65\%) than to Codex's (70--85\%), which further supports that task complexity, not just raw model capability, drives DeepSeek's reliability gap.
+
+\subsection{DeepSeek-V4-Flash}
+
+Table~\ref{tab:autopatch_overall_pipeline_performance_deepseek} presents DeepSeek-V4-Flash's tool-calling performance on AutoPatch across the three retrieval variants. Completion rates (76--83\%) sit between GPT-4o's (72--80\%) and GPT-5.3-Codex's (88--100\%), while LLM Judge validity (60.6--71.7\%) is closer to Codex's range than to GPT-4o's, despite DeepSeek being the cheapest model evaluated (Table~\ref{tab:generation_cost_summary_condensed}). \textit{Topology} achieves the best overall trade-off, with the highest BERTScore F1 (0.536, tied with Semantic+Structure) and the highest Judge validity (71.7\%). \textit{Semantic} completes fewer queries (76.2\%) and reaches the lowest Judge validity (60.6\%), suggesting that for a weaker, cheaper model, retrieval quality has a larger effect on downstream functional correctness than for the stronger proprietary models.
+
+\begin{table}[H]
+  \centering
+  \caption{DeepSeek-V4-Flash: Overall pipeline performance on the autopatch dataset}
+  \label{tab:autopatch_overall_pipeline_performance_deepseek}
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    Source & N & Completion \% & BLEU-4 & BERTScore F1 & ROUGE-L F1 & LLM Judge Valid \\
+    \midrule
+    Semantic+Structure & 101 & 83.2 & 0.818 $\pm$ 0.000 & 0.536 $\pm$ 0.137 & 0.893 $\pm$ 0.102 & 69.7 \\
+    Structure & 101 & 76.2 & 0.826 $\pm$ 0.000 & 0.519 $\pm$ 0.130 & 0.897 $\pm$ 0.101 & 60.6 \\
+    Topological Structure & 101 & 82.2 & 0.831 $\pm$ 0.000 & 0.536 $\pm$ 0.130 & 0.898 $\pm$ 0.092 & 71.7 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:autopatch_pipeline_by_cwe_category_deepseek} breaks performance down by vulnerability category. As with GPT-4o and Codex, Numeric/Type vulnerabilities show a lower BERTScore ($\approx$0.32--0.36) despite high BLEU-4 ($\approx$0.85), reinforcing that this gap stems from dataset-level tokenization mismatches (Appendix~\ref{chapter:appendix_example_autopatch}) rather than model capability. Resource Management patches are consistently the weakest category across all three retrieval variants (BERTScore F1 0.46--0.49), whereas Memory Safety and Concurrency remain the most stable (BERTScore F1 0.53--0.56).
+
+\begin{table}[H]
+  \centering
+  \caption{DeepSeek-V4-Flash: Pipeline performance by CWE category on the autopatch dataset}
+  \label{tab:autopatch_pipeline_by_cwe_category_deepseek}
+  \begin{tabular}{llrrrr}
+    \toprule
+    Source & Category & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
+    \midrule
+    \multirow{4}{*}{Semantic+Structure} & Memory Safety & 30 & 0.874 & 0.560 & 0.932 \\
+    & Concurrency & 30 & 0.825 & 0.549 & 0.889 \\
+    & Numeric/Type & 10 & 0.846 & 0.346 & 0.910 \\
+    & Resource Mgmt & 14 & 0.730 & 0.464 & 0.827 \\
+    \midrule
+    \multirow{4}{*}{Structure} & Memory Safety & 30 & 0.823 & 0.532 & 0.904 \\
+    & Concurrency & 26 & 0.843 & 0.528 & 0.912 \\
+    & Numeric/Type & 9 & 0.850 & 0.319 & 0.903 \\
+    & Resource Mgmt & 12 & 0.749 & 0.486 & 0.833 \\
+    \midrule
+    \multirow{4}{*}{Topological Structure} & Memory Safety & 36 & 0.822 & 0.541 & 0.901 \\
+    & Concurrency & 24 & 0.853 & 0.534 & 0.886 \\
+    & Numeric/Type & 8 & 0.860 & 0.356 & 0.921 \\
+    & Resource Mgmt & 15 & 0.754 & 0.473 & 0.842 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Compared to GPT-4o (Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o}), DeepSeek's BERTScore F1 is 3--5pp lower on Memory Safety but comparable on Concurrency, indicating that the cost savings do not come at a uniform quality cost across vulnerability classes.
 
 
-% uv run python3 utils/aggregate_autopatch_summary.py cvefixes_experiments/output/autopatch/20260816_080855_autopatch_retrieval_patching_5d203b_gpt4/ --out cvefixes_experiments/output/autopatch/20260816_080855_autopatch_retrieval_patching_5d203b_gpt4/autopatch_summary.tex
-% \begin{table}[H]
 %   \centering
 %   \caption{GPT-4o: Generation cost summary by run}
 %   \label{tab:generation_cost_summary_by_run_gpt4o}
@@ -1428,6 +1386,10 @@ Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \m
     % combined / single\_turn & gpt-4o & 75 & 425738 & 78016 & 503754 & \$2.7668 & \$0.036890 \\
     % combined / tool\_calling & gpt-4o & 75 & 625030 & 55592 & 680622 & \$3.1777 & \$0.042370 \\
     % tool\_calling\_no\_retrieval & gpt-4o & 20 & 113308 & 16570 & 129878 & \$0.6735 & \$0.033673 \\
+    \midrule
+    Sem.+Struc (Tool) & DeepSeek & 101 & 1.28M & 218.2K & 1.50M & \$0.35 & \$0.0035 \\
+    Semantic (Tool) & DeepSeek & 101 & 1.28M & 213.5K & 1.50M & \$0.35 & \$0.0035 \\
+    Topology (Tool) & DeepSeek & 101 & 1.35M & 213.7K & 1.56M & \$0.36 & \$0.0036 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1456,7 +1418,7 @@ Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \m
 
 \begin{figure}
     \centering
-    \includegraphics[width=1\linewidth]{img/costs/cost_vs_quality_autopatch.png}
+    \includegraphics[width=1\linewidth]{img/patching/cost_vs_quality_autopatch.png}
     \caption{AutoPatch Patching Cost vs. BERTScore as quality measure.}
     \label{img:cost_bertscore_autopatch}
 \end{figure}
