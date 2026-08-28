@@ -875,7 +875,7 @@ Your task: given vulnerable C code and a retrieved similar vulnerability example
 
 ## Patch format
 
-Use one or more Search & Replace blocks — each one replaces an exact code section:
+Use one or more Search & Replace blocks -- each one replaces an exact code section:
 
 <<<<<<< SEARCH
 [exact lines from the vulnerable code, copied verbatim including whitespace]
@@ -885,14 +885,14 @@ Use one or more Search & Replace blocks — each one replaces an exact code sect
 
 - Copy the SEARCH lines **exactly** from the target code (tabs, spacing, everything).
 - Use one block per change location.
-- Do NOT use unified diff format (– no `@@` headers, no `+`/`-` line prefixes).
+- Do NOT use unified diff format (- no `@@` headers, no `+`/`-` line prefixes).
 
 ## Rules
 
 - The patch MUST address the actual root cause, not just add superficial checks.
-- Do NOT invent struct members, functions, or APIs that don’t exist in the codebase.
-- Keep the patch minimal — change only what’s necessary to fix the vulnerability.
-- If the example’s CWE differs from the target’s CWE, adapt your approach accordingly.
+- Do NOT invent struct members, functions, or APIs that don't exist in the codebase.
+- Keep the patch minimal -- change only what's necessary to fix the vulnerability.
+- If the example's CWE differs from the target's CWE, adapt your approach accordingly.
 - Never submit a patch that `verify_fix_correctness` has flagged as INCORRECT.
 - You MUST call `submit_patch` to finalize your answer.
 
@@ -1019,7 +1019,7 @@ You are a security code reviewer. Given a vulnerability diagnosis and a proposed
 The pipeline has the following functions available as tools:
 
 \begin{table}[ht]
-\caption[Available Tools Table]{List of the tools that the agent can call throughout its pipeline.}\label{tab:sample}
+\caption[Available Tools Table]{List of the tools that the agent can call throughout its pipeline.}\label{tab:api_call}
 
 \centering
 \begin{tabularx}{\textwidth}{l X}
@@ -1074,7 +1074,7 @@ The \texttt{complete()} signature was extended with \texttt{tools=} and \texttt{
 Four backend approaches were implemented:
 
 \begin{table}[ht]
- \caption[Types of API call Table]{An example for a simple table.}\label{tab:sample}
+ \caption[Types of API call Table]{An example for a simple table.}\label{tab:api_call}
 
 \centering
 \begin{tabularx}{\textwidth}{l X}
@@ -1185,7 +1185,7 @@ We evaluate the system across three axes: \textit{retrieval metrics}, assess whe
 \textbf{CVE hit@1} is a stricter version of the CWE hit@1. It measures whether the top-1 retrieved example corresponds to the same underlying CVE (or CVE-fix pair) as the query, rather than merely the same vulnerability class.
 It is implemented as an exact CVE identifier match rather than fix-commit lineage, so every entry filed under the same CVE (e.g.\ multiple affected functions from the same fix) counts as a hit.
 
-\textbf{Confidence Score} is the similarity score assigned by the retriever to its top-1 match, used to measure the ranking signal quality. It can also be used as a threshold to reject low-confidence retrievals rather than return wrong CVEs examples (see Section~\ref{img:retrieval_pattern}).
+\textbf{Confidence Score} is the similarity score assigned by the retriever to its top-1 match, used to measure the ranking signal quality. It can also be used as a threshold to reject low-confidence retrievals rather than return wrong CVEs examples.
 
 \textbf{Effective dimensionality} of the embedding space is used to characterize how much of the embedding's nominal dimensionality is actually used to separate examples.
 
