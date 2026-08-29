@@ -4,21 +4,95 @@
 \chapter{Literature Review}\label{chapter:literature-review}
 
 
-\section{Literature Review}
+\section{Patching}
+Most vulnerabilities are not entirely novel; the knowledge required to address a new flaw is often already available in previously published fixes for similar issues. Since many software flaws recur across different programs or modules, existing patches can be automatically extracted, adapted, and applied to structurally similar code \cite{Shariffdeen2020}.
+This strategy has been explored in Automated Program Repair, and prior work has shown how automated repair systems leverage existing defect and fix-pattern histories to generate patches for newly discovered bugs and vulnerabilities \cite{legoues2019}.
 
-\subsection*{Structural Retrieval and Graph Edit Distance}
+One early way to explore code to find vulnerabilities is to use tools like CodeQL and Joern. Such tools perform static analysis over a graph representation of the code, like encoding control flow, data flow, and syntactic structure to search for known patterns.
+Even though these graph-based traversal approaches made vulnerability search much easier and more automated, they require expertise in the language and in the domain-specific vulnerabilities. To scale the search for vulnerabilities and avoid missing one because its pattern was not explicitly searched, it is necessary to shift from hand-crafted rules to an automated search.
+
+\section*{Structural Retrieval and Graph Edit Distance}
+Graph edit distance (GED) is defined as the minimum-cost sequence of vertex and edge insertions, deletions, and substitutions required to transform one graph into the other \cite{gao2010survey}.
+This classical approach evaluates the structure directly and can be applied to arbitrary graph types, including as a measure of structural similarity between two graphs. This makes them a promising approach to spot vulnerable structures already known in new code without any language as a proxy, and to reuse the graph knowledge directly in the search.
+However, GED is NP-hard; additionally, exact/near-exact computation doesn't scale to corpus-level retrieval over thousands of historical fixes. 
+
+This scalability issue is particularly relevant for security applications.
+Feng et al. explore it in the context of vulnerability search, showing that control-flow-graph-based bug search does not scale to firmware corpora due to the cost of graph matching. Their approach converts CFGs into high-level numeric feature vectors that support real-time approximate
+search via hashing \cite{feng2016scalable}. 
+Xu et al. replace these hand-crafted features with a learned graph neural network embedding for
+the same cross-platform bug-search task, reporting large accuracy gains over the hand-engineered baseline \cite{xu2017neural}. 
+% the following work is interesting, but i didn't train any of the models so it can be used as a downside
+% More generally, SimGNN reframes GED computation itself as a learning problem, training a neural network to approximate GED directly rather than computing it exactly \cite{li2019simgnn}. 
+These works exemplify that structural similarity for security-relevant graphs is best operationalized by fixed-length embeddings whose distances approximate structural similarity, enabling standard approximate nearest-neighbor search over large historical corpora.
+% (not by computing GED directly at query time, )
+
+
+
 % Example of graph definition from NetLSD
 % This work contributes to the exploration of this gap by proposing a Retrieval-Augmented Generation (RAG) system that uses graph-based representations of code vulnerabilities to generate embeddings.
 % An undirected graph is a pairG = (V, E), whereV = (v1, . . . ,vn),n =
 % |V | is the set of vertices and E ⊆ (V ×V ) the set of edges
 
-% content: graph edit distance \cite{gao2010survey, li2019simgnn}
 
-\subsection*{Graph Embedding Techniques}
-% content: general NetLSD, WL, GIN definitions/formulas
-% (strip your own config choices out of these -- those stay in Methodology)
 
-\subsection*{Agentic Patching Frameworks}
+
+\section{Structural and Semantic Code Embedding Techniques}
+
+The Weisfeiler-Lehman (WL) test iteratively refines a node-coloring scheme by aggregating each node's label with those of its neighbors. 
+WL similarity between two graphs is computed from the overlap of these refined label distributions across iterations \cite{shervashidze2011wl}
+explain 1-WL color refinement, its graph-kernel use, and its limitation: it loses information beyond its local iterative labels and establishes an expressivity reference point for GNNs.
+The Graph Isomorphism Network (GIN) is a generalization of WL approach that uses a trainable architecture with a sum-based neighborhood aggregation function
+ GIN is a learned message-passing architecture designed to be as discriminative as 1-WL under its assumptions. Add the missing \cite{xu2019gin}.
+NetLSD  computes a heat-trace signature from the graph Laplacian's eigenvalues, yielding a permutation-invariant embedding that requires no training and is comparable across graphs of different size \cite{tsitsulin2018netlsd}.
+ global/topological rather than learned from labelled examples.
+GraphFVD applies this same principle at the level of code representation rather than graph architecture: it extracts property-graph-based slices (PrVCs) from the CPG rather than embedding whole-function graphs, and learns their embeddings with a Hierarchical Attention Graph Convolutional Network, reporting that this slice-level representation outperforms both function-level and sequence-level slice baselines for vulnerability detection \cite{shao2025graphfvd}. This is consistent with our own choice to embed a bounded diff-centered slice rather than the full function CPG, though GraphFVD's embeddings feed a supervised classifier for single-function detection rather than a retrieval index over a historical fix corpus — the two tasks share a representation but not an objective.
+
+CodeBERT  provides a pretrained, transformer-based embedding of code capturing lexical and semantic regularities — variable naming, API usage, idiomatic patterns, complementing the information that is opaque to a purely topological representation \cite{feng2020codebert} 
+
+
+Synthesis: state the retrieval tension your thesis investigates: WL and NetLSD characterize structure without training; GIN learns structural patterns; CodeBERT supplies code semantics; combinations may be useful because vulnerabilities have both structural and lexical aspects. Do not report results here.
+
+Together, these approaches expose a central retrieval trade-off: topology-only methods provide invariant structural comparisons, learned graph models can adapt to vulnerability-relevant patterns, and code-language models retain semantic cues omitted by graph structure; consequently, no single representation is expected to capture every relevant similarity relation.
+
+
+\subsection*{Retrieval-Augmented Secure Code Generation}
+
+A parallel line of work applies retrieval augmentation not to
+patching existing vulnerable code, but to generating new code
+securely in the first place. RESCUE addresses the observation that
+plain retrieval-augmented generation struggles with the noise of raw
+security documents and that existing retrieval methods overlook the
+security semantics implicit in a task description, by constructing a
+hybrid knowledge base that combines two complementary sources: an
+LLM-assisted cluster-then-summarize pipeline distills raw
+vulnerability-fix data into high-level security guidelines, while
+static program slicing extracts concise, security-focused code
+examples by isolating the statements directly relevant to a fix and
+filtering out unrelated logic \cite{shi2026rescue}. At query time,
+RESCUE performs a hierarchical, multi-faceted retrieval: it first
+analyzes the task description along three facets — API usage
+patterns, vulnerability cause, and code similarity — to identify the
+relevant vulnerability type at a coarse (CWE) level, then narrows to
+fine-grained secure code examples within that type, fusing the
+results into the context used to guide generation. RESCUE is closest
+in architectural spirit to our own pipeline: both use program slicing
+to suppress irrelevant code before embedding or retrieval, and both
+structure retrieval hierarchically rather than as a single flat
+nearest-neighbor lookup. The two systems target different points in
+the vulnerability lifecycle, however: RESCUE retrieves security
+knowledge to steer an LLM toward writing new code that avoids a known
+vulnerability class, whereas our pipeline retrieves structurally
+analogous historical fixes to steer an LLM toward correctly repairing
+a specific, already-identified vulnerable function. RESCUE's use of
+program slicing to concentrate an embedding on security-relevant
+statements is also the third independent precedent for this design
+choice in this review, alongside GraphFVD's property-graph-based
+vulnerability candidates and LLMxCPG's CPG-based slicing for scale
+reduction — reinforcing that isolating the security-relevant subgraph,
+rather than embedding whole-function code, is a broadly convergent
+design decision across recent work in this space.
+
+\section{Agentic Patching Frameworks}
 % content: AutoPatch \cite{seo2026autopatch, Seo2025AutoPatchMF}
 % content: RepairAgent \cite{bouzenia2025repairagent}
 % content: ReAct \cite{yao2023react}
@@ -26,85 +100,33 @@
 % content: MCP \cite{mcp2024}
 % content: agent-harness citation \cite{langchain_agent_harness}
 % content: CodeBERT as background embedding approach
+LLM-based program repair has moved from single-turn, few-shot patch generation toward agentic frameworks that allow the model to iteratively gather context and revise its own output.
 
+- AutoPatch (Seo et al.) — explain *claims to do methodologically* (LLM-augmented CVE variant generation for patch benchmarking); the Dataset chapter covers what you actually found when you used it (surface-level augmentations invisible at CPG level).
+ probe whether patch-generation systems generalize
+beyond memorized fixes \cite{seo2026autopatch, Seo2025AutoPatchMF};
+this thesis uses AutoPatch as one of its two evaluation datasets (see
+Chapter~\ref{ch:dataset}), and this subsection accordingly focuses on
+its methodology rather than its results. 
+- RepairAgent — closest prior agentic-patching system; this is probably your most important related-work comparison point, worth more than one sentence. 
+What tools does it give the agent, how does it decide when to stop, how does it evaluate patches.
+tool-augmented agentic loop, giving the
+LLM explicit actions for inspecting the codebase, retrieving relevant
+context, and validating candidate patches, and is the closest prior
+system to our own agentic generation layer in terms of task framing \cite{bouzenia2025repairagent}
+- ReAct — the general reasoning+acting loop RepairAgent (and your own agentic layer) build on. Cite as the pattern, not as a patching system itself.
+- Self-Refine — iterative self-critique loop; relevant if your agentic generation layer does any revision/retry step. If it doesn't, don't force this citation in — only include what you actually build on.
+ ReAct, which interleaves explicit reasoning traces with tool-invoking actions so that the model's next action is conditioned on the observed result of its previous one \cite{yao2023react}.
+ Self-Refine adds an iterative self-critique loop on top of this pattern, having the model evaluate and revise its own output across multiple passes without external supervision \cite{madaan2023selfrefine}.
 
-% See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot}, \autoref{fig:sample-listing}.
+ QLCoder	agentic framework that automatically synthesizes CodeQL queries directly from CVE metadata. It bridges the gap between natural language vulnerability reports and actionable detection tools by embedding an LLM in an iterative synthesis loop that uses execution feedback to verify query correctness.	"RQ1: For how many real-world CVEs can QLCoder successfully generate syntactically valid and semantically precise queries?
+RQ2: How useful is each component of the QLCoder framework (LSP server, documentation access, AST snippets) to the synthesis process?
+RQ3: How does the choice of different base agent frameworks (e.g., Claude Code vs. Gemini CLI) affect the overall effectiveness of QLCoder?"	"Structured Synthesis Loop: The agent proposes a query, a validator executes it on vulnerable and patched versions of a repository, and feedback is provided to refine the next proposal.
+Model Context Protocol (MCP) Interface: Constrains reasoning using a Language Server Protocol (LSP) for syntax guidance and a vector database for semantic retrieval of existing queries and documentation.
+Fix Discrimination: Ensures the synthesized query is precise enough to flag the vulnerable version but remain silent on the patched version."	CWE-Bench-Java: 176 CVEs across 111 Java projects; 42 different CWE categories, such as Path Traversal (48), Cross-Site Scripting (36), and Code Injection (20); 65 CVEs reported in 2025 after Claude Sonnet 4 cutoff
 
-% \begin{table}[htpb]
-%   \caption[Example table]{An example for a simple table.}\label{tab:sample}
-%   \centering
-%   \begin{tabular}{l l l l}
-%     \toprule
-%       A & B & C & D \\
-%     \midrule
-%       1 & 2 & 1 & 2 \\
-%       2 & 3 & 2 & 3 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-% \begin{figure}[htpb]
-%   \centering
-%   % This should probably go into a file in figures/
-%   \begin{tikzpicture}[node distance=3cm]
-%     \node (R0) {$R_1$};
-%     \node (R1) [right of=R0] {$R_2$};
-%     \node (R2) [below of=R1] {$R_4$};
-%     \node (R3) [below of=R0] {$R_3$};
-%     \node (R4) [right of=R1] {$R_5$};
-
-%     \path[every node]
-%       (R0) edge (R1)
-%       (R0) edge (R3)
-%       (R3) edge (R2)
-%       (R2) edge (R1)
-%       (R1) edge (R4);
-%   \end{tikzpicture}
-%   \caption[Example drawing]{An example for a simple drawing.}\label{fig:sample-drawing}
-% \end{figure}
-
-% \begin{figure}[htpb]
-%   \centering
-
-%   \pgfplotstableset{col sep=&, row sep=\\}
-%   % This should probably go into a file in data/
-%   \pgfplotstableread{
-%     a & b    \\
-%     1 & 1000 \\
-%     2 & 1500 \\
-%     3 & 1600 \\
-%   }\exampleA
-%   \pgfplotstableread{
-%     a & b    \\
-%     1 & 1200 \\
-%     2 & 800 \\
-%     3 & 1400 \\
-%   }\exampleB
-%   % This should probably go into a file in figures/
-%   \begin{tikzpicture}
-%     \begin{axis}[
-%         ymin=0,
-%         legend style={legend pos=south east},
-%         grid,
-%         thick,
-%         ylabel=Y,
-%         xlabel=X
-%       ]
-%       \addplot table[x=a, y=b]{\exampleA};
-%       \addlegendentry{Example A};
-%       \addplot table[x=a, y=b]{\exampleB};
-%       \addlegendentry{Example B};
-%     \end{axis}
-%   \end{tikzpicture}
-%   \caption[Example plot]{An example for a simple plot.}\label{fig:sample-plot}
-% \end{figure}
-
-% \begin{figure}[htpb]
-%   \centering
-%   \begin{tabular}{c}
-%   \begin{lstlisting}[language=SQL]
-%     SELECT * FROM tbl WHERE tbl.str = "str"
-%   \end{lstlisting}
-%   \end{tabular}
-%   \caption[Example listing]{An example for a source code listing.}\label{fig:sample-listing}
-% \end{figure}
+MAAP	a self-evolving, role-specialized multi-agent framework designed for end-to-end automated vulnerability repair (AVR) in Python codebases. It addresses the limitations of single-agent approaches—such as context overload and myopic decision-making—by decomposing vulnerable repositories into fine-grained subtasks	"RQ1 (Patch Effectiveness): How effective is MAAP at fixing real-world vulnerabilities compared to other methods, such as single-agent variants or plain multi-agent systems?
+RQ2 (Routing Efficiency): How well does the learned router trade off correctness, latency, and cost during the repair process?
+RQ3 (Ablation Study): How does each architectural module (router, supervisor, knowledge base, agent factory) contribute to the overall patch accuracy?"	"Contextual-Bandit Router: Learns to assign subtasks to the most appropriate specialized agents to optimize for success, cost, and latency.
+Retrieval-Augmented Knowledge Base: Stores successful and failed repair trajectories (AST diffs and rationales) to guide agents and prune ""dead-end"" explorations.
+Agent Factory: Dynamically spawns new specialized agents when the system encounters novel vulnerability patterns or low success rates"	VAITP selection: 120 real-world Python CVEs(Input validation and sanitization, memory corruption, authentication/session management). AI-generated and human-verified code snippets of vulnerable and patched versions
