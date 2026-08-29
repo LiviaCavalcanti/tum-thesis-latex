@@ -13,7 +13,7 @@ Even though these graph-based traversal approaches made vulnerability search muc
 
 \section*{Structural Retrieval and Graph Edit Distance}
 Graph edit distance (GED) is defined as the minimum-cost sequence of vertex and edge insertions, deletions, and substitutions required to transform one graph into the other \cite{gao2010survey}.
-This classical approach evaluates the structure directly and can be applied to arbitrary graph types, including as a measure of structural similarity between two graphs. This makes them a promising approach to spot vulnerable structures already known in new code without any language as a proxy, and to reuse the graph knowledge directly in the search.
+This classical approach evaluates the structure directly and can be applied to arbitrary graph types, including as a measure of structural similarity between two graphs. This makes them a promising approach for identifying vulnerable structures already known in new code without any language as a proxy, and for reusing the graph knowledge directly in the search.
 However, GED is NP-hard; additionally, exact/near-exact computation doesn't scale to corpus-level retrieval over thousands of historical fixes. 
 
 This scalability issue is particularly relevant for security applications.
@@ -38,21 +38,36 @@ These works exemplify that structural similarity for security-relevant graphs is
 
 \section{Structural and Semantic Code Embedding Techniques}
 
-The Weisfeiler-Lehman (WL) test iteratively refines a node-coloring scheme by aggregating each node's label with those of its neighbors. 
-WL similarity between two graphs is computed from the overlap of these refined label distributions across iterations \cite{shervashidze2011wl}
-explain 1-WL color refinement, its graph-kernel use, and its limitation: it loses information beyond its local iterative labels and establishes an expressivity reference point for GNNs.
-The Graph Isomorphism Network (GIN) is a generalization of WL approach that uses a trainable architecture with a sum-based neighborhood aggregation function
- GIN is a learned message-passing architecture designed to be as discriminative as 1-WL under its assumptions. Add the missing \cite{xu2019gin}.
+Traditional graph classification uses non/parametric graph kernels that can run on standard hardware used by developers.
+The field has well-established approaches that can run locally on a developer's workstation without consuming too many resources.  One of its fields is Graph Isomorphism, which asks whether two graphs are topologically identical. 
+While no polynomial-time algorithm is known for it yet \cite{garey1979computers, babai2016graph}, there are practical computational bounds that apply to the 1-dimensional Weisfeiler-Lehman (WL) color refinement test \cite{weisfeiler1968reduction}.
+
+The WL test of graph isomorphism is an iterative process of color refinement to characterize graph topology. First, at each step, a node aggregates its current labels with the sorted set of labels of its immediate neighborhoods; then it hashes the aggregated labels into unique new labels. This process repeats until the label distribution between the two compared graphs diverges or until a limit number k of iterations is reached; this latter only allows the isomorphism conclusion for the evaluated subgraph. 
+
+The WL Fast Subtree Kernel \cite{shervashidze2011wl} applies this mechanism by mapping the graphs in a Hilbert Space (Reproducing Kernel Hilbert Space) and calculating the inner product of label histograms built in k iterations.
+It loses information beyond its local iterative labels and establishes an expressivity reference point for standard message-passing architectures. Despite its efficiency, it cannot capture higher-order substructures (e.g., cycles, cliques) beyond the local neighborhood trees defined by iterative local multiset hashing. 
+
+The Graph Isomorphism Network (GIN) \cite{xu2019gin}, designed to be as discriminative and powerful as the Weisfeiler-Lehman graph isomorphism tests, adopts an approach equivalent to 1-WL. 
+It applies neighborhood aggregation through a learned message-passing architecture, in which a node embedding encodes the structure of its k-hop neighbors.  A sufficient number of iterations is required to discriminate graphs; that's because, to have the same power as 1-WL, the neighborhood aggregation and graph-level readout functions must be strictly injective. Node representations are as refined as the number of iterations, even though features from early iterations may generalize better in some cases.
+% bring this back in the conclusion as i didnt explored enough to know whether the architecture is big enough
+
+% First, we characterize the maximum representational capacity of a general class of GNN-based
+% models. Ideally, a maximally powerful GNN could distinguish different graph structures by mapping
+% them to different representations in the embedding space. This ability to map any two different graphs
+% to different embeddings, however, implies solving the challenging graph isomorphism problem. That
+% is, we want isomorphic graphs to be mapped to the same representation and non-isomorphic ones to
+% different representations. In our analysis, we characterize the representational capacity of GNNs via
+% a slightly weaker criterion: a powerful heuristic called Weisfeiler-Lehman (WL) graph isomorphism
+% test, that is known to work well in general, with a few exceptions, e.g., regular graphs
+
 NetLSD  computes a heat-trace signature from the graph Laplacian's eigenvalues, yielding a permutation-invariant embedding that requires no training and is comparable across graphs of different size \cite{tsitsulin2018netlsd}.
- global/topological rather than learned from labelled examples.
+ global/topological rather than learned from labeled examples.
 GraphFVD applies this same principle at the level of code representation rather than graph architecture: it extracts property-graph-based slices (PrVCs) from the CPG rather than embedding whole-function graphs, and learns their embeddings with a Hierarchical Attention Graph Convolutional Network, reporting that this slice-level representation outperforms both function-level and sequence-level slice baselines for vulnerability detection \cite{shao2025graphfvd}. This is consistent with our own choice to embed a bounded diff-centered slice rather than the full function CPG, though GraphFVD's embeddings feed a supervised classifier for single-function detection rather than a retrieval index over a historical fix corpus — the two tasks share a representation but not an objective.
 
 CodeBERT  provides a pretrained, transformer-based embedding of code capturing lexical and semantic regularities — variable naming, API usage, idiomatic patterns, complementing the information that is opaque to a purely topological representation \cite{feng2020codebert} 
 
-
-Synthesis: state the retrieval tension your thesis investigates: WL and NetLSD characterize structure without training; GIN learns structural patterns; CodeBERT supplies code semantics; combinations may be useful because vulnerabilities have both structural and lexical aspects. Do not report results here.
-
-Together, these approaches expose a central retrieval trade-off: topology-only methods provide invariant structural comparisons, learned graph models can adapt to vulnerability-relevant patterns, and code-language models retain semantic cues omitted by graph structure; consequently, no single representation is expected to capture every relevant similarity relation.
+WL and NetLSD characterize structure without training; GIN learns structural patterns; CodeBERT supplies code semantics; combinations may be useful because vulnerabilities have both structural and lexical aspects. 
+In one hand topology-only methods provide invariant structural comparisons, in the other learned graph models can adapt to vulnerability-relevant patterns, and code-language models retain semantic cues omitted by graph structure. Consequently, no single representation is expected to capture every relevant similarity relation.
 
 
 \subsection*{Retrieval-Augmented Secure Code Generation}
