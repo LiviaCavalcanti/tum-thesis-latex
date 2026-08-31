@@ -27,104 +27,101 @@ These works exemplify that structural similarity for security-relevant graphs is
 % (not by computing GED directly at query time, )
 
 
-
-% Example of graph definition from NetLSD
-% This work contributes to the exploration of this gap by proposing a Retrieval-Augmented Generation (RAG) system that uses graph-based representations of code vulnerabilities to generate embeddings.
-% An undirected graph is a pairG = (V, E), whereV = (v1, . . . ,vn),n =
-% |V | is the set of vertices and E ⊆ (V ×V ) the set of edges
-
-
-
-
 \section{Structural and Semantic Code Embedding Techniques}
 
-Traditional graph classification uses non/parametric graph kernels that can run on standard hardware used by developers.
-The field has well-established approaches that can run locally on a developer's workstation without consuming too many resources.  One of its fields is Graph Isomorphism, which asks whether two graphs are topologically identical. 
-While no polynomial-time algorithm is known for it yet \cite{garey1979computers, babai2016graph}, there are practical computational bounds that apply to the 1-dimensional Weisfeiler-Lehman (WL) color refinement test \cite{weisfeiler1968reduction}.
+Traditional graph classification frequently uses non-parametric graph kernels, offering computationally lightweight approaches that can run locally without requiring substantial overhead. 
+One of its fields is structural comparison, whose core is the Graph Isomorphism problem, which determines whether the topologies of two graphs are identical. 
+While no general polynomial-time algorithm for Graph Isomorphism is currently known \cite{garey1979computers, babai2016graph}, practical upper bounds on the computational complexity of the 1-dimensional Weisfeiler-Lehman (WL) color refinement test have been established \cite{weisfeiler1968reduction}.
 
-The WL test of graph isomorphism is an iterative process of color refinement to characterize graph topology. First, at each step, a node aggregates its current labels with the sorted set of labels of its immediate neighborhoods; then it hashes the aggregated labels into unique new labels. This process repeats until the label distribution between the two compared graphs diverges or until a limit number k of iterations is reached; this latter only allows the isomorphism conclusion for the evaluated subgraph. 
+The $1$-WL test characterizes graph topology through an iterative color-refinement process. 
+At each iteration, a node aggregates its current label with the sorted multiset of its immediate neighbors' labels and hashes the resulting tuple into a new unique label. 
+This process repeats until the label distribution between two compared graphs diverges or a fixed cutoff of $k$ iterations is reached; this latter only allows the isomorphism conclusion for the evaluated subgraph. 
 
-The WL Fast Subtree Kernel \cite{shervashidze2011wl} applies this mechanism by mapping the graphs in a Hilbert Space (Reproducing Kernel Hilbert Space) and calculating the inner product of label histograms built in k iterations.
-It loses information beyond its local iterative labels and establishes an expressivity reference point for standard message-passing architectures. Despite its efficiency, it cannot capture higher-order substructures (e.g., cycles, cliques) beyond the local neighborhood trees defined by iterative local multiset hashing. 
+The WL Fast Subtree Kernel \cite{shervashidze2011wl} applies this mechanism to a Reproducing Kernel Hilbert Space(RKHS), calculating the inner product of label histograms accumulated over $k$ iterations.
+This approach establishes an expressivity benchmark for graph representations. However, despite its computational efficiency, $1$-WL is limited to local neighborhood tree structures defined by iterative local multiset hashing, preventing it from capturing higher-order global substructures such as cycles and cliques. 
 
-The Graph Isomorphism Network (GIN) \cite{xu2019gin}, designed to be as discriminative and powerful as the Weisfeiler-Lehman graph isomorphism tests, adopts an approach equivalent to 1-WL. 
-It applies neighborhood aggregation through a learned message-passing architecture, in which a node embedding encodes the structure of its k-hop neighbors.  A sufficient number of iterations is required to discriminate graphs; that's because, to have the same power as 1-WL, the neighborhood aggregation and graph-level readout functions must be strictly injective. Node representations are as refined as the number of iterations, even though features from early iterations may generalize better in some cases.
-% bring this back in the conclusion as i didnt explored enough to know whether the architecture is big enough
+The Graph Isomorphism Network (GIN) \cite{xu2019gin}, which bridges graph kernels and deep learning and is designed to maximize the discriminative power of Message-Passing Neural Networks, proved to be as powerful as the Weisfeiler-Lehman graph isomorphism tests. 
+To achieve this performance, GIN uses learning neighborhood aggregation via a parameterized function, in which each node embedding iteratively encodes the structure of its k-hop neighborhood. 
+To have the same power as 1-WL, GIN requires that both the neighborhood aggregation and graph-level readout functions must be strictly injective. 
+A sufficient number of iterations is required to discriminate graphs; 
+While deeper iterations are required for larger structural representations, features from early iterations may generalize better depending on the task.
+% TODO: put the investigation of the number of iteration as future work
 
-% First, we characterize the maximum representational capacity of a general class of GNN-based
-% models. Ideally, a maximally powerful GNN could distinguish different graph structures by mapping
-% them to different representations in the embedding space. This ability to map any two different graphs
-% to different embeddings, however, implies solving the challenging graph isomorphism problem. That
-% is, we want isomorphic graphs to be mapped to the same representation and non-isomorphic ones to
-% different representations. In our analysis, we characterize the representational capacity of GNNs via
-% a slightly weaker criterion: a powerful heuristic called Weisfeiler-Lehman (WL) graph isomorphism
-% test, that is known to work well in general, with a few exceptions, e.g., regular graphs
+GraphFVD applies the graph embedding principles to the software security context.
+It learns graph embeddings from the Code Property Graph code representation
+Rather than embedding whole-function graphs, GraphFVD extracts property-graph slices (PrVCs) from the CPG and embeds them using a Hierarchical Attention Graph Convolutional Network.
+Their experiments report that this slice-level representation outperforms both function-level and sequence-level slice baselines for vulnerability detection \cite{shao2025graphfvd}. 
+This aligns with our design choice to embed a bounded slice rather than the full function CPG.
+However, whereas GraphFVD's embeddings feed a supervised classifier for single-function detection, our approach indexes a historical corpus for a retrieval-augmented analysis.
+Therefore, the two tasks share a representation, but their task objective diverge.
 
-NetLSD  computes a heat-trace signature from the graph Laplacian's eigenvalues, yielding a permutation-invariant embedding that requires no training and is comparable across graphs of different size \cite{tsitsulin2018netlsd}.
- global/topological rather than learned from labeled examples.
-GraphFVD applies this same principle at the level of code representation rather than graph architecture: it extracts property-graph-based slices (PrVCs) from the CPG rather than embedding whole-function graphs, and learns their embeddings with a Hierarchical Attention Graph Convolutional Network, reporting that this slice-level representation outperforms both function-level and sequence-level slice baselines for vulnerability detection \cite{shao2025graphfvd}. This is consistent with our own choice to embed a bounded diff-centered slice rather than the full function CPG, though GraphFVD's embeddings feed a supervised classifier for single-function detection rather than a retrieval index over a historical fix corpus — the two tasks share a representation but not an objective.
+Complementing local message-passing architectures, the Network Laplacian Spectral Descriptor (NetLSD)\cite{netlsd} provides a global, multi-scale topological representation. 
+NetLSD computes a heat-trace signature from the graph Laplacian's eigenvalues, yielding a permutation- and size-invariant embedding that requires no training and is comparable across graphs of different sizes \cite{netlsd}. It captures macro-level structural dynamics without requiring supervised training, making it computationally effective for comparing heterogeneous graph structures.
 
-CodeBERT  provides a pretrained, transformer-based embedding of code capturing lexical and semantic regularities — variable naming, API usage, idiomatic patterns, complementing the information that is opaque to a purely topological representation \cite{feng2020codebert} 
+In contrast to purely structured embeddings, transformer-based models capture lexical and semantic regularities in source code. CodeBERT \cite{feng2020codebert} provides a pre-trained embedding that models token sequences, capturing variable naming conventions, API usage patterns, and control structure semantics—information that remains opaque to purely topological representations.
 
-WL and NetLSD characterize structure without training; GIN learns structural patterns; CodeBERT supplies code semantics; combinations may be useful because vulnerabilities have both structural and lexical aspects. 
-In one hand topology-only methods provide invariant structural comparisons, in the other learned graph models can adapt to vulnerability-relevant patterns, and code-language models retain semantic cues omitted by graph structure. Consequently, no single representation is expected to capture every relevant similarity relation.
-
+These embedding strategies of encoding code prioritize different aspects. WL and NetLSD are non-parametric structural descriptors that provide deterministic, invariant topological comparisons without training. GIN, just like GraphFVD, learns structural aggregation for specific vulnerability patterns. CodeBERT captures token-level semantics while lacking structural dependencies. 
+Because no single representation captures both fine-grained topological flows and token-level semantics, combining structural graph embeddings with lexical representations offers a promising direction for vulnerability analysis and code retrieval.
 
 \subsection*{Retrieval-Augmented Secure Code Generation}
 
-A parallel line of work applies retrieval augmentation not to
-patching existing vulnerable code, but to generating new code
-securely in the first place. RESCUE addresses the observation that
-plain retrieval-augmented generation struggles with the noise of raw
-security documents and that existing retrieval methods overlook the
-security semantics implicit in a task description, by constructing a
-hybrid knowledge base that combines two complementary sources: an
-LLM-assisted cluster-then-summarize pipeline distills raw
-vulnerability-fix data into high-level security guidelines, while
-static program slicing extracts concise, security-focused code
-examples by isolating the statements directly relevant to a fix and
-filtering out unrelated logic \cite{shi2026rescue}. At query time,
-RESCUE performs a hierarchical, multi-faceted retrieval: it first
-analyzes the task description along three facets — API usage
-patterns, vulnerability cause, and code similarity — to identify the
-relevant vulnerability type at a coarse (CWE) level, then narrows to
-fine-grained secure code examples within that type, fusing the
-results into the context used to guide generation. RESCUE is closest
-in architectural spirit to our own pipeline: both use program slicing
-to suppress irrelevant code before embedding or retrieval, and both
-structure retrieval hierarchically rather than as a single flat
-nearest-neighbor lookup. The two systems target different points in
-the vulnerability lifecycle, however: RESCUE retrieves security
-knowledge to steer an LLM toward writing new code that avoids a known
-vulnerability class, whereas our pipeline retrieves structurally
-analogous historical fixes to steer an LLM toward correctly repairing
-a specific, already-identified vulnerable function. RESCUE's use of
-program slicing to concentrate an embedding on security-relevant
-statements is also the third independent precedent for this design
-choice in this review, alongside GraphFVD's property-graph-based
-vulnerability candidates and LLMxCPG's CPG-based slicing for scale
-reduction — reinforcing that isolating the security-relevant subgraph,
-rather than embedding whole-function code, is a broadly convergent
-design decision across recent work in this space.
+RESCUE applies retrieval-augmented generation to secure code generation. It uses a hybrid knowledge base that combines vulnerability-fix data distilled into security guidelines with static program slicing to extract security-focused code examples. At retrieval time, RESCUE performs a hierarchical, multi-faceted lookup: first, it identifies the vulnerability type (CWE level) from the task description, then it retrieves fine-grained secure code examples within that type. 
+RESCUE targets code generation for known vulnerability classes, while our pipeline targets the repair of already identified vulnerable functions. Both systems share key architectural insights by using program slicing to isolate security-relevant statements before embedding and employing hierarchical retrieval rather than flat nearest-neighbor lookup. Program slicing as a mechanism to concentrate security focus emerges as a convergent design pattern across recent work — alongside GraphFVD's property-graph-based vulnerability candidates and LLMxCPG's CPG-based slicing — reinforcing that isolating security-relevant subgraphs, rather than embedding whole functions, is a broadly validated approach for vulnerability-related tasks.
 
 \section{Agentic Patching Frameworks}
-% content: AutoPatch \cite{seo2026autopatch, Seo2025AutoPatchMF}
-% content: RepairAgent \cite{bouzenia2025repairagent}
-% content: ReAct \cite{yao2023react}
-% content: Self-refine \cite{madaan2023selfrefine}
-% content: MCP \cite{mcp2024}
-% content: agent-harness citation \cite{langchain_agent_harness}
-% content: CodeBERT as background embedding approach
-LLM-based program repair has moved from single-turn, few-shot patch generation toward agentic frameworks that allow the model to iteratively gather context and revise its own output.
 
-- AutoPatch (Seo et al.) — explain *claims to do methodologically* (LLM-augmented CVE variant generation for patch benchmarking); the Dataset chapter covers what you actually found when you used it (surface-level augmentations invisible at CPG level).
- probe whether patch-generation systems generalize
-beyond memorized fixes \cite{seo2026autopatch, Seo2025AutoPatchMF};
-this thesis uses AutoPatch as one of its two evaluation datasets (see
-Chapter~\ref{ch:dataset}), and this subsection accordingly focuses on
-its methodology rather than its results. 
-- RepairAgent — closest prior agentic-patching system; this is probably your most important related-work comparison point, worth more than one sentence. 
-What tools does it give the agent, how does it decide when to stop, how does it evaluate patches.
+LLM-based program repair has moved from single-turn toward agentic frameworks that allow the model to iteratively gather context and revise its own output. (cite)
+
+AutoPatch constructs a benchmark of LLM-augmented CVE variants for vulnerability detection and patching, leveraging RAG-DB-assisted prompting \cite{seo2026autopatch, Seo2025AutoPatchMF}.
+75 high-severity, real-world CVEs
+using five popular LLMs to evaluate our system. Among
+them, GPT-4o shows the best performance, achieving an F1-
+score of 90.3% in vulnerability verification and 94.1% in
+patching, particularly excelling in concurrency-related issues
+and validation and logic handling issues. Compared to traditional fine-tuning approaches, AutoPatch is significantly
+more efficient. Compared to traditional fine-tuning approaches,
+AutoPatch demonstrates significantly greater efficiency.
+Specifically, incremental fine-tuning with 10 epochs incurs
+approximately a 1,209% higher cost, while non-incremental
+fine-tuning at 5-CVE intervals results in a 5,230% increase
+After the Code Patcher
+agent generates a patched version of the code, vulnerabilities
+may remain. To ensure the reliability and security of the final
+output, the system employs a patch-verification feedback loop,
+executed for a developer-specified number of iterations. In this
+loop, the code generated by the Code Patcher agent is returned
+to the Vulnerability Verifier agent, where it performs the same
+verification process using the previously constructed one-shot
+example. This cycle continues until either no vulnerability is
+detected or the maximum number of iterations is reached
+ These results suggest that our
+context-aware verification and patching mechanism is particularly effective at surfacing semantic inconsistencies, especially
+in validation and logic-related vulnerabilities
+This performance gap suggests that the approaches lacking
+in-context examples struggle to capture the complex semantic
+context present in real-world vulnerabilities.
+ average
+loop counts close to one across all models. Although a small
+number of difficult cases require more iterations, as indicated
+by the maximum loop values such as 8 for DeepSeek-R1
+and 10 for o3-mini, these cases are uncommon
+% the Dataset chapter covers what you actually found when you used it (surface-level augmentations invisible at CPG level).
+This thesis uses AutoPatch as one of its two evaluation datasets (see Chapter~\ref{chapter:dataset}). 
+ 
+RepairAgent proposes bug fixes using an autonomous agent powered by Large Language Models. The agent plans and executes actions to fix bugs by invoking suitable tools, which include: gathering information about
+the bug, gathering repair ingredients, and validating fixes.
+They evaluate their approach against Defects4J which contains 835 bugs .
+RepairAgent imposes an average cost
+of 270,000 tokens per bug, which, under the current
+pricing of OpenAI’s GPT-3.5 model, translates to 14
+cents per bug. An additional evaluation on a set of recent
+bugs [25] shows that RepairAgent is able to achieve
+similar performance on single-line bugs while being a
+bit worse on multi-line and multi-file bugs, mainly, due
+to a higher complexity of bugs in GitBug-Java dataset.
+We believe from these results that RepairAgent is not
+much affected by potential data leakage of Defects4J.
+how does it decide when to stop, how does it evaluate patches.
 tool-augmented agentic loop, giving the
 LLM explicit actions for inspecting the codebase, retrieving relevant
 context, and validating candidate patches, and is the closest prior
@@ -135,13 +132,10 @@ system to our own agentic generation layer in terms of task framing \cite{bouzen
  Self-Refine adds an iterative self-critique loop on top of this pattern, having the model evaluate and revise its own output across multiple passes without external supervision \cite{madaan2023selfrefine}.
 
  QLCoder	agentic framework that automatically synthesizes CodeQL queries directly from CVE metadata. It bridges the gap between natural language vulnerability reports and actionable detection tools by embedding an LLM in an iterative synthesis loop that uses execution feedback to verify query correctness.	"RQ1: For how many real-world CVEs can QLCoder successfully generate syntactically valid and semantically precise queries?
-RQ2: How useful is each component of the QLCoder framework (LSP server, documentation access, AST snippets) to the synthesis process?
-RQ3: How does the choice of different base agent frameworks (e.g., Claude Code vs. Gemini CLI) affect the overall effectiveness of QLCoder?"	"Structured Synthesis Loop: The agent proposes a query, a validator executes it on vulnerable and patched versions of a repository, and feedback is provided to refine the next proposal.
-Model Context Protocol (MCP) Interface: Constrains reasoning using a Language Server Protocol (LSP) for syntax guidance and a vector database for semantic retrieval of existing queries and documentation.
-Fix Discrimination: Ensures the synthesized query is precise enough to flag the vulnerable version but remain silent on the patched version."	CWE-Bench-Java: 176 CVEs across 111 Java projects; 42 different CWE categories, such as Path Traversal (48), Cross-Site Scripting (36), and Code Injection (20); 65 CVEs reported in 2025 after Claude Sonnet 4 cutoff
+ Structured Synthesis Loop: The agent proposes a query, a validator executes it on vulnerable and patched versions of a repository, and feedback is provided to refine the next proposal.
+MFix Discrimination: Ensures the synthesized query is precise enough to flag the vulnerable version but remain silent on the patched version."	CWE-Bench-Java: 176 CVEs across 111 Java projects; 42 different CWE categories, such as Path Traversal (48), Cross-Site Scripting (36), and Code Injection (20); 65 CVEs reported in 2025 after Claude Sonnet 4 cutoff
 
-MAAP	a self-evolving, role-specialized multi-agent framework designed for end-to-end automated vulnerability repair (AVR) in Python codebases. It addresses the limitations of single-agent approaches—such as context overload and myopic decision-making—by decomposing vulnerable repositories into fine-grained subtasks	"RQ1 (Patch Effectiveness): How effective is MAAP at fixing real-world vulnerabilities compared to other methods, such as single-agent variants or plain multi-agent systems?
-RQ2 (Routing Efficiency): How well does the learned router trade off correctness, latency, and cost during the repair process?
-RQ3 (Ablation Study): How does each architectural module (router, supervisor, knowledge base, agent factory) contribute to the overall patch accuracy?"	"Contextual-Bandit Router: Learns to assign subtasks to the most appropriate specialized agents to optimize for success, cost, and latency.
+MAAP	a self-evolving, role-specialized multi-agent framework designed for end-to-end automated vulnerability repair (AVR) in Python codebases. It addresses the limitations of single-agent approaches—such as context overload and myopic decision-making—by decomposing vulnerable repositories into fine-grained subtasks	
+Contextual-Bandit Router: Learns to assign subtasks to the most appropriate specialized agents to optimize for success, cost, and latency.
 Retrieval-Augmented Knowledge Base: Stores successful and failed repair trajectories (AST diffs and rationales) to guide agents and prune ""dead-end"" explorations.
 Agent Factory: Dynamically spawns new specialized agents when the system encounters novel vulnerability patterns or low success rates"	VAITP selection: 120 real-world Python CVEs(Input validation and sanitization, memory corruption, authentication/session management). AI-generated and human-verified code snippets of vulnerable and patched versions
