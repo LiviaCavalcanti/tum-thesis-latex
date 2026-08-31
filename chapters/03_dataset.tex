@@ -5,6 +5,19 @@ The AutoPatch dataset contains high-severity CVEs disclosed in 2024 and 2025 and
 For each CVE, the entry pairs were augmented using 5 LLMs:  Code Llama (13b-instruct), DeepSeek Coder (v2-lite), DeepSeek-R1 (32b), GPT-4o, and OpenAI o3-mini.
 The augmentation strategies used were: "inserting unreachable code fragments, adding random code in comments, varying whitespace and formatting, defining a useless function, and introducing extraneous newline characters".
 
+Because both datasets are referenced with several overlapping counts throughout this chapter, we fix the terminology upfront:
+\begin{itemize}
+    \item An \textbf{original CVE} is one of the 75 hand-curated vulnerability disclosures in AutoPatch (or, for CVEfixes, one entry of the National Vulnerability Database record set described in Section~\ref{sec:cvefixes}).
+    \item An \textbf{original vulnerable--patched pair} is the ground-truth (\texttt{original\_code.txt}, \texttt{original\_code\_fixed.c}) function pair recorded for that CVE — one per original CVE.
+    \item An \textbf{LLM reimplementation} is a patched-function variant independently regenerated for a given CVE by one of the 5 LLMs above (\texttt{re\_implemented\_<model>.json}); each CVE has up to 5 such variants.
+    \item A \textbf{non-semantic augmentation} is a separate, additional variant per CVE (\texttt{patch\_augmented.json}) produced by applying one of the five superficial transformations listed above to existing code \emph{without} changing its semantics; it is used to test retrieval/patching robustness to surface-level noise rather than to add new ground-truth pairs.
+    \item An \textbf{index record} is a function pair (original, reimplemented, or CVEfixes method pair) stored in the FAISS/HNSW retrieval knowledge base.
+    \item A \textbf{retrieval query} is a held-out function pair whose vulnerability subgraph $G_{\text{vuln}}$ (or $G_{\text{before}}$, for LLM-generated variants) is embedded and searched against the index.
+    \item A \textbf{patch-generation attempt} is one LLM call asking the patching agent to fix a query's vulnerable function; a fraction of attempts end in a parse error (the agent's output cannot be extracted into a compilable patch) rather than a scored patch, which reduces the number of \emph{evaluated} patches below the number of attempts (see Chapter~\ref{chapter:results}).
+\end{itemize}
+
+For AutoPatch, this yields $75$ original pairs and $75 \times 5 = 375$ LLM reimplementations, i.e.\ $450$ original-plus-reimplemented pairs in total, plus one non-semantic augmented variant per CVE (up to $75$ additional entries) used only for robustness analysis (Section~\ref{sec:variant-analysis}).
+
 % \begin{table}[H]
 % \centering
 % \caption{Distribution of CWE Types in the AutoPatch Dataset ($N = 75$)}
@@ -68,9 +81,9 @@ The augmentation strategies used were: "inserting unreachable code fragments, ad
 \end{table}
 
 
-Table \ref{tab:autopatch_cwe_distribution} shows the CWE distribution in the AutoPatch dataset across the 75 entries. It is composed dominantly by validation/logic issues (CWE-20, CWE-252) and concurrency issues (CWE-362); the remaining dataset has memory safety CWEs (CWE-416, CWE-476, CWE-122, CWE-125, CWE-787).
+Table \ref{tab:autopatch_cwe_distribution} shows the CWE distribution in the AutoPatch dataset across the 75 entries. It is dominated by validation/logic issues (CWE-20, CWE-252) and concurrency issues (CWE-362); the remaining dataset has memory safety CWEs (CWE-416, CWE-476, CWE-122, CWE-125, CWE-787).
 
-\section{CVEfixes}
+\section{CVEfixes}\label{sec:cvefixes}
 
 CVEfixes\cite{moonen2024cvefixes} is a vulnerability dataset for data-driven security research automatically collected and curated from Common Vulnerabilities and Exposures (CVE) records from the public U.S. National Vulnerability Database (NVD). 
 The dataset includes detailed information about the Pull Request CVE resolution, such as the commit-, file-, and method level, as well as the repository- and CVE level.
@@ -78,15 +91,15 @@ The general statistics are shown below:
 
 \begin{itemize}
     \item\textbf{CVEs} 11,873 vulnerabilities
-    \item\textbf{commits}] 12,107 fix commits
+    \item\textbf{commits} 12,107 fix commits
     \item\textbf{files} 51,342 changed files
-    \item\textbf{methods} 277,948 method changes
+    \item\textbf{method-change rows} 277,948 rows in the \texttt{method\_change} table
     \item\textbf{CWE types} 272 distinct types
     \item\textbf{projects} 4,249 open-source projects
 \end{itemize}
 
 % Origin, Collection method, Composition used
-This project uses version v1.0.8, which covers all published CVEs up to 23 July 2024. According to the authors, the projects considered in this dataset include all open-source projects that were reported in CVE records in the NVD in this time frame and had publicly available git repositories. The dataset is stored in a relational database, containing 272 different CWE types across 12107 vulnerability-fixing commits from 4249 open-source projects. The dataset includes the source code before and after changing 51342 files and 138974 functions.
+This project uses version v1.0.8, which covers all published CVEs up to 23 July 2024. According to the authors, the projects considered in this dataset include all open-source projects that were reported in CVE records in the NVD in this time frame and had publicly available git repositories. The dataset is stored in a relational database, containing 272 different CWE types across 12107 vulnerability-fixing commits from 4249 open-source projects. The dataset includes the source code before and after changing 51342 files. Each function change is stored as two rows in \texttt{method\_change} (one \texttt{before\_change} snapshot, one after), so the 277,948 raw rows correspond to 138,974 distinct before/after function-pair changes.
 
 \begin{table}[htbp]
 \centering
@@ -114,8 +127,8 @@ This project uses version v1.0.8, which covers all published CVEs up to 23 July 
 
 \subsection{Fix Description Encoding}
  
-The AutoPatch is structured into folders where each entry is stored in a folder containing a description JSON (\texttt{db\_entry.json} file=, which includes a field describing the remediation strategy at a symbolic, variable-agnostic level (\texttt{fix\_list}).
-The fix description is using symbolic names with variable and function
+The AutoPatch dataset is organized into directories where each entry is stored in a folder containing a description JSON (\texttt{db\_entry.json} file=, which includes a field describing the remediation strategy at a symbolic, variable-agnostic level (\texttt{fix\_list}).
+The fix description uses symbolic names with variable and function
 mappings (e.g., \textit{''add a NULL check before dereferencing the
 pointer''}) lets a fixed pattern learned from one example
 be transferred to a structurally similar target function. 
@@ -159,7 +172,31 @@ CWE-401 & Memory Leak              & 77  \\
  
 Following the goal of having comparable results, a stratified sample of 450 entries was extracted from this subset of CWE, the same size as the AutoPatch augmented dataset size. To ensure sufficient representation of CVEs in the index and query subset, only 6 CWEs were considered to generate the subset: CWE-476, CWE-416, CWE-20, CWE-787, CWE-362, and CWE-190. This list was built using as a reference the paper
 % Shao, M., Ding, Y., Cao, J., \& Li, Y. (2025). GraphFVD: Property graph-based fine-grained vulnerability detection. Computers & Security, 151, 104350. https://doi.org/10.1016/j.cose.2025.104350 
-that also uses CPG, but in their case to create a vulnerability classifier 
+that also uses CPG, but in their case to create a vulnerability classifier.
+
+The 450-entry corpus is not a direct subsample of the 1,618-entry CWE-overlap filter above; it is built by a separate, reproducible 6-step pipeline that queries the CVEfixes database directly for the 6 target CWEs and applies successive validity filters. Table~\ref{tab:cvefixes_pipeline_steps} reports the row count remaining after each step.
+
+\begin{table}[htbp]
+\centering
+\caption{CVEfixes Final Index/Query Corpus Construction Pipeline}
+\label{tab:cvefixes_pipeline_steps}
+\small
+\begin{tabular}{llrrr}
+\toprule
+\textbf{Step} & \textbf{Purpose} & \textbf{Rows} & \textbf{Removed} & \textbf{Unique CVEs} \\
+\midrule
+0. Raw entries        & Direct DB query, 6 target CWEs, C/C++ methods     & 5,063 & --    & 1,011 \\
+1. CWE filter          & Confirms single-CWE attribution (no-op here)      & 5,063 & 0     & 1,011 \\
+2. Exact deduplication & Removes identical (CVE, function) rows            & 2,972 & 2,091 & 1,011 \\
+3. Cross-CVE contamination removal & Function-pair matching: drops functions shared across CVEs & 2,374 & 598 & 855 \\
+4. Min-CVE-count filter & Keeps CWEs/CVEs with $\geq$5 occurrences          & 1,278 & 1,096 & 74 \\
+5. Joern parse success & Graph-availability check: drops entries without a valid CPG & 726 & 552 & 35 \\
+6. CWE-balanced sampling & Stratified sampling to 75 entries/CWE (final corpus) & 450 & 828 & 27 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Step 5 (\emph{Joern parse success}) is the CVEfixes analogue of the ``patch-generation attempt'' unit defined above: a method pair is only usable once Joern successfully parses both its before- and after-code into a non-empty CPG; parse failures (malformed snippets, missing includes, truncated methods) are excluded rather than imputed. The resulting 450 records are then split 80/20 per CWE into 360 index and 90 query entries, described next. 
 
  
 \begin{table}[htbp]
