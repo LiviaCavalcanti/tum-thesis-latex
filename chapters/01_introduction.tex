@@ -1,35 +1,37 @@
-% !TeX root = ../main.tex
-% Add the above to each chapter to make compiling the PDF easier in some editors.
-
 \chapter{Introduction}\label{chapter:introduction}
 
-Vulnerabilities are a common issue across most code projects. Once a vulnerability is found and patched, it is registered in a vulnerability catalog, which allows the knowledge to be canonized. For a given entry code change that addresses the vulnerability the catalog stores, for example, the fix composed by the removed code and/or the added code, and the code around it is where the vulnerability resided, and references for the original code change and repository.
-Once a similar vulnerable codebase is identified, reapplying the known fix consists of recognizing that context elsewhere and porting an analogous change.
+\section{Motivation}
 
-The identification process, however, requires continuous cross-verification of the catalog with the codebase one is responsible for. This toil usually requires security expertise and competes with feature work for developers' time.
-The blatius ratio of a vulnerability is hard to measure; nevertheless, the consequences are well known. Once a vulnerability is identified, it can be easily exploited by using a public proof of concept, while the project's reputation suffers if it is seen as chronically insecure. 
+Software vulnerabilities are not undiscovered mysteries waiting to be found from scratch in every codebase; overwhelmingly, they are variations of flaws that have already been identified, disclosed, and fixed somewhere else.
+Once a vulnerability is found and patched in one project, the same bug class routinely resurfaces in other projects that share a library, a coding pattern, or simply a common ancestor in the open-source dependency graph.
+Public vulnerability catalogs exist precisely to prevent this knowledge from being lost: for a given entry, the removed and/or added code marks \emph{the fix}, and the surrounding, unchanged code marks \emph{the vulnerable context} in which that fix had to be applied.
+Reapplying a known fix to a new, similarly vulnerable codebase is, in principle, a matter of recognizing that context elsewhere and porting an analogous change.
+
+In practice, this recognition step does not scale.
+Continuously cross-referencing a project's codebase against a growing catalog of disclosed vulnerabilities is tedious, requires specialized security expertise, and competes with feature work for developers' time.
+This is especially burdensome for volunteer-driven open-source projects, where the pace of remediation lags the pace of disclosure.
+The cost of this lag is asymmetric: every day a known vulnerability remains unpatched in a downstream project is a day it can be trivially exploited using a public proof of concept, while the project's adoption and reputation suffer if it is seen as chronically insecure.
 %TODO: find a citation quantifying the average time-to-patch for known CVEs in open-source projects (e.g. from an OSS security report) to support this claim with data.
 
 \section{Research Background}
-To meet compliance requirements, organizations must adhere to International Standards and regulations such as ISO/IEC 27001 ~\cite{iso27001}. 
-This standard establishes best practices for data protection, cyber-resilience, and operational excellence. 
-To accomplish that and improve development robustness, enterprises must anticipate and adapt to vulnerabilities and potential attacks. 
-For software companies, this goal demands evolving software development life cycles to rapidly identify, generate, and deploy risk mitigation for vulnerabilities. 
-One possible approach is to integrate automated systems that proactively generate patches for buggy programs. 
 
-With the advent and widespread adoption of Large Language Models (LLMs), a new venue for automated remediation emerged ~\cite{Xia_2024}. 
-However, the current LLM approaches remain insufficient for security patching due to two primary failure reasons:
+To meet compliance requirements, organizations must adhere to international standards and regulations such as ISO/IEC~27001~\cite{iso27001}.
+This standard establishes best practices for data protection, cyber-resilience, and operational excellence.
+To satisfy it and improve development robustness, enterprises must anticipate and adapt to vulnerabilities and potential attacks.
+For software companies, this demands evolving software development life cycles to rapidly identify, generate, and deploy risk mitigations.
+One promising approach is to integrate automated systems that proactively generate patches for vulnerable programs.
+
+With the advent and widespread adoption of Large Language Models (LLMs), a new avenue for automated remediation has emerged.
+%TODO: restore/verify the Xia_2024 survey citation on LLM-based automated program repair; add its BibTeX entry to references.bib once confirmed.
+However, current LLM-based approaches remain insufficient for security patching, for two primary reasons:
 
 \begin{enumerate}
-
-    \item \textbf{Semantic Misunderstanding:} 84–94\% of AI patches rely on localized fixes that fail to address root causes, making them significantly more fragile and easier to bypass than human-authored patches \cite{mahmud2025systematic}.
-
-    \item \textbf{Vulnerability Identification Failures:} Models may misidentify vulnerability contexts, with some retrieval tasks showing failure rates as high as 91.6\% \cite{McClanahan2024Meets}. 
-    This leads to "semantic hallucinations", where a model might apply mitigation steps for the wrong operating system \cite{McClanahan2024Meets} or package version \cite{zemicheal2024llm}, creating a false sense of security while leaving the actual system exposed.
-
+    \item \textbf{Semantic misunderstanding.} 84--94\% of AI-generated patches rely on localized fixes that fail to address root causes, making them significantly more fragile and easier to bypass than human-authored patches~\cite{mahmud2025systematic}.
+    \item \textbf{Vulnerability identification failures.} Models may misidentify vulnerability contexts, with some retrieval tasks showing failure rates as high as 91.6\%~\cite{McClanahan2024Meets}.
+    This leads to \emph{semantic hallucinations}, where a model applies mitigation steps for the wrong operating system~\cite{McClanahan2024Meets} or package version~\cite{zemicheal2024llm}, creating a false sense of security while leaving the actual system exposed.
 \end{enumerate}
 
-\subsection{Problem Statement}
+\section{Problem Statement}
 
 Both failure modes above share a common root cause: the model is not given the right piece of context at the right level of abstraction.
 Providing lengthy raw source code compounds this problem, since vulnerability-relevant logic is diluted by implementation details and boilerplate, degrading the quality of security analysis.
@@ -37,71 +39,18 @@ Providing lengthy raw source code compounds this problem, since vulnerability-re
 Under this effect, which prior work terms \emph{Analysis Focus Drift}, the model ends up performing a generic code-quality review rather than a targeted vulnerability analysis.
 There is, therefore, an opportunity to develop methodologies that concentrate security-relevant information while filtering out implementation noise.
 
-Both of these failures share the fact that the model is not given the right piece of context at the right level of abstraction, which is aggravated by providing lengthy raw source code to the LLM. 
-Since vulnerability-relevant logic is diluted by implementation details and boilerplate code, thereby degrading the quality of security analysis ~\cite{contextenhancedYang}.
-Empirical results from the same work suggest that this code noise induces what the authors term Analysis Focus Drift, wherein the model performs a code quality review rather than a vulnerability analysis.
-There is, therefore, an opportunity to develop methodologies that enrich security-relevant information while filtering out implementation noise. 
-
-Retrieval-augmented approaches can supply the models with structurally similar, previously fixed vulnerabilities. By doing so, it provides grounded evidence for the task rather than requiring the model to rely on its generic pretraining knowledge through reasoning.
+Retrieval-augmented approaches are a natural fit for this gap: rather than asking an LLM to reason about a vulnerability from generic pretraining knowledge, they supply it with structurally similar, previously-fixed vulnerabilities as grounding evidence.
 Prior work shows that knowledge bases can improve LLM responses in security applications~\cite{Seo2025AutoPatchMF, guo2025bluecodeagentblueteamingagent}.
 %TODO: restore/verify the du2025vulrag and wang2025valign citations on knowledge-base-augmented vulnerability repair; add BibTeX entries once confirmed.
-
-Moreover, various studies show that knowledge bases improve LLM responses in security applications ~\cite{du2025vulragenhancingllmbasedvulnerability, seo2026autopatch, wang2025valign, guo2025bluecodeagentblueteamingagent}.
-Although it is unclear which retrieval and context-construction strategy optimizes patch quality,  particularly in multi-agent pipelines where retrieval, reasoning, and patch generation are handled by separate components.
-
-This thesis investigates exactly that: the use of a structural signature that can be indexed, retrieved, and handed to an LLM as targeted context. Furthermore, it treats each historical fix as a pair of code property graphs and their properties to explore how the structural data can support this pipeline.
-
-% \subsection{Contributions}
-% %TODO: this paragraph was drafted from memory of the current pipeline state — verify wording, terminology, and completeness against the Methodology chapter before keeping it.
- 
-% This thesis makes the following contributions:
- 
-% \begin{itemize}
-%     \item A pipeline for extracting Code Property Graphs (CPGs) via Joern and computing structural diffs between pre- and post-fix versions, using fingerprint-based semantic node matching to resolve Joern's non-deterministic node IDs across graph pairs.
-%     \item A PDG-anchored slicing strategy that bounds the extracted context to the vulnerability-relevant subgraph rather than the full function or file.
-%     \item An evaluation of multiple unsupervised graph embedding strategies for retrieval -- including NetLSD, Weisfeiler-Lehman (WL), GIN, a heterogeneous edge-type-aware R-GCN, and combined/motif-based variants -- indexed with FAISS (flat and HNSW) for similarity search.
-%     \item An agentic, tool-calling patch-generation pipeline that consumes retrieved structural context and produces candidate patches, evaluated across multiple LLM backends and embedding strategies.
-%     \item An empirical assessment of retrieval quality and vulnerability-class coverage on a curated dataset, including a scoping analysis of the AutoPatch dataset that motivates using it as a CVE-list filter over CVEFixes rather than as a training source in its own right.
-% \end{itemize}
+However, it remains unclear which retrieval and context-construction strategy most effectively improves patch quality, particularly in multi-agent pipelines where retrieval, reasoning, and patch generation are handled by separate components.
+This thesis investigates that question by treating each historical fix as a pair of code property graphs: one for the code before the fix, and one for the code after, and using the diff between them, together with a bounded surrounding slice, as a structural signature that can be indexed, retrieved, and handed to an LLM as targeted context.
 
 \section{Scope and Positioning}
 
 This thesis does not aim to replace security experts or to discover previously unknown vulnerabilities.
-The proposed pipeline only works once a vulnerability has already been identified and fixed. That is, it does not cover zero-days.
+The proposed pipeline only works once a vulnerability has already been identified and fixed by a developer somewhere; it does not detect zero-days.
 Instead, its goal is to maximize the propagation of that human knowledge: to free security experts' time for finding genuinely new vulnerabilities, to reduce the window of exposure for already-known ones, and to let teams without dedicated security expertise keep their codebases free of previously-cataloged flaws.
 
+Concretely, the system assumes that the vulnerable function to be patched, and its CWE category, are already known and given as input; detecting and localizing a vulnerability are outside the scope of this thesis. The retriever only needs the function's code, not its CWE, to find a structurally similar historical fix. What this thesis contributes is (1) retrieving a structurally similar, historically fixed example for that already-characterized vulnerability, and (2) using that example's own metadata (its CWE, CVE identifier, root cause, variable/function mappings, and patched code), together with the target's CWE, to assist patch generation.
 
-%TODO: add thesis contributions  (e.g. CPG-based diff embedding, FAISS/HNSW retrieval, patch-generation and evaluation pipeline)
-
-% TODO add a paragraph of the remaining chapters (Dataset, Methodology, Evaluation, ...). 
-
-\subsection{Research Objectives}
-
-To evaluate the proposed framework, we address two primary research questions:
- 
-\textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
- 
-\textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
-
-If within reach, we aim to also address the following complementary research questions:
- 
-\textbf{CRQ1: }How does the structure-aware RAG framework with a small model compare with existing approaches (e.g., zero-shot small models and AutoPatch)?
-
-\textbf{CRQ2: }What is the computational and financial cost of the approach (e.g., token usage, storage complexity and size, end-to-end pipeline costs)? 
-
-
-\subsection{Thesis Structure}
-
-The remainder of this thesis is organized as follows. Chapter~\ref{chapter:literature-review} reviews related work on LLM-based vulnerability repair, retrieval-augmented generation, and graph-based program representations. 
-Chapter~\ref{chapter:dataset} describes the chosen dataset composition, including the scoping decisions made around AutoPatch and CVEFixes. 
-Chapter~\ref{chapter:methodology} details the CPG extraction, diffing, embedding, and retrieval pipeline, as well as the agentic patch-generation architecture. 
-Chapter~\ref{chapter:results} presents the empirical results across embedding strategies and LLM backends. Chapter~\ref{chapter:analysis} discusses these results in light of RQ1 and RQ2, including the identified methodological caveats and limitations, summarizing the contributions and outlining directions for future work.
-
-
-
-
-% RQ1: Can structural diffs of code property graphs (before/after a fix) serve as effective retrieval signatures for identifying similar historical vulnerabilities across projects?
-% RQ2: Does providing an LLM with retrieved, structurally-similar prior fixes as context improve patch quality/correctness compared to raw-source-only prompting?
-% RQ3: Which retrieval/context-construction strategy (e.g., embedding variant, bounded slice size) most effectively reduces semantic misunderstanding and vulnerability-identification failures in a multi-agent patching pipeline?
-
-% Objectives, rationale/motivation, scope, and structure
+%TODO: add a closing paragraph summarizing this thesis's concrete contributions (e.g. CPG-based diff embedding, FAISS/HNSW retrieval, patch-generation and evaluation pipeline) and a one-paragraph roadmap of the remaining chapters (Dataset, Methodology, Evaluation, ...).
