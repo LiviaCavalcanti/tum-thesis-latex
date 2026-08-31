@@ -183,6 +183,12 @@ Once the graph is loaded, the following cleanups are applied:
 \end{itemize}
 
 \section{Embedders}
+% content ONLY: your config choices --
+% - 128-dim, L2-normalized, configurable PCA (shared preamble)
+% - "Combined" embedder: concatenation (384d) + PCA reduction, robustness rationale
+% - CodeBERT (seq) variant: your pipeline diagram/config
+% - CodeBERT (pat) variant: your pipeline diagram/config
+% (general NetLSD/WL/GIN explanations moved to Literature Review above)
 
 Two embedding families were evaluated: deterministic embedders, built on heuristics or well-defined mathematical formulations, and semantic embedders, built on pretrained language model of code.
 All embedders are \textbf{unsupervised}, that is, no labeled training data required.
@@ -197,6 +203,7 @@ This vector is then passed through the PCA reduction step.
   \item \textbf{WL} (\textit{Weisfeiler-Lehman Kernel}), following the $1$-WL color-refinement process described in Chapter~\ref{chapter:literature-review}.
     Implemented via iterative color refinement over node types, followed by weighted sum pooling (\texttt{global\_add\_pool}) and a linear projection. 
     In this work, it was implemented in PyTorch Geometric with no external dependency. 
+    % \texttt{diff\_weight} biases pooling toward high-signal nodes.
     As input, it receives  11-class one-hot over CPG node types (METHOD, CALL, IDENTIFIER, etc.) which can be, optionally, enriched with one-hot encoding 5-dimension diff-label and a 1-dimension \texttt{diff\_weight} scalar, resulting in 17 dims per node. The pipeline uses it untrained with the random weights fixed at seed 42.
   Concretely, the implementation stacks 4 \texttt{WLConv} refinement layers (PyTorch Geometric); each layer's resulting colour is hashed modulo an 8192-entry embedding table (\texttt{hidden\_dim}=64) to keep the representation bounded. The 4 per-iteration sum-pooled vectors ($4 \times 64 = 256$d) are concatenated and passed through a single \texttt{Linear(256, 128)} projection layer. All weights (embedding table and projection) are randomly initialized with \texttt{torch.manual\_seed(42)} and never trained.
 
