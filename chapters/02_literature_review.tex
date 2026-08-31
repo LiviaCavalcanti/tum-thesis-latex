@@ -72,7 +72,7 @@ RESCUE targets code generation for known vulnerability classes, while our pipeli
 
 \section{Agentic Patching Frameworks}
 
-Retrieving structurally and semantically similar historical fixes only helps if that evidence can be turned into a concrete patch; this is the role played by agentic patching frameworks. LLM-based program repair has increasingly applied agentic frameworks that allow the model to iteratively gather context, interact with external tools, and revise its own output. (cite)
+Retrieving structurally and semantically similar historical fixes only helps if that evidence can be turned into a concrete patch; this is the role played by agentic patching frameworks. LLM-based program repair has increasingly applied agentic frameworks that allow the model to iteratively gather context, interact with external tools, and revise its own output. ReAct interleaves explicit reasoning traces with tool-invoking actions so that the model's next action is conditioned on the observed result of its previous one \cite{yao2023react}, and underlies the tool-calling loops used by several of the systems reviewed below. Self-Refine complements this pattern with an iterative self-critique loop, having the model evaluate and revise its own output across multiple passes without external supervision \cite{madaan2023selfrefine}.
 
 An example of this approach is AutoPatch, which leverages RAG-DB-assisted prompting to perform vulnerability detection and patching on a benchmark that mixes real-world and augmented Common Vulnerabilities and Exposures (CVEs).
 The work evaluated the architecture against five popular LLMs, with GPT-4o achieving the best performance, yielding F1-scores of 90.3\% for vulnerability verification and 94.1\% for patching. 
