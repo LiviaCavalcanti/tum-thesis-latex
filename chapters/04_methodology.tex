@@ -148,7 +148,7 @@ Then, the compiled graph is exported to GraphML format with the shell command \t
 Each export generates a directory tree where each subdirectory contains an \verb|export.xml| file with a subgraph of the full CPG.
 
 The nodes can have different labels (e.g.\ \verb|CALL|, \verb|IDENTIFIER|, \verb|CONTROL_STRUCTURE|), while the edges can belong to one of the following graph representations layered over the same node set: 
-Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG), and Program Dependency Graph (PDG).
+Abstract Syntax Tree (AST), Control Flow Graph (CFG), Control Dependence Graph (CDG), and Program Dependency Graph (PDG).
 \begin{itemize}
     \item AST: syntactic parse structure of the source code.
     \item CFG: possible execution paths through the code (branches, loops).
@@ -183,12 +183,6 @@ Once the graph is loaded, the following cleanups are applied:
 \end{itemize}
 
 \section{Embedders}
-% content ONLY: your config choices --
-% - 128-dim, L2-normalized, configurable PCA (shared preamble)
-% - "Combined" embedder: concatenation (384d) + PCA reduction, robustness rationale
-% - CodeBERT (seq) variant: your pipeline diagram/config
-% - CodeBERT (pat) variant: your pipeline diagram/config
-% (general NetLSD/WL/GIN explanations moved to Literature Review above)
 
 Two embedding families were evaluated: deterministic embedders, built on heuristics or well-defined mathematical formulations, and semantic embedders, built on pretrained language model of code.
 All embedders are \textbf{unsupervised}, that is, no labeled training data required.
@@ -197,35 +191,22 @@ This vector is then passed through the PCA reduction step.
 
 \begin{itemize}
 
-  \item \textbf{NetLSD} (\textit{Network Laplacian Spectral Descriptor}) ~\cite{netlsd}.
-  Computes the heat trace of the normalized graph Laplacian across a timescale that aims to get graph expressive representations similar to random walk models.
-  It is node permutation-invariant and captures global spectral structure, adapting to scale encoding both local and global features, that is, it is scale-adaptable. 
-  It can also compare graphs of different sizes and supports weighted graphs. 
-  NetLSD was created to be an alternative to graph edit distance, which is NP-hard to compute exactly. NetLSD comparison is efficiently computable; the calculation can be done in a constant time given precomputed descriptors. 
+  \item \textbf{NetLSD} (\textit{Network Laplacian Spectral Descriptor}) ~\cite{netlsd}, introduced in Chapter~\ref{chapter:literature-review}.
   The heat trace signature is evaluated at 128 log-spaced timescales $t \in [10^{-2}, 10^{2}]$ (\texttt{numpy.logspace(-2, 2, 128)}), yielding one scalar per timescale as the descriptor dimension. Before computing the trace, isolated nodes are removed from the undirected projection of the CPG, since they inflate the zero eigenvalue and collapse the descriptor; graphs with fewer than 3 remaining nodes are embedded as the zero vector.
 
-  \item \textbf{WL} (\textit{Weisfeiler-Lehman Kernel}).
+  \item \textbf{WL} (\textit{Weisfeiler-Lehman Kernel}), following the $1$-WL color-refinement process described in Chapter~\ref{chapter:literature-review}.
     Implemented via iterative color refinement over node types, followed by weighted sum pooling (\texttt{global\_add\_pool}) and a linear projection. 
     In this work, it was implemented in PyTorch Geometric with no external dependency. 
-    % \texttt{diff\_weight} biases pooling toward high-signal nodes.
-    WL proceeds in the following iterative fashion: 
-    (1) aggregates the labels of nodes and their neighborhoods, 
-    and (2) hashes the aggregated labels into unique new node labels.
     As input, it receives  11-class one-hot over CPG node types (METHOD, CALL, IDENTIFIER, etc.) which can be, optionally, enriched with one-hot encoding 5-dimension diff-label and a 1-dimension \texttt{diff\_weight} scalar, resulting in 17 dims per node. The pipeline uses it untrained with the random weights fixed at seed 42.
   Concretely, the implementation stacks 4 \texttt{WLConv} refinement layers (PyTorch Geometric); each layer's resulting colour is hashed modulo an 8192-entry embedding table (\texttt{hidden\_dim}=64) to keep the representation bounded. The 4 per-iteration sum-pooled vectors ($4 \times 64 = 256$d) are concatenated and passed through a single \texttt{Linear(256, 128)} projection layer. All weights (embedding table and projection) are randomly initialized with \texttt{torch.manual\_seed(42)} and never trained.
 
-  \item \textbf{GIN} (\textit{Graph Isomorphism Network}) ~\cite{xu2019gin}
-   A message-passing neural Network that evaluates whether two graphs are topologically identical. It is equivalent to the Weisfeiler-Lehman isomorphism test in expressiveness.
-   At an algorithm level, it consists of a Graph Neural Network that represents each node by recursively aggregating the neighboring representations. 
+  \item \textbf{GIN} (\textit{Graph Isomorphism Network}) ~\cite{xu2019gin}, introduced in Chapter~\ref{chapter:literature-review}.
     The node representation is updated at each layer \texttt{k} by aggregating the representations of its neighbors via a sum aggregator, followed by an MLP:
     $$h_v^{(k)} = \text{MLP}^{(k)}\!\left((1+\epsilon)\cdot h_v^{(k-1)} + \sum_{u \in \mathcal{N}(v)} h_u^{(k-1)}\right)$$
 
   Where $\epsilon$ is a fixed scalar ($\epsilon = 0$, \texttt{train\_eps=False}) rather than a learned parameter, consistent with the embedder being used untrained.
   $h_v^{(0)}$ is initialized  from the node features, i.e.\ the 11-dimensional one-hot CPG node-type encoding described above.
-  The number of layers is equivalent to the number of neighbor hops that will be encoded by each node.
-  This choice is a trade-off between the amount of local structural pattern and the global one.  
   Concretely, the network stacks $K=3$ \texttt{GINConv} layers, each with a hidden dimension of 128 and followed by a \texttt{BatchNorm1d} and ReLU. All weights (input projection, MLPs, readout) are randomly initialized once with \texttt{torch.manual\_seed(42)}, frozen (\texttt{requires\_grad=False}), and reused as a fixed feature extractor across all graphs, consistent with the untrained-GIN literature that shows random GIN weights already produce structurally discriminative embeddings.
-  Therefore, it learns to embed the subtree in a low-dimensional space, not only discriminating different structures but also mapping similar embeddings for similar structures and capturing dependencies between graph structures.
   Graph-level embeddings are obtained via dual pooling, concatenating sum pooling and mean pooling outputs. 
   The sum pooling preserves structural size information, while mean pooling makes the normalized representations.
   $$\mathbf{h}_G = \left[\sum_{v} h_v^{(K)}\ \Big\|\ \frac{1}{|V|}\sum_{v} h_v^{(K)}\right]$$   
@@ -530,9 +511,7 @@ In this version, the system prompt also contains an explicit sub-step: \texttt{"
 % recreate or remove the diagram
 \vspace{0.2cm}
 \begin{figure}[h!]
-  \caption[Patch pipeline]{Main methods of the patching pipeline with agent}\label{diagram:patch_pipeline}
-
-  % \centering
+  \centering
   \begin{tikzpicture}[
     node distance=0.25cm,
     ctxstyle/.style={
@@ -621,15 +600,14 @@ In this version, the system prompt also contains an explicit sub-step: \texttt{"
     \node[lbl, left=0.15cm of parse] {\rotatebox{90}{Output}};
 
   \end{tikzpicture}
+  \caption[Patch pipeline]{Main methods of the patching pipeline with agent}\label{diagram:patch_pipeline}
 \end{figure}
-
-% Graph variants (`graph`, `graph_v2`) additionally serialize `G_vuln` into structured sections (`[Vulnerability Diff]` / `[Data Flow]` / `[Control Dependencies]`
 % ) and inject them as `{target_graph_context}` in the prompt.
 
 
 \subsection{Agent with Structure-Aware Tooling}
 
-This agent follows a ReAct loop~\cite{react2023google}, in which the LLM reasons and calls tools iteratively until it reaches a submission point and calls \texttt{submit\_patch}, or until it hits the maximum number of iterations, set to 6.
+This agent follows the ReAct loop~\cite{yao2023react} introduced in Chapter~\ref{chapter:literature-review}, in which the LLM reasons and calls tools iteratively until it reaches a submission point and calls \texttt{submit\_patch}, or until it hits the maximum number of iterations, set to 6.
 
 The agent calls follow the OpenAI function-calling format. 
 At each iteration, the agent calls \texttt{backend.complete(model, messages, tools=full\_tools, tool\_choice="auto")} passing the five tool schemas. 
@@ -692,7 +670,6 @@ Use one or more Search & Replace blocks -- each one replaces an exact code secti
 
 \vspace{0.2cm}
 \begin{figure}[h!]
-  \caption[Tool Agent Pipeline]{Workflow steps of tool calling agent}\label{diagram:workflowtoolagent}
   \centering
   \begin{tikzpicture}[
     node distance=0.25cm,
@@ -797,6 +774,7 @@ Use one or more Search & Replace blocks -- each one replaces an exact code secti
     \draw[arr] (loopbox.south) -- (res);
 
   \end{tikzpicture}
+  \caption[Tool Agent Pipeline]{Workflow steps of tool calling agent}\label{diagram:workflowtoolagent}
 \end{figure}
 
 \begin{lightprompt}[title=Judge System Prompt, label={lst:judge-prompt}]
@@ -1042,10 +1020,6 @@ With this, patches that are semantically equivalent but with different phrasing 
 
 % TODO: Will we have time for it?
 \textbf{Patch quality (qualitative).} A subset of generated patches is additionally reviewed by security specialists, who assess correctness, completeness, and whether the patch introduces any new risk, complementing the automated metrics above with expert judgment that automated scoring cannot fully capture.
-
-
-ReAct, which interleaves explicit reasoning traces with tool-invoking actions so that the model's next action is conditioned on the observed result of its previous one \cite{yao2023react}.
-Self-Refine adds an iterative self-critique loop on top of this pattern, having the model evaluate and revise its own output across multiple passes without external supervision \cite{madaan2023selfrefine}.
 
 
 11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz (2.50 GHz)
