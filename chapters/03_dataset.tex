@@ -183,15 +183,15 @@ The 450-entry corpus is not a direct subsample of the 1,618-entry CWE-overlap fi
 \small
 \begin{tabular}{llrrr}
 \toprule
-\textbf{Step} & \textbf{Purpose} & \textbf{Rows} & \textbf{Removed} & \textbf{Unique CVEs} \\
+\textbf{Step} & \textbf{Purpose} & \textbf{Rows} & \textbf{Removed}\\
 \midrule
-0. Raw entries        & Direct DB query, 6 target CWEs, C/C++ methods     & 5,063 & --    & 1,011 \\
-1. CWE filter          & Confirms single-CWE attribution (no-op here)      & 5,063 & 0     & 1,011 \\
-2. Exact deduplication & Removes identical (CVE, function) rows            & 2,972 & 2,091 & 1,011 \\
-3. Cross-CVE contamination removal & Function-pair matching: drops functions shared across CVEs & 2,374 & 598 & 855 \\
-4. Min-CVE-count filter & Keeps CWEs/CVEs with $\geq$5 occurrences          & 1,278 & 1,096 & 74 \\
-5. Joern parse success & Graph-availability check: drops entries without a valid CPG & 726 & 552 & 35 \\
-6. CWE-balanced sampling & Stratified sampling to 75 entries/CWE (final corpus) & 450 & 828 & 27 \\
+0. Raw entries        & Direct DB query, 6 target CWEs, C/C++ methods     & 5,063 & --    \\
+1. CWE filter          & Confirms single-CWE attribution (no-op here)      & 5,063 & 0    \\
+2. Exact deduplication & Removes identical (CVE, function) rows            & 2,972 & 2,091\\
+3. Cross-CVE contamination removal & Function-pair matching: drops functions shared across CVEs & 2,374 & 598 \\
+4. Min-CVE-count filter & Keeps CWEs/CVEs with $\geq$5 occurrences          & 1,278 & 1,096 \\
+5. Joern parse success & Graph-availability check: drops entries without a valid CPG & 726 & 552 \\
+6. CWE-balanced sampling & Stratified sampling to 75 entries/CWE (final corpus) & 450 & 828 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -210,8 +210,6 @@ Step 5 (\emph{Joern parse success}) is the CVEfixes analogue of the ``patch-gene
 AutoPatch CWE types & 13 \\ % TODO: was 23 in original — AutoPatch CWE table (tab:autopatch_cwe_distribution) lists 13 unique CWE IDs
 Matching CVEfixes entries (of 4,607 method pairs) & \textbf{1,618} \\
 Coverage of method-pair corpus & 35.1\% \\
-\midrule
-CVE-based filter (exact CVE overlap) & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -277,27 +275,28 @@ Table~\ref{tab:cwe_distribution} shows the resulting CWE distribution.
 
 \paragraph{CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization / Race Condition :}Occurs when a program performs two or more operations concurrently, and the outcome depends on the non-deterministic sequence of execution. If shared resources (memory spaces, sockets, files) are accessed without proper synchronization primitives, concurrent threads can manipulate memory unexpectedly, leading to privilege escalation, data corruption, or crashes.
 
-The CWE-362 sample consists of 15 instances across 6 unique CVEs, originating predominantly from lower-level C code within the Linux Kernel (network stack \texttt{net/ipv4}, storage systems fs/ext4) and cryptographic/communication libraries (e.g., OpenSSL/SRTP).
+The CWE-362 sample is predominantly composed by lower-level C code within the Linux Kernel (network stack \texttt{net/ipv4}, storage systems fs/ext4) and cryptographic/communication libraries (e.g., OpenSSL/SRTP).
 
 Rather than relying on naive global locks, the ground-truth patches exhibit high domain-specific synchronization complexity:
 
-CVE-2012-3552 consists of Domain-Specific Socket Locking and represents 53\% of the class sample. Fixes rely on socket-specific concurrency macros (\texttt{lock\_sock}/\texttt{release\_sock}) and kernel-level Read-Copy Update (\texttt{rcu\_dereference}, \texttt{rcu\_assign\_pointer}) primitives to safely manage \texttt{ip\_options} memory across concurrent socket writes.
-File System Read-Write Inconsistencies \& Semaphores (CVE-2012-4508, CVE-2015-8839) involve ext4 race conditions between page faults and file truncation (\texttt{fallocate}/\texttt{truncate}), requiring reader-writer semaphores (\texttt{i\_mmap\_sem}) or explicit inconsistency flags instead of adding simple mutexes.
-Structural Decoupling \& Flagging (CVE-2020-12652, CVE-2021-32686) is solved either by passing objects directly to eliminate state copies or by enforcing strict synchronization across concurrent SSL resource access paths without basic \texttt{lock}/\texttt{unlock} wrappers.
+Fixes rely on socket-specific concurrency macros (\texttt{lock\_sock}/\texttt{release\_sock}) and kernel-level Read-Copy Update (\texttt{rcu\_dereference}, \texttt{rcu\_assign\_pointer}) primitives to safely manage \texttt{ip\_options} memory across concurrent socket writes.
+File System Read-Write Inconsistencies \& Semaphores involve ext4 race conditions between page faults and file truncation (\texttt{fallocate}/\texttt{truncate}), requiring reader-writer semaphores (\texttt{i\_mmap\_sem}) or explicit inconsistency flags instead of adding simple mutexes.
+Structural Decoupling \& Flagging is solved either by passing objects directly to eliminate state copies or by enforcing strict synchronization across concurrent SSL resource access paths without basic \texttt{lock}/\texttt{unlock} wrappers.
 
 
 \paragraph{CWE-20: Improper Input Validation :}
 Occurs when an application fails to validate, sanitize, or verify input before processing it, based on the expected structural, length, or character format requirements.
-The sample is composed of 15 evaluations of a single vulnerability (CVE-2021-26788) in C/C++. The fix pattern consists of inserting input-character bounds checks (e.g., validating hex strings via \texttt{isxdigit()}) to ensure that user-supplied input strings conform to expected formats before execution.
+The fix pattern consists of inserting input-character bounds checks (e.g., validating hex strings via \texttt{isxdigit()}) to ensure that user-supplied input strings conform to expected formats before execution.
 
 \paragraph{CWE-190: Integer Overflow or Wraparound :}
 Occurs when an arithmetic calculation produces an integer value outside the representable range of the specified data type, typically resulting in undersized buffer allocations.
-The sample consists of 15 instances of CVE-2023-36326 evaluated in different pipeline configurations. The fix pattern requires inserting safe integer-arithmetic checks before dynamic memory operations (\texttt{malloc}, \texttt{realloc}) to prevent small, wrapped-integer sizes from being allocated for large data streams.
+The fix pattern requires inserting safe integer-arithmetic checks before dynamic memory operations (\texttt{malloc}, \texttt{realloc}) to prevent small, wrapped-integer sizes from being allocated for large data streams.
 
 \paragraph{CWE-416: Use After Free (UAF) :}
 Occurs when an application continues to use a memory pointer after it has been explicitly deallocated or freed. This can lead to arbitrary code execution, heap corruption, or diversion of execution paths.
-The sample contains multiple CVEs of C/C++ network stack and media-streaming components, including CVE-2016-3841 (Linux IPv6 socket lifecycle), CVE-2023-38703 (SRTP session cleanup), CVE-2023-3863, CVE-2019-11487, and CVE-2022-0156. The patch consists of resetting dangling pointers to \texttt{nullptr}, managing reference counts, or ensuring that asynchronous destructor routines do not access freed memory blocks.
+The sample contains C/C++ network stack and media-streaming components vulnerabilities, including Linux IPv6 socket lifecycle, and SRTP session cleanup. The patch consists of resetting dangling pointers to \texttt{nullptr}, managing reference counts, or ensuring that asynchronous destructor routines do not access freed memory blocks.
 
 \paragraph{CWE-476: NULL Pointer Dereference :}
 Occurs when a program attempts to read or write memory using a pointer variable that evaluates to \texttt{nullptr}, leading to Denial of Service of the application.
-The sample is a multi-CVE split, which includes media processing frameworks and proxy servers, such as CVE-2019-19815 (GPAC multimedia handling), CVE-2020-10739 (Istio/Envoy proxy handling), CVE-2023-24832, and CVE-2018-20786. The patches consist of applying explicit null-check guards (\texttt{if (ptr == nullptr) return;}) or safe-access wrappers before accessing the fields.
+The sample includes media processing frameworks and proxy servers, such as GPAC multimedia handling, and Istio/Envoy proxy handling. 
+The patches consist of applying explicit null-check guards (\texttt{if (ptr == nullptr) return;}) or safe-access wrappers before accessing the fields.
