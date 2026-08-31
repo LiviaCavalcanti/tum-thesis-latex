@@ -129,9 +129,9 @@ Besides that, the system can be split into offline retrieval-index construction 
 
 \paragraph{Online Query and generation.} At inference time, the pipeline runs the following steps:
 \begin{itemize}
-  \item transforms the input code snippet into an embedding;
-  \item queries the vector database to retrieve similar code, indicating they contain a similar underlying vulnerability;
-  \item uses the retrieved entry's data, notably, the patched code, to prompt an LLM to generate a fix for the query vulnerability.
+  \item transforms the input (query) code snippet into an embedding;
+  \item queries the vector database to retrieve the closest historical example, indicating they contain a similar underlying vulnerability;
+  \item prompts an LLM to generate a fix for the query vulnerability, combining (a) the retrieved example's own metadata, notably the retrieved patched code, CWE, CVE identifier, root cause, and variable/function mappings, with (b) the query's own CWE (plus, where the query is drawn from the curated AutoPatch subset, its own root cause and variable/function mappings), as described in the Architecture section above.
 \end{itemize}
 
 In the development phase, retrieval and patch can be assessed on a held-out test set using the automated evaluation script described in ~\ref{section:evaluation}.
@@ -180,229 +180,7 @@ Once the graph is loaded, the following cleanups are applied:
   \item any remaining edges whose source or target in previous step are removed are pruned.
 \end{itemize}
 
-[TO BE REMOVED]
-\section*{Graph Sampling}
-Once loaded, the CPG contains the full code file, including the boilerplate added in the graph-generation wrapping pipeline step (Section~\ref{sec:graph-generation}).
-Therefore, it is necessary to isolate the subgraph related to the vulnerability from the irrelevant rest of the code. 
-For that, a subsample is calculated from the difference between the vulnerable graph and the patched graph, the so-called $G_{\mathrm{vuln}}$. 
-By doing so, we expect to be able to generalize the search for the vulnerability, removing the specificities of a given system that are imprinted in the graph.
-
-\paragraph{Bounded slicing}
-To include context that may be relevant, a bounded search is performed with the goal of including any relevant settings in which the vulnerability occurs.
-The slice is a configurable neighborhood expansion ($n \in \{0,1,2,3\}$ hops). $n=0$ is the original sampled graph, that is, only the directly changed nodes.
-    
-\paragraph{Semantic difference}
-Before performing the sampling, each node needs to be deterministically identifiable to avoid different results depending on runs or randomness resulting from a non-deterministic ID assigned by Joern across runs.
-The nodes in the sample are further enriched with semantic labels resulting from the comparison of the two graphs.
-Each node of the sample is labeled as either:
-\begin{itemize}
-  \item Removed node: every node present in $G_\mathrm{orig}$ but absent in the $G_\mathrm{patch}$.
-  \item Fix-adjacent node: every node present in $G_\mathrm{orig}$ that is a removed node neighbor.
-  \item Edge-changed node: every node attached to an edge which any of the nodes changed between the two graphs. 
-\end{itemize}
-
-Besides the labelling, the $G_\mathrm{vuln}$ nodes also received weights. 
-\begin{center}
-\begin{tabular}{lc}
-  \textbf{Label} & \textbf{Weight} \\
-  \hline
-  \texttt{removed}       & 1.0 \\
-  \texttt{fix\_adjacent} & 0.8 \\
-  \texttt{edge\_changed} & 0.6 \\
-  \texttt{context}       & 0.2 \\
-\end{tabular}
-\end{center}
-
-These weights are directly proportional to the relation of the node to the vulnerability and will be integrated into the embedders for further pruning.
-
-% \begin{tikzpicture}[node distance=0.8cm and 2.2cm]
-
-%     % ===== TOP GROUP: CODE PARSING & ANALYSIS =====
-%     \begin{scope}[local bounding box=analysis_group]
-        
-%         % Vulnerable input
-%         \node[inputbox] (vuln_code) {Vulnerable\\Code};
-        
-%         % Joern Parse
-%         \node[processbox, right=of vuln_code] (joern) {Joern Parse};
-        
-%         % GraphML Export
-%         \node[processbox, right=of joern] (export) {GraphML\\Export};
-        
-%     \end{scope}
-
-%     \begin{scope}[local bounding box=analysis_group_patched, yshift=-2.3cm]
-        
-%         % Patched input
-%         \node[inputbox] (patched_code) {Patched\\Code};
-        
-%         % Joern Parse
-%         \node[processbox, right=of patched_code] (joern2) {Joern Parse};
-        
-%         % GraphML Export
-%         \node[processbox, right=of joern2] (export2) {GraphML\\Export};
-        
-%     \end{scope}
-    
-%     % Graph DB - centered above the middle section
-%     \node[cylinder, right=3cm of export, yshift=-1.15cm] (graphdb) {};
-    
-%     % Dashed box around analysis (encompasses both scopes equally)
-%     \node[groupbox, fit=(analysis_group) (analysis_group_patched), label={[anchor=north, yshift=-2pt]\textbf{CODE ANALYSIS}}] {};
-    
-%     % ===== MIDDLE GROUP: GRAPH PROCESSING =====
-%     \begin{scope}[local bounding box=processing_group, yshift=-5.5cm]
-        
-%         % Graph Loading (aligned with the left of export)
-%         \node[processbox] (load) {Graph Loading\\Merge XML,\\Filter Nodes};
-        
-%         % Semantic Diff
-%         \node[processbox, right=of load] (diff) {Semantic Diff\\Fingerprint\\Matching};
-        
-%         % Graph Sampling
-%         \node[processbox, right=of diff] (sampling) {Graph Sampling\\Extract\\Vulnerability};
-        
-%     \end{scope}
-    
-%     % Dashed box around processing
-%     \node[groupbox, fit=(processing_group), label={[anchor=north, yshift=-2pt]\textbf{GRAPH PROCESSING}}] {};
-    
-%     % ===== BOTTOM: OUTPUT (centered below sampling) =====
-%     \node[outputbox, below=1.2cm of sampling] (output) {Vulnerability\\Subgraph\\with diff\_weight};
-    
-%     % ===== ARROWS =====
-    
-%     % Vulnerable group arrows
-%     \draw[arrow] (vuln_code) -- (joern);
-%     \draw[arrow] (joern) -- (export);
-    
-%     % Perpendicular arrow from export to graphdb
-%     \draw[arrow] (export.east) -- ++(1.1,0) |- (graphdb.west);
-
-%     % Patched group arrows
-%     \draw[arrow] (patched_code) -- (joern2);
-%     \draw[arrow] (joern2) -- (export2);
-    
-%     % Perpendicular arrow from export2 to graphdb
-%     \draw[arrow] (export2.east) -- ++(1.1,0) |- (graphdb.west);
-    
-%     % From graph DB to loading (routed cleanly)
-%     \draw[arrow] (graphdb.south) -- ++(0,-1.6) -| (load.north);
-    
-%     % Processing arrows
-%     \draw[arrow] (load) -- (diff);
-%     \draw[arrow] (diff) -- (sampling);
-    
-%     % To output
-%     \draw[arrow] (sampling) -- (output);
-    
-%     % ===== LABELS =====
-%     \node[left=0.6cm of vuln_code, yshift=-11pt, font=\small\bfseries] {INPUT};
-%     \node[below=0.6cm of output, font=\small\bfseries] {OUTPUT};
-
-% \end{tikzpicture}
-
-\vspace{1cm}
-\usetikzlibrary{shapes.geometric, positioning, fit, arrows.meta, backgrounds}
-
-% ---- Colors ----
-\definecolor{tealFill}{HTML}{E1F5EE}
-\definecolor{tealBorder}{HTML}{0F6E56}
-\definecolor{tealText}{HTML}{085041}
-
-\definecolor{grayFill}{HTML}{F1EFE8}
-\definecolor{grayBorder}{HTML}{5F5E5A}
-\definecolor{grayText}{HTML}{444441}
-
-\definecolor{purpleFill}{HTML}{EEEDFE}
-\definecolor{purpleBorder}{HTML}{534AB7}
-\definecolor{purpleText}{HTML}{3C3489}
-
-\definecolor{coralFill}{HTML}{FAECE7}
-\definecolor{coralBorder}{HTML}{993C1D}
-\definecolor{coralText}{HTML}{712B13}
-
-% ---- Styles ----
-\tikzset{
-  teal/.style={rectangle, rounded corners=4pt, draw=tealBorder, fill=tealFill,
-    text=tealText, minimum height=1cm, align=center, font=\small, inner sep=6pt},
-  purple/.style={rectangle, rounded corners=4pt, draw=purpleBorder, fill=purpleFill,
-    text=purpleText, minimum height=1.1cm, align=center, font=\small, inner sep=6pt},
-  coral/.style={rectangle, rounded corners=4pt, draw=coralBorder, fill=coralFill,
-    text=coralText, minimum height=1.1cm, align=center, font=\small, inner sep=6pt},
-  db/.style={cylinder, shape border rotate=90, aspect=0.25, draw=grayBorder,
-    fill=grayFill, text=grayText, minimum height=1.4cm, minimum width=1.6cm,
-    font=\small, align=center},
-  groupbox/.style={rectangle, rounded corners=8pt, draw=black!35, dashed,
-    inner sep=14pt, label position=north west},
-  arrow/.style={-{Stealth[length=2.2mm]}, line width=0.5pt, draw=black!55}
-}
-
-\vspace{0.2cm}
-\begin{figure}[h!]
-  \caption[Graph processing pipeline]{Online and Offline code analysis and graph processing of the retrieval pipeline }
-\label{diagram:graphprocessing_pipeline}
-  
-\begin{tikzpicture}[node distance=0.4cm and 1.2cm, font=\small]
-
-
-  % ===== CODE ANALYSIS GROUP =====
-  \node[teal] (vuln)    {Vulnerable code};
-  \node[teal, right=of vuln]   (joern1) {Joern parse};
-  \node[teal, right=of joern1] (export1) {GraphML export};
-
-  \node[teal, below=1.0cm of vuln]    (patched) {Patched code};
-  \node[teal, right=of patched] (joern2) {Joern parse};
-  \node[teal, right=of joern2]  (export2) {GraphML export};
-
-  \node[db, right=1.8cm of export1, yshift=-0.8cm] (graphdb) {Graph DB};
-
-  % Fit box with explicit padding and a clean overlaid title
-  \begin{scope}[on background layer]
-    \node[groupbox, fit=(vuln)(export1)(patched)(export2)(graphdb), inner sep=12pt] (box1) {};
-  \end{scope}
-  % Title node resting cleanly on top-left of the border (with white fill to cut the line)
-  \node[font=\small\bfseries, fill=white, inner sep=2pt, anchor=west] 
-    at ([xshift=10pt]box1.north west) {Code analysis};
-
-
-  % ===== GRAPH PROCESSING GROUP =====
-  \node[purple, below=1.8cm of patched.south west, anchor=north west] (load) {Graph loading\\[2pt] \small Merge \& filter};
-  \node[purple, right=of load]  (diff)     {Semantic diff\\[2pt] \small Fingerprint match};
-  \node[purple, right=of diff]  (sampling) {Graph sampling\\[2pt] \small Extract subgraph};
-
-  \begin{scope}[on background layer]
-    \node[groupbox, fit=(load)(diff)(sampling), inner sep=12pt] (box2) {};
-  \end{scope}
-  \node[font=\small\bfseries, fill=white, inner sep=2pt, anchor=west] 
-    at ([xshift=10pt]box2.north west) {Graph processing};
-
-
-  % ===== OUTPUT =====
-  \node[coral, below=1.2cm of sampling] (output)
-    {Vulnerable subgraph\\[2pt] \small with diff\_weight};
-
-
-  % ===== ARROWS =====
-  \draw[arrow] (vuln) -- (joern1);
-  \draw[arrow] (joern1) -- (export1);
-  \draw[arrow] (patched) -- (joern2);
-  \draw[arrow] (joern2) -- (export2);
-
-  \draw[arrow] (export1.east) -| ++(0.4,-0.5) |- (graphdb.west);
-  \draw[arrow] (export2.east) -| ++(0.62,0.5)  |- (graphdb.west);
-
-  % Cleanly routed arrow avoiding box overlap (drops down the right side and enters load)
-  \draw[arrow] (graphdb.south) -- ++(0,-1.8) -| ([xshift=-0.6cm]load.west) -- (load.west);
-
-  \draw[arrow] (load) -- (diff);
-  \draw[arrow] (diff) -- (sampling);
-  \draw[arrow] (sampling) -- (output);
-
-\end{tikzpicture}
-\end{figure}
-
-\subsection*{Embedders}
+\section{Embedders}
 % content ONLY: your config choices --
 % - 128-dim, L2-normalized, configurable PCA (shared preamble)
 % - "Combined" embedder: concatenation (384d) + PCA reduction, robustness rationale
@@ -422,6 +200,7 @@ This vector is then passed through the PCA reduction step.
   It is node permutation-invariant and captures global spectral structure, adapting to scale encoding both local and global features, that is, it is scale-adaptable. 
   It can also compare graphs of different sizes and supports weighted graphs. 
   NetLSD was created to be an alternative to graph edit distance, which is NP-hard to compute exactly. NetLSD comparison is efficiently computable; the calculation can be done in a constant time given precomputed descriptors. 
+  The heat trace signature is evaluated at 128 log-spaced timescales $t \in [10^{-2}, 10^{2}]$ (\texttt{numpy.logspace(-2, 2, 128)}), yielding one scalar per timescale as the descriptor dimension. Before computing the trace, isolated nodes are removed from the undirected projection of the CPG, since they inflate the zero eigenvalue and collapse the descriptor; graphs with fewer than 3 remaining nodes are embedded as the zero vector.
 
   \item \textbf{WL} (\textit{Weisfeiler-Lehman Kernel}).
     Implemented via iterative color refinement over node types, followed by weighted sum pooling (\texttt{global\_add\_pool}) and a linear projection. 
@@ -431,6 +210,7 @@ This vector is then passed through the PCA reduction step.
     (1) aggregates the labels of nodes and their neighborhoods, 
     and (2) hashes the aggregated labels into unique new node labels.
     As input, it receives  11-class one-hot over CPG node types (METHOD, CALL, IDENTIFIER, etc.) which can be, optionally, enriched with one-hot encoding 5-dimension diff-label and a 1-dimension \texttt{diff\_weight} scalar, resulting in 17 dims per node. The pipeline uses it untrained with the random weights fixed at seed 42.
+  Concretely, the implementation stacks 4 \texttt{WLConv} refinement layers (PyTorch Geometric); each layer's resulting colour is hashed modulo an 8192-entry embedding table (\texttt{hidden\_dim}=64) to keep the representation bounded. The 4 per-iteration sum-pooled vectors ($4 \times 64 = 256$d) are concatenated and passed through a single \texttt{Linear(256, 128)} projection layer. All weights (embedding table and projection) are randomly initialized with \texttt{torch.manual\_seed(42)} and never trained.
 
   \item \textbf{GIN} (\textit{Graph Isomorphism Network}) ~\cite{xu2019gin}
    A message-passing neural Network that evaluates whether two graphs are topologically identical. It is equivalent to the Weisfeiler-Lehman isomorphism test in expressiveness.
@@ -442,6 +222,7 @@ This vector is then passed through the PCA reduction step.
   $h_v^{(0)}$ is initialized  from the node features, i.e.\ the 11-dimensional one-hot CPG node-type encoding described above.
   The number of layers is equivalent to the number of neighbor hops that will be encoded by each node.
   This choice is a trade-off between the amount of local structural pattern and the global one.  
+  Concretely, the network stacks $K=3$ \texttt{GINConv} layers, each with a hidden dimension of 128 and followed by a \texttt{BatchNorm1d} and ReLU. All weights (input projection, MLPs, readout) are randomly initialized once with \texttt{torch.manual\_seed(42)}, frozen (\texttt{requires\_grad=False}), and reused as a fixed feature extractor across all graphs, consistent with the untrained-GIN literature that shows random GIN weights already produce structurally discriminative embeddings.
   Therefore, it learns to embed the subtree in a low-dimensional space, not only discriminating different structures but also mapping similar embeddings for similar structures and capturing dependencies between graph structures.
   Graph-level embeddings are obtained via dual pooling, concatenating sum pooling and mean pooling outputs. 
   The sum pooling preserves structural size information, while mean pooling makes the normalized representations.
@@ -556,15 +337,19 @@ This vector is then passed through the PCA reduction step.
     \end{figure}
   
 \item \textbf{Combined.}
-    Concatenates NetLSD, WL and GIN descriptors ($3 \times 128 = 384$ dimensions) and reduces via PCA to the target dimension, by default 128.
+    Concatenates NetLSD, WL and GIN descriptors ($3 \times 128 = 384$ dimensions) and reduces via PCA (\texttt{sklearn.decomposition.PCA}, \texttt{random\_state=42}) to the target dimension, by default 128. The PCA is fit once on the first batch of graphs seen (\texttt{embed\_many()}/\texttt{fit()}) and its parameters are cached and reused at inference time.
     It aims to be most robust to individual embedder failures.
-\item \textbf{CodeBERT (seq)}. Hugging Face downloaded Transformer sequence encoder from which the \texttt{[CLS]} token is used as an embedding vector. 
-The model inputs is the CODE text collected from graph nodes with \texttt{diff\_weight} > 0.3.
-The nodes are sorted by descending \texttt{diff\_weight} then line number, or BFS over \texttt{REACHING\_DEF} / \texttt{CFG} / \texttt{CDG} edges from high-importance seeds (flow-ordered variant), so CodeBERT's self-attention implicitly sees data-flow structure.
-However, we prefer to use all the nodes for performance.
-No graph structure features.
+\item \textbf{CodeBERT (seq)}. Uses the local \texttt{microsoft/codebert-base} checkpoint cached at \texttt{models/codebert-base/} (loaded with \texttt{AutoModel.from\_pretrained(..., local\_files\_only=True)}), from which the \texttt{[CLS]} token of the last hidden state is used as the 768-d embedding vector. No graph-structural features are used; this variant is the semantic-only ablation control.
 
-\item \textbf{CodeBERT (pattern)}. The CodeBERT embedding (768-d) is concatenated with a 34-dimension structural embedding generated by the \texttt{VulnPatternEmbedder}. The resulting 802-dimensional vector then passes through PCA to be reduced to a 128-dimensional vector. 
+\paragraph{Node selection and ordering (as run).} The model input is built by \texttt{collect\_changed\_code()}: nodes with \texttt{diff\_weight > 0.3} are kept and sorted by (descending \texttt{diff\_weight}, ascending \texttt{LINE\_NUMBER}); their \texttt{CODE} strings are concatenated in that order up to a \textbf{400-whitespace-token} budget (truncating the last node's text if it would exceed the budget). \emph{Fallback only:} if no node exceeds the 0.3 threshold, every code-bearing node is used instead, ordered by line number alone. All experiments reported here use this line/diff-weight ordering; the BFS flow-ordered variant that traverses \texttt{REACHING\_DEF}/\texttt{CFG}/\texttt{CDG} edges from high-\texttt{diff\_weight} seeds (\texttt{collect\_flow\_ordered\_code()}, exposed as \texttt{codebert\_flow}) was implemented but not part of \texttt{embeddings.active} in \texttt{config.yaml} and is not used for the reported results.
+
+\paragraph{Tokenization.} The concatenated string is then passed to the CodeBERT tokenizer with \texttt{truncation=True, max\_length=512} (subword tokens, batched with padding). The 400-word pre-truncation and the 512-subword tokenizer truncation are two independent, stacked limits — the former bounds how much raw code is concatenated per node, the latter bounds the final subword sequence fed to the transformer.
+
+\paragraph{Duplicated tokens.} Because Joern assigns a \texttt{CODE} span to every AST node (statements, sub-expressions, identifiers, literals), concatenating over all qualifying nodes reproduces overlapping text: e.g.\ a \texttt{CALL} node's full expression text and its child \texttt{IDENTIFIER}/\texttt{LITERAL} nodes' sub-spans are \emph{both} concatenated, so tokens are duplicated across nesting levels in the flattened sequence. No de-duplication is applied.
+
+When a projection to 128d is requested, the 768-d CLS vectors are reduced with a PCA (\texttt{sklearn.decomposition.PCA}, \texttt{random\_state=42}) fit once on the index corpus (\texttt{embed\_many()}/\texttt{fit()}) and reused at query time.
+
+\item \textbf{CodeBERT (pattern)}. The CodeBERT embedding (768-d) is concatenated with a 34-dimension structural embedding generated by the \texttt{VulnPatternEmbedder}. Its 768-d CodeBERT component reuses the same checkpoint, node selection/ordering, tokenization, and query-time diff-weight assumptions of CodeBERT (seq) described above (\texttt{collect\_changed\_code()}, \texttt{max\_length=512}). The resulting 802-dimensional vector then passes through PCA (\texttt{sklearn.decomposition.PCA}, \texttt{random\_state=42}, fit once on the index corpus) to be reduced to a 128-dimensional vector. 
     The extracted structural features are organized into 5 groups and are computed from the CPG's edge connectivity:
     \begin{itemize}
         \item Vulnerability Flow Patterns (8 dimensions): detect common C/C++ vulnerability signatures using graph reachability.
@@ -618,7 +403,7 @@ The node classification is done via regex on \texttt{CODE} attributes of each no
 % CDG[2..3], REACHING_DEF[4..5] — same pattern
 % ```
 
-\item Diff Topology Stats (6 dimensions): embeds the characteristics of the graph, for example, edge density, number of connected components, mean degree, max degree, and internal and crossing.
+\item Topology Stats (6 dimensions): embeds the characteristics of the graph, for example, edge density, number of connected components, mean degree, max degree, and internal and crossing.
 
 \item Node Role Distribution (6 dimensions): counts the types of nodes (\texttt{CALL}, \texttt{OTHER}, \texttt{IDENTIFIER}, \texttt{CONTROL\_STRUCTURE}, \texttt{LITERAL}, \texttt{BLOCK})
 \end{itemize}
@@ -635,7 +420,7 @@ The node classification is done via regex on \texttt{CODE} attributes of each no
         arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol}
       ]
         \node[box] (cpg) {CPG (Joern)};
-        \node[box, below=of cpg] (collect) {Collect changed code\\{\tiny diff\_weight $>$ 0.3, sort by line}};
+        \node[box, below=of cpg] (collect) {Collect changed code};
         \node[box, below=of collect] (tok) {Tokenize as flat sequence\\{\tiny ``sk = sk\_alloc(); sock->sk = sk; ...''}};
         \node[box, draw=c3!60, fill=c3!8, below=of tok] (bert) {CodeBERT [CLS]\\{\tiny 768d}};
         \node[box, draw=hit!60, fill=hit!8, below=of bert] (out-seq) {L2 Normalize\\{\tiny 768d embedding}};
@@ -704,7 +489,7 @@ Just as with retrieval, the generation code is built on top of abstractions that
 Three data classes carry the flow through the pipeline and standardize the information handling:
 
 \begin{itemize}
-  \item \textbf{PatchContext}: wraps what is required to generate a patch and, therefore, will be used as the input for the agent. It includes the retrieved example's metadata and CVE identifier, the vulnerable C source to patch,  and, for graph-aware variants, the CPG graph context.
+  \item \textbf{PatchContext}: wraps what is required to generate a patch and, therefore, will be used as the input for the agent. It includes the retrieved example's own metadata (CWE, CVE identifier, root cause, variable/function mappings, and patched code), the vulnerable C source to patch, the target's CWE (and, when available from the curated AutoPatch subset, the target's own root cause and variable/function mappings, as introduced in the Architecture section), and, for graph-aware variants, the CPG graph context.
   \item \textbf{AgentResult}: wraps the output data consisting of Chain of Thought and the vulnerable code, the patched code, each of the LLM call turns ( \texttt{InvocationRecord} format), log of tool call executions along with prompt fingerprints, and the total number of tokens.
 \item \textbf{Agent}: base class that works as a Protocol containing the agent name and a run method implementation that receives a \texttt{PatchContext} as input and generates a \texttt{AgentResult} object. With that, it is possible to easily integrate different agent approaches by following the pipeline's interface while maintaining the observability necessary for performance evaluation.  
 \end{itemize}
@@ -730,7 +515,7 @@ It includes  chain-of-thought reasoning for the example fix and gold patched cod
 The assistant template also includes directive for the expected reasoning format: \texttt{"in the following format, including the leading and trailing ``` ... [CoT START] ... [Patched Code START] ... [Patched Code END]"}. By using separate templates, the formatting structure is preserved and clearly distinguished throughout the conversation.
 
 The second user message contains the actual code to be patched. 
-It has the same structure as the first user message, but with the fields: target code, target root cause, target vulnerability-related variable mapping, target vulnerability-related function mapping, and target supplementary code.
+It has the same structure as the first user message, but with the fields: target code, target root cause, target vulnerability-related variable mapping, target vulnerability-related function mapping, and target supplementary code. As established in the Architecture section, only the target's CWE (used to build the system prompt) is assumed known for every query; the target root cause and variable/function mapping fields are populated only when the query is drawn from the curated AutoPatch subset, which carries these per-CVE annotations, and default to \texttt{"Unknown"} for CVEfixes-sourced queries.
 
 The use of multiple messages also allows generalization of the naming convention in the target code. The example's variable/function mappings, in both system prompt and first user message, teach the model how to adapt from abstract fix patterns (from the example) to concrete variable names in the target code.
 
@@ -1029,7 +814,7 @@ The pipeline has the following functions available as tools:
   \texttt{get\_vulnerability\_context} & Returns CVE description, CWE category, and typical fix patterns from the static knowledge base (\texttt{cwe\_descriptions.py}).% It covers CWE-20/190/362/400/416/476/787 
   \\
   \addlinespace
-  \texttt{analyze\_example\_fix} & Computes a unified diff between the input code to be patched and example code from the retriever execution, and returns a structured unified diff following a token budget.\\
+  \texttt{analyze\_example\_fix} & Computes a unified diff between the retrieved example's own vulnerable and patched code (\emph{not} the target input), and returns it as a structured, token-budgeted diff so the agent can study the fix pattern applied to that example before adapting it to the target code.\\
   \addlinespace
   \texttt{check\_c\_syntax} & Parses the candidate patch with \texttt{tree-sitter-c} when available, falling back to brace-balance heuristics otherwise\\
   \addlinespace
@@ -1074,7 +859,7 @@ The \texttt{complete()} signature was extended with \texttt{tools=} and \texttt{
 Four backend approaches were implemented:
 
 \begin{table}[ht]
- \caption[Types of API call Table]{An example for a simple table.}\label{tab:api_call}
+ \caption[Implemented LLM backend abstractions]{Implemented LLM backend abstractions.}\label{tab:backend_call}
 
 \centering
 \begin{tabularx}{\textwidth}{l X}
@@ -1251,6 +1036,8 @@ With this, patches that are semantically equivalent but with different phrasing 
 \textbf{Experiments Comparison between Methodologies}
 Paired per-query deltas + a sign/Wilcoxon test — never compare aggregate means over different evaluated subsets (that was the original trap)
 
+ReAct, which interleaves explicit reasoning traces with tool-invoking actions so that the model's next action is conditioned on the observed result of its previous one \cite{yao2023react}.
+Self-Refine adds an iterative self-critique loop on top of this pattern, having the model evaluate and revise its own output across multiple passes without external supervision \cite{madaan2023selfrefine}.
 
 
 11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz (2.50 GHz)
