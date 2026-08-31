@@ -133,9 +133,8 @@ This suggests that the graph-only signal is expressive on this dataset, whereas 
   % \end{table}
   % }
 
-For the Topological Structure embedder, PCA is also an important component. Besides reducing dimensionality, it implicitly rebalances the relative contributions of GIN, WL, and NetLSD in the concatenated vector.
-Without it, whichever sembedder has the largest magnitude overweights the overall distance. It can be seen in the pairwise-similarity table that GIN is both the largest-magnitude embedder and the one that Topological Structure depends on most.
-On the other hand, most embedders even show a slight improvement without PCA (Semantic: 75.3\% to 76.7\%; WL: 65.8\% to 67.1\%;).
+For the Topological Structure embedder, L2-normalization is the critical component, not PCA. Table~\ref{tab:pca_l2} shows that removing PCA while keeping L2 costs almost nothing (0.822 to 0.808 hit@1), whereas keeping PCA but removing L2 causes a near-total collapse (0.822 to 0.136 hit@1, GIN alone falling to 0.055). Each sub-embedder (NetLSD, WL, GIN) is L2-normalized individually before concatenation, so no single stream can dominate the concatenated vector by raw magnitude alone as long as normalization is enabled; disabling it removes that safeguard, and whichever sub-embedder has the largest raw magnitude (GIN, per the pairwise-similarity table) then overweights the overall distance.
+PCA's role is instead to reduce redundancy/correlation across the concatenated GIN, WL, and NetLSD streams, which is why most embedders even show a slight improvement without it once L2-normalization is kept (Semantic: 75.3\% to 76.7\%; WL: 65.8\% to 67.1\%;).
 
 %   \vspace{0.3em}
 %   % {\scriptsize\color{black!55}
@@ -232,8 +231,8 @@ For a production vulnerability retrieval system, this may suggest that real-worl
 \section{CVEFixes: Embedder Retrieval Performance}\label{sec:cvefixes-retrieval}
 Overall, the CodeBERT-based retrievers outperform the Topological Structure embedding model. This suggests that for these real-world scenarios, the underlying semantic signal carries more weight than the aggregated code topological structure representations crafted under the settings used in this work.
 
-\paragraph{Semantic + Structure Performance}
-For the Semantic + Structure Retriever, Figure~\ref{img:retrieval_boxplots} shows that vulnerability classes such as CWE-190 and CWE-787 exhibit clear, distinct separations with no overlap between the interquartile ranges (IQRs) or whiskers of incorrect and correct matches. However, an exception occurs in CWE-20, where the ranking scores for incorrect retrievals are concentrated at higher values than the correct ones.
+\paragraph{Semantic+Structure Performance}
+For the Semantic+Structure Retriever, Figure~\ref{img:retrieval_boxplots} shows that vulnerability classes such as CWE-190 and CWE-787 exhibit clear, distinct separations with no overlap between the interquartile ranges (IQRs) or whiskers of incorrect and correct matches. However, an exception occurs in CWE-20, where the ranking scores for incorrect retrievals are concentrated at higher values than the correct ones.
 
 For CWE-476, while correct matches score slightly higher on average, their distributions noticeably overlap, lacking a clean separation. CWE-362 demonstrates a similarly fuzzy boundary. While the IQR for errors is mainly in the lower half of the correct ranking score distribution, the 25th percentile (p25) of correct retrievals aligns with the median of incorrect retrievals.
 
@@ -269,7 +268,7 @@ This high volume of high-ranking false positives likely occurs because a vulnera
     \label{img:retrieval_boxplots}
 \end{figure}
 
-The Structure and Semantic Retriever excels in both vulnerability retrieval and downstream program repair. 
+The Semantic+Structure Retriever excels in both vulnerability retrieval and downstream program repair. 
 It achieves the highest retrieval accuracy in both CWEs (65.17\%) and CVEs (53.93\%).
 This hybrid architecture likely achieves this strong performance by capturing localized lexical semantics, such as variable names and types, and maximizing its signal by encoding program flow control using regex vulnerability searches. 
 Explicit graph patterns improved the identification of memory-safety vulnerabilities. 
@@ -279,7 +278,7 @@ Conversely, pure topological descriptors fail to capture the localized lexical n
 
 \subsection{CVE level analysis}
 
-Structure + Semantic model achieves good performance in retrieving localized data-flow and bounds-check patterns. 
+The Semantic+Structure model achieves good performance in retrieving localized data-flow and bounds-check patterns. 
 For example, (CWE-20) CVE-2021-26788 ($0.93$) and (CWE-20) CVE-2020-15211 ($0.73$) involve localized input validation and bounds checking (e.g., adding \texttt{isxdigit()} checks or guarding pointers within a single block). 
 This good performance is explained by the match code, which is based on AST/CPG structural syntax. 
 Good performance is also observed when the patch modifies an existing AST node (e.g., reordering calls or tweaking conditionals, as in (CWE-362) CVE-2011-1768).
@@ -314,7 +313,7 @@ This is the case of CVE-2012-3552, which calls \texttt{ip\_setup\_cork()}, perfo
 Therefore, the regex group that signals a race condition remains empty. 
 The remaining feature groups of the pattern embedding are unrelated vulnerability classes (Use-After-Free, Null Pointer Dereference, unchecked returns, array bounds, uninitialized variables, and alloc/free misallocations). 
 As a result, the structural vector becomes near-constant noise. 
-As the Structure+Semantic model concatenates the structural pattern vector with the CodeBERT embedding and then applies PCA, the semantic signal is diluted, leading to incorrect retrieval with this embedder.  
+As the Semantic+Structure model concatenates the structural pattern vector with the CodeBERT embedding and then applies PCA, the semantic signal is diluted, leading to incorrect retrieval with this embedder.  
 
 Similarly, CVE-2021-326862, an issue in the Linux kernel that allows local users to hold an incorrect lock during the ioctl operation and trigger a race condition, and CVE-2020-1265, a race condition in SSL sockets under heavy TLS loads where the IP socket option handling can lead to denial of service of open-source multimedia communication libraries, are not correctly retrieved. These errors occur because these cases use domain-specific identifiers that are not directly related to kernel locking primitives misuse and therefore cannot be matched by the vulnerability flow rules. 
 As a consequence, the vectors that flag concurrency vulnerabilities remain empty for both evaluated vulnerable functions, following the same error pattern described previously.  
@@ -618,7 +617,7 @@ for (int i = 0; i < flat_size; ++i) {
 }
 \end{lightcpp}
 
-It shows that even though the retriever supplies the patcher agent with a similar CVE's code, a vulnerability patch, vulnerability metadata (TODO: correctly describe fix list), a patch CoT, and the root cause (patch-analysis memory), the model can still generate a patch for a different vulnerability than the one queried. 
+It shows that even though the retriever supplies the patcher agent with a similar historical example (its vulnerable and patched code, fix-list metadata (TODO: correctly describe fix list), a patch CoT, and root cause), and the query's own CWE is already known to the pipeline (Chapter~\ref{chapter:methodology}), the model can still generate a patch for a different vulnerability than the one queried. 
 A similar behavior was found in another test set entry, 
 % with (\#78), 
 where the CVE and CWE were correctly retrieved according to the dataset, but the actual fix generated by the LLM consisted of replacing \texttt{GetInput}, \texttt{GetOutput}, and \texttt{GetVariableInput} with their \texttt{*Safe} equivalents and guarding them with \texttt{TF\_LITE\_ENSURE\_OK}, even though it had correctly identified that \texttt{bw\_output} retrieval based on the \texttt{merge\_outputs} flag. However, this pattern is related to CVE-2021-29532, a Null Pointer Dereference (CWE-476) that results in a segmentation fault and a Denial of Service (DoS) crash when \texttt{GetInput} returns a \texttt{nullpt} and it's dereferenced. Nevertheless, when submitting its reasoning, the model's own justification illustrates the problem: 
@@ -638,7 +637,7 @@ Even though the pipeline uses different steps to generate a patch and evaluate i
 A possible architecture could consist of a "Generator" agent that proposes a fix based on the retrieved context, while a separated "Reviewer" evaluates the patch. The Reviewer agent can compare the CPG of the generated patch against known secure topologies. This separation of concerns can improve the chances that the generated patch resolves the actual issue.
 
 
-\subsection*{Functional Validity and Execution Stability}
+\subsection*{Judge-Assessed Validity and Execution Stability}
 
 The trade-off between surface-level accuracy and functional accuracy extends further. As seen in Table \ref{tab:llmjudge_codex53}, the sequential CodeBERT model generates the highest overall rate of functionally valid patches (36.0\%), closely followed by the Topological Structure model pipeline (32.0\%).
 However, despite topological features producing syntactically stable code with the lowest runtime error rate (4.0\%), they suffer from the highest invalid patch rate (64.0\%). That is, even though the code runs, it remains vulnerable.
@@ -702,7 +701,7 @@ The results in Table \ref{tab:cwe_comparison_gpt4o} follow similar patterns to t
 
 Similar to Codex, CWE-787 (Out-of-bounds Write) shows the weakest performance. While BERTScore and ROUGE-L remain stable, Hunk $\text{F}_1$ collapses to almost zero across all methods (0.01--0.18). This suggests that the failures on CWE-787 are intrinsic to the task difficulty due to factors like the dataset sample or the complexity of the patch required for that specific CWE.
 
-Conversely, most Tool Calling methods excel at CWE-362 (Race Conditions), achieving approximately 0.98--0.99, similar to scores seen previously (approximately 0.97--0.99). On the other hand, while the individual Tool Calling methods perform very similarly in Table \ref{tab:cwe_comparison_gpt4o}, the \texttt{Combined} retrieval pipeline showed a drop in performance. For example, in CWE-416, it scored 0.9369 BERTScore and 0.9691 ROUGE-L with GPT-5.3-Codex, whereas with GPT-4o it fell to 0.2671 and 0.3390, respectively. Comparatively, it is worse than the Tool Calling (without retrieval) CodeBERT Seq/Pattern Tool Calling patches across almost every single category.
+Conversely, most Tool Calling methods excel at CWE-362 (Race Conditions), achieving approximately 0.98--0.99, similar to scores seen previously (approximately 0.97--0.99). On the other hand, while the individual Tool Calling methods perform very similarly in Table \ref{tab:cwe_comparison_gpt4o}, the Topological Structure retrieval pipeline showed a drop in performance. For example, in CWE-416, it scored 0.9369 BERTScore and 0.9691 ROUGE-L with GPT-5.3-Codex, whereas with GPT-4o it fell to 0.2671 and 0.3390, respectively. Comparatively, it is worse than the Tool Calling (without retrieval) Structure/Semantic+Structure Tool Calling patches across almost every single category.
 
 
 GPT-4o presents competitive performance when considering tool calling and Structure. For example, in CWE-416, the Tool Calling (without retrieval) achieves a 0.9814 Hunk $\text{F}_1$, which is actually better than the Codex-5.3 table's maximum of 0.9337. 
@@ -809,7 +808,7 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
     \bottomrule
   \end{tabular}
   \\[0.75em]
-  \textit{(b) Patch quality and functional validity}
+  \textit{(b) Patch quality and judge-assessed validity}
 
   \begin{tabular}{lrrrrrrr}
     \toprule
@@ -908,13 +907,13 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
 
 Tables \ref{tab:patch_analysis_summary_deepseek} and \ref{tab:patch_analysis_summary_by_cwe_DeepSeek-V4-Flash} show the patching performance of the DeepSeek-V4-Flash model. As previously remarked, they reinforce the need for agentic multi-turn workflows for automated program repair.
 
-Prompt-only generation fails to produce functionally valid code. Despite achieving token-based evaluation success rates of 28.1\% to 33.7\%, the prompt-only LLM Judge Valid rates hover between 0.0\% and 1.1\%. On the other hand, the multi-turn Tool Calling pipeline powered by  DeepSeek shows higher functional validity. The \textit{Semantic+Structure} and \textit{Structure} retrieval methods achieve valid rates of 27.0\% and 25.8\%, respectively, outperforming baseline Tool Calling without retrieval (21.3\%). This demonstrates that for pipelines powered by less powerful models, such as DeepSeek, enriching the context with the semantic and structural root causes of vulnerabilities via RAG can increase performance. Whereas relying on the model generation capacity may result in syntactically plausible edits being predicted. Nevertheless, it is notable that performance is lower than that of proprietary OpenAI models from previous subsections. Therefore, it reinforces the need for compensation in engineering effort when the pipeline uses open-weight models.  
+Prompt-only generation fails to produce functionally valid code. Despite achieving token-based evaluation success rates of 28.1\% to 33.7\%, the prompt-only LLM Judge Valid rates hover between 0.0\% and 1.1\%. On the other hand, the multi-turn Tool Calling pipeline powered by  DeepSeek shows higher judge-assessed validity. The \textit{Semantic+Structure} and \textit{Structure} retrieval methods achieve valid rates of 27.0\% and 25.8\%, respectively, outperforming baseline Tool Calling without retrieval (21.3\%). This demonstrates that for pipelines powered by less powerful models, such as DeepSeek, enriching the context with the semantic and structural root causes of vulnerabilities via RAG can increase performance. Whereas relying on the model generation capacity may result in syntactically plausible edits being predicted. Nevertheless, it is notable that performance is lower than that of proprietary OpenAI models from previous subsections. Therefore, it reinforces the need for compensation in engineering effort when the pipeline uses open-weight models.  
 
 % Additionally, DeepSeek exhibits a higher iteration overhead compared to Codex and GPT-4o. The model averages 5.2 to 5.5 turns per patch generation, suggesting a more exploratory and error-prone reasoning process before converging on a final solution. 
 
-Furthermore, the \textit{Topological Structure} retrieval strategy has the LLM Judge functional validity of 6.7\%. Repeating the behavior observed in GPT-4o, DeepSeek struggles to recover the vulnerability identification errors of the retriever, which composes with the errors of the model itself.
+Furthermore, the \textit{Topological Structure} retrieval strategy has the LLM Judge judge-assessed validity of 6.7\%. Repeating the behavior observed in GPT-4o, DeepSeek struggles to recover the vulnerability identification errors of the retriever, which composes with the errors of the model itself.
 
-Vulnerability-specific patterns are also reproduced under the DeepSeek experiment. As seen in Table \ref{tab:patch_analysis_summary_by_cwe_DeepSeek-V4-Flash}, Tool Calling with Pattern retrieval achieves 73.3\% syntax success and a 93.3\% verify rate on CWE-787. Yet, high performance does not translate to LLM as a Judge's functional validity for out-of-bounds writes. DeepSeek's performance confirms the overall evaluation that reliable automated vulnerability patching demands agentic, iterative tool use coupled with isolated, targeted retrieval, even though further exploration on the agentic workflow is required to meet reliable performance for production code.
+Vulnerability-specific patterns are also reproduced under the DeepSeek experiment. As seen in Table \ref{tab:patch_analysis_summary_by_cwe_DeepSeek-V4-Flash}, Tool Calling with Pattern retrieval achieves 73.3\% syntax success and a 93.3\% verify rate on CWE-787. Yet, high performance does not translate to LLM as a Judge's judge-assessed validity for out-of-bounds writes. DeepSeek's performance confirms the overall evaluation that reliable automated vulnerability patching demands agentic, iterative tool use coupled with isolated, targeted retrieval, even though further exploration on the agentic workflow is required to meet reliable performance for production code.
 
 \begin{table}[H]
   \centering
@@ -1160,7 +1159,7 @@ The Semantic+Structure  variant, despite lower completion (88\%), still achieves
 
 \begin{figure}
     \centering
-    \includegraphics[width=1\linewidth]{img/patching/ci_gptcodex_bertscore.png}
+    \includegraphics[width=1\linewidth]{img/patching/ci_gptcodex_with_baselines_bertscore_autopatch.png}
     \caption{BERTScore confidence intervals for GPT-5.3-Codex patching on AutoPatch, grouped by CWE category.}
     \label{img:autopatch_gptcodex_bertscore}
 \end{figure}
@@ -1183,8 +1182,6 @@ This statistical equivalence, combined with the high Judge validity rates, sugge
     \bottomrule
   \end{tabular}
 \end{table}
-
-Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex} breaks down performance by vulnerability category. Memory Safety (CWE-416, CWE-476) and Concurrency (CWE-362, CWE-667) have the largest sample sizes (22-31 patches each). Resource Management patches show mediocre performance across all metrics. Numeric/Type vulnerabilities (CWE-190, CWE-787) have a lower BERTScore ($\approx$0.31 - 0.32) despite high BLEU-4 ($\approx$0.87--0.89). The low BERTScore may stem from the use of different augmentation models for dataset creation, imprinting their styles on the code. When generating patches using an LLM-powered agent results in refactoring, or the dataset's ground truth includes helpers that are neither generated in the patch nor passed as input to vulnerable code, the tokens in the evaluation differ. See the example in Appendix \ref{chapter:appendix_example_autopatch}. Hence, the importance of the validity metric, which conveys the most relevant measure for the deployment feasibility of this pipeline.
 
 \begin{table}[H]
   \centering
@@ -1211,6 +1208,8 @@ Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex} breaks down perform
     \bottomrule
   \end{tabular}
 \end{table}
+
+Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex} breaks down performance by vulnerability category. Memory Safety (CWE-416, CWE-476) and Concurrency (CWE-362, CWE-667) have the largest sample sizes (22-31 patches each). Resource Management patches show mediocre performance across all metrics. Numeric/Type vulnerabilities (CWE-190, CWE-787) have a lower BERTScore ($\approx$0.31 - 0.32) despite high BLEU-4 ($\approx$0.87--0.89). The low BERTScore may stem from the use of different augmentation models for dataset creation, imprinting their styles on the code. When generating patches using an LLM-powered agent results in refactoring, or the dataset's ground truth includes helpers that are neither generated in the patch nor passed as input to vulnerable code, the tokens in the evaluation differ. See the example in Appendix \ref{chapter:appendix_example_autopatch}. Hence, the importance of the validity metric, which conveys the most relevant measure for the deployment feasibility of this pipeline.
 
 \subsection{GPT-4o}
 
@@ -1288,6 +1287,9 @@ This performance gap suggests that model capability is the dominant factor for l
 
 Conversely, for GPT-4o, the prompt enrichment via retrieval provides a relevant boost. In this case, all three retrieval variants outperform the Tool-only baseline by 6 - 15 percentage points on Judge validity. This indicates that context compensates model limitations by grounding the generation in relevant vulnerability patterns.
 
+\paragraph{Comparison to the Original AutoPatch Benchmark.}
+The original AutoPatch paper reports GPT-4o as its best-performing model, with an F1-score of 94.1\% for patching \cite{Seo2025AutoPatchMF}. Our own evaluation on this same benchmark both corroborates and complicates that figure. Using a tool-calling agent without AutoPatch's dedicated iterative Verifier-feedback loop, our GPT-4o pipeline reaches only 50--65\% LLM-judge-assessed patch validity across retrieval strategies (Table~\ref{tab:autopatch_overall_pipeline_performance_gpt4o}), well below the originally reported 94.1\%; the strongest configuration we test, GPT-5.3-Codex, reaches 70.3--85.3\% validity (Table~\ref{tab:autopatch_overall_pipeline_performance_gpt_codex}), closer to but still short of that figure. This gap suggests that AutoPatch's reported performance depends substantially on its iterative verification loop rather than on retrieval-augmented prompting alone, since that loop is precisely what our simpler tool-calling variant omits. Consistent with the original paper, however, our results likewise confirm that concurrency-related vulnerabilities remain among the most reliably patched categories: the Concurrency category matches or exceeds the overall-average BERTScore F1 across every model and retrieval strategy tested (Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt_codex}, Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o}).
+
 \paragraph{Cost Analysis.}
 Table~\ref{tab:generation_cost_summary_condensed} summarizes the patch generation costs for AutoPatch. GPT-5.3-Codex is more cost-efficient, with an average of \$0.018-0.020 per patch versus \$0.039--0.042 for GPT-4o with retrieval. The Tool-only GPT-4o baseline has the highest per-entry cost (\$0.224), which may indicate that when there is no retrieval context to guide generation, the model compensates by using more tokens and loops, and, as seen previously, this is not enough to deliver performance. RAG pipelines reduce GPT-4o costs by 5-6$\times$ compared to the no-retrieval baseline while simultaneously improving patch quality. 
 Compared to the CVEfixes dataset (Table~\ref{tab:cvefixes_generation_cost_summary}), AutoPatch generation costs are 3 to 6$\times$ lower per entry for equivalent configurations. 
@@ -1305,15 +1307,15 @@ Table~\ref{tab:autopatch_overall_pipeline_performance_deepseek} presents DeepSee
   \setlength{\tabcolsep}{2pt}
   \caption{DeepSeek-V4-Flash: Overall pipeline performance on the autopatch dataset}
   \label{tab:autopatch_overall_pipeline_performance_deepseek}
-  \textit{(a) Completion and functional validity}
+  \textit{(a) Completion and judge-assessed validity}
 
   \begin{tabular}{lrrr}
     \toprule
     \textbf{Source} & \textbf{$N$} & \makecell{\bfseries Completion\\(\%)} & \makecell{\bfseries LLM Judge\\Valid (\%)} \\
     \midrule
-    Semantic+Structure & 101 & 83.2 & 69.7 \\
-    Semantic & 101 & 76.2 & 60.6 \\
-    Topological Structure & 101 & 82.2 & 71.7 \\
+    Semantic+Structure & 75 & 83.2 & 69.7 \\
+    Semantic & 75 & 76.2 & 60.6 \\
+    Topological Structure & 75 & 82.2 & 71.7 \\
     \bottomrule
   \end{tabular}
   \\[0.75em]
@@ -1419,8 +1421,8 @@ Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \m
     Sem.+Struc - Tool & GPT-4o & 75 & 559K & 57K & 616K & \$2.95 & \$0.039 \\
     Semantic - Tool & GPT-4o & 75 & 625K & 56K & 681K & \$3.18 & \$0.042 \\
     Topology - Tool & GPT-4o & 75 & 620K & 55K & 680K & \$3.17 & \$0.041 \\
-    Model baseline & GPT-4o & 82 & 872.5K & 72.6K & 945.1K & \$4.36 & \$0.053 \\
-    Tool w/o retrieval & GPT-4o & 82 & 4.6M & 83.3K & 4.6M & \$18.37 & \$0.224 \\
+    Model baseline & GPT-4o & 75 & 872.5K & 72.6K & 945.1K & \$4.36 & \$0.053 \\
+    Tool w/o retrieval & GPT-4o & 75 & 4.6M & 83.3K & 4.6M & \$18.37 & \$0.224 \\
     % codebert\_pattern / single\_turn & gpt-4o & 75 & 384527 & 69479 & 454006 & \$2.4842 & \$0.033122 \\
     % codebert\_pattern / tool\_calling & gpt-4o & 75 & 558624 & 57310 & 615934 & \$2.9545 & \$0.039393 \\
     % codebert\_seq / single\_turn & gpt-4o & 75 & 405989 & 76320 & 482309 & \$2.6673 & \$0.035563 \\
@@ -1429,33 +1431,12 @@ Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \m
     % combined / tool\_calling & gpt-4o & 75 & 625030 & 55592 & 680622 & \$3.1777 & \$0.042370 \\
     % tool\_calling\_no\_retrieval & gpt-4o & 20 & 113308 & 16570 & 129878 & \$0.6735 & \$0.033673 \\
     \midrule
-    Sem.+Struc (Tool) & DeepSeek & 101 & 1.28M & 218.2K & 1.50M & \$0.35 & \$0.0035 \\
-    Semantic (Tool) & DeepSeek & 101 & 1.28M & 213.5K & 1.50M & \$0.35 & \$0.0035 \\
-    Topology (Tool) & DeepSeek & 101 & 1.35M & 213.7K & 1.56M & \$0.36 & \$0.0036 \\
+    Sem.+Struc (Tool) & DeepSeek & 75 & 1.28M & 218.2K & 1.50M & \$0.35 & \$0.0035 \\
+    Semantic (Tool) & DeepSeek & 75 & 1.28M & 213.5K & 1.50M & \$0.35 & \$0.0035 \\
+    Topology (Tool) & DeepSeek & 75 & 1.35M & 213.7K & 1.56M & \$0.36 & \$0.0036 \\
     \bottomrule
   \end{tabular}
 \end{table}
-
-% ## Summary
-
-% **Confirmed: DeepSeek did NOT adapt to the tool-calling pipeline.**
-
-% From the analysis of results.jsonl and evaluation.jsonl:
-
-% | Metric | Single-Turn | Tool-Calling |
-% |--------|------------|--------------|
-% | **Generated patches** | 0/75 (0%) | 0/75 (0%) |
-% | **Parse errors** | status=error | status=parse_error (100%) |
-% | **DeepSeek variants** | 15 re_impl_deepseek + 10 re_impl_deepseek-r1 = 25 failures | 25 failures |
-
-% **Key Evidence:**
-% - ✗ `generated_patch` field is empty in all results.jsonl records
-% - ✗ `agent_output` field is missing from all records  
-% - ✗ 100% of DeepSeek queries produced `parse_error` in tool-calling mode
-% - ✗ 100% of queries with 0 successful patches
-
-% **Broader Finding:**
-% Notably, **all model variants failed in this run** (not just DeepSeek), suggesting a systemic issue with the pipeline configuration rather than model-specific problems. The distinction is that single-turn produced no output (error status) while tool-calling produced malformed output (parse_error status).
 
 
 \begin{figure}
@@ -1470,4 +1451,4 @@ the retrieval-augmented pipeline achieves high success rates (70--85\% Judge val
 The key findings prioritize model capability: GPT-5.3-Codex substantially dominates, outperforming GPT-4o regardless of retrieval strategy. 
 Also, when using less capable models, retrieval augmentation is particularly beneficial. 
 Regarding the evaluation, token-based metrics (BLEU, ROUGE) can plateau across variants and are vulnerable to data preprocessing, but Judge validity can reveal meaningful evaluation in such cases. 
-Finally, the Topology retrieval achieves the best trade-off of completion rate and functional validity for the stronger model, while Semantic+Structure offers the most stable performance for the weaker model.
+Finally, the Topology retrieval achieves the best trade-off of completion rate and judge-assessed validity for the stronger model, while Semantic+Structure offers the most stable performance for the weaker model.
