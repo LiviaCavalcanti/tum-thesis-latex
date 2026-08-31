@@ -108,12 +108,12 @@
 
 One of the goals of this work is to use historical knowledge from previous fixes to generate fixes for new, structurally similar vulnerable code.
 
-\section*{Architecture}
+\section{Architecture}
 % content: KB + agentic framework description
 This project presents a structure-aware retrieval system that identifies the type of vulnerability in a code snippet and suggests a patch grounded in similar previously seen fixes. 
 These previously fixed code snippets are used to build a knowledge base (KB) indexed with embeddings built from the code. This knowledge base is combined with an agentic generation layer that, given the context retrieved, prompts an LLM to produce a candidate patch.
 
-\section*{Data Pipeline}
+\section{Data Pipeline}
 
 Following the architecture definition, the data pipeline was implemented in separate layers: Retrieval and Generation.
 Besides that, the system can be split into offline retrieval-index construction of the KB, and an online stage in which retrieval occurs independently, before the patch generation.
@@ -136,7 +136,9 @@ Besides that, the system can be split into offline retrieval-index construction 
 
 In the development phase, retrieval and patch can be assessed on a held-out test set using the automated evaluation script described in ~\ref{section:evaluation}.
 
-\section*{Graph Generation}\label{sec:graph-generation}
+\section{Graph Representation}\label{sec:graph-representation}
+
+\subsection{Graph Generation}\label{sec:graph-generation}
 
 This work uses Joern to generate the Code Property Graph (CPG) from a code snippet. 
 For snippets that are not well-formed C/C++ programs, notably those from AutoPatch, the pipeline first wraps the code with the minimum necessary macros and type definitions (e.g. \ \verb|typedef unsigned int u32|, \verb|#define NULL ((void*)0)|) and writes a parseable source file.
@@ -162,7 +164,7 @@ Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG
 The pipeline generates graphs for both the \textit{vulnerable} and the \textit{patched} version of each code snippet.  
 
 
-\section*{Graph Loading}
+\subsection{Graph Loading}
 The exported graph is imported into the pipeline using the NetworkX library as a \verb|MultiDiGraph|, a directed graph representation that allows multiple parallel edges between the same pair of nodes, which allows the representation of multiple code graph structure since (e.g.\ both an AST and a CFG edge).
 
 All  \verb|export.xml| files are discovered by recursively exploring the export's subdirectories. Each file is read individually with \verb|nx.read_graphml| and merged into a single combined graph iteratively. 
@@ -464,7 +466,7 @@ The node classification is done via regex on \texttt{CODE} attributes of each no
   %     (out-seq.east) -- ++(1,0) |- (code-pat.west);
   % \end{tikzpicture}
 
-\section*{FAISS}
+\section{Retrieval Index}
 
 As an indexer, we used FAISS flat. It was built using batches of 32 graphs embeddings per index call. The index metric used is the cosine similarity. Because the vectors are L2-normalized, the cosine similarity boils down to the inner product. 
 The L2-normalization formula:
@@ -479,7 +481,7 @@ The PCA-based embedders save the fitted PCA to reuse it on inference time. Each 
 
 The index is stored as a binary, and the metadata as a JSON file. Each position in the vector index corresponds to an entry in the metadata. At retrieval time, both are loaded, allowing semantic-metadata mapping for operations enrichment.
 
-\section*{Agent Architecture} \label{section:agent-architecture}
+\section{Agent Architecture}\label{section:agent-architecture}
 
 The agent receives the retrieved context, if applicable, and the vulnerable code, and is responsible for returning a candidate patch.
 
@@ -499,7 +501,7 @@ To allow easy switching between different agent architectures, implementations a
 The work developed two agent implementations \texttt{Single Turn}, a minimal one-shot baseline, and a \texttt{Tool Calling} agent, which uses ReAct loops with access to coding tools.
 % TODO citation: justify the stragegy of implementation adopted by citing a work 
 
-\subsection*{Single-turn LLM}
+\subsection{Single-turn LLM}
 
 The baseline prompt uses the Autopatch paper's approach as reference, and is powered by an LLM(GPT-4o, temperature=0.2). 
 The AutoPatch approach separates the example from the system instructions, allowing the LLM to clearly distinguish between what the task is, the example, and the target input. To do so, the approach uses a few-shot prompt and builds 4 messages assembled from template files declared in \texttt{registry.yaml}, a record of historically available prompt templates. 
@@ -625,7 +627,7 @@ In this version, the system prompt also contains an explicit sub-step: \texttt{"
 % ) and inject them as `{target_graph_context}` in the prompt.
 
 
-\subsection*{Agent with structure-aware tooling}
+\subsection{Agent with Structure-Aware Tooling}
 
 This agent follows a ReAct loop~\cite{react2023google}, in which the LLM reasons and calls tools iteratively until it reaches a submission point and calls \texttt{submit\_patch}, or until it hits the maximum number of iterations, set to 6.
 
@@ -848,7 +850,7 @@ As the next step, the model re-enters the loop to correct the SEARCH block, by u
 If the match succeeds, the reconstructed patched file is returned as result and the loop ends.
 
 
-\paragraph{Backend abstraction.}
+\subsection{Backend Abstraction}
 The pipeline has a LLM Transport abstraction
 % (\texttt{src\/agents\/backends.py})
 , defined by \texttt{CompletionBackend} protocol that allows the underlying LLM to be swapped without changing the calling code.
@@ -878,7 +880,7 @@ Four backend approaches were implemented:
 
 Swapping between backends only requires call \texttt{use\_backend()} context manager, no other code changes are needed.
 
-\subsection*{Batch execution and input assembly}
+\subsection{Batch Execution and Input Assembly}
 
 The system provides an outer loop via \texttt{run\_batch\_inference()}, which is used to evaluate the overall performance using a dataset. 
 This loop starts by building a single agent instance with the selected architecture via the registry, which will be shared across all queries. It receives as part of the config one evaluation dataset over which it iterates, generating the queries and appending each result to an append-only \texttt{results.jsonl} file after processing. This logging approach was adopted to make the run crash-safe and resumable.
@@ -887,7 +889,7 @@ For each query, it assembles a \texttt{PatchContext} using the fields already li
 
 % Two retriever modes support this outer loop besides the embedding-based FAISS/HNSW lookup: \texttt{OracleRetriever}, which returns the perfect same-CVE match by direct lookup and serves as an upper bound that isolates patch-generation quality from retrieval quality; and \texttt{PrecomputedRetriever}, which replays cached results from a prior \texttt{--mode query} run so the same retrieval output can be reused across multiple patching experiments without recomputing embeddings.
 
-\subsection*{Baseline No-Retrieval Variant}
+\subsection{Baseline No-Retrieval Variant}
 Uses an identical system prompt as the Structure tooling aware agent, but without any retrieval tool call: \texttt{"You have NO access to similar vulnerability examples — use CWE knowledge and verification only."} 
 For that, the \texttt{analyze\_example\_fix} tool is excluded from the tool list, so the model has no mechanism to inspect a retrieved example. This serves as the ablation baseline. Nevertheless, to make it fair, the prompt lists what are the CWEs that may be present in the code snippet.
 
@@ -948,8 +950,8 @@ For that, the \texttt{analyze\_example\_fix} tool is excluded from the tool list
 
 % \paragraph{Reproducibility and cost tracking.}
 
-\subsection*{Evaluation}\label{section:evaluation}
-We evaluate the system across three axes: \textit{retrieval metrics}, assess whether the corresponding historical vulnerability is returned given an unseen vulnerability query; \textit{patching metrics}, which assess the quality and correctness of the generated patch; and \textit{system metrics}, which assess the cost and viability of the pipeline as a whole.
+\section{Evaluation}\label{section:evaluation}
+We evaluate the system across three axes: \textit{retrieval metrics}, assess whether the corresponding historical vulnerability is returned given an unseen vulnerability query; \textit{patching metrics}, which assess the quality and correctness of the generated patch.
 
 % content: merge the two overlapping metric lists into one
 % e.g. group as Retrieval Metrics / Patching Metrics / System Metrics
@@ -964,7 +966,7 @@ We evaluate the system across three axes: \textit{retrieval metrics}, assess whe
 % Cost: prompt/completion tokens and latency — multi-agent multiplies calls, so define a budget and report quality-per-token.
 % Functional signal: the LLM-judge and human-label pipelines already exist (src/evaluate/llm_evaluation.py, llm_vulnerability_eval.jsonl, human_labels.jsonl) — a reviewer agent should be judged on whether it moves the verdict, not text overlap.
 % Pre-register a win condition, e.g. "+X hunk_f1 at ≤ current parse-error rate and $≤ N×$ tokens."
-\subsection*{Retrieval}
+\subsection{Retrieval Metrics}
 \textbf{CWE hit@1} measures whether the top-1 retrieved example shares the same CWE category as the queried vulnerability.
 
 \textbf{CVE hit@1} is a stricter version of the CWE hit@1. It measures whether the top-1 retrieved example corresponds to the same underlying CVE (or CVE-fix pair) as the query, rather than merely the same vulnerability class.
@@ -972,11 +974,20 @@ It is implemented as an exact CVE identifier match rather than fix-commit lineag
 
 \textbf{Confidence Score} is the similarity score assigned by the retriever to its top-1 match, used to measure the ranking signal quality. It can also be used as a threshold to reject low-confidence retrievals rather than return wrong CVEs examples.
 
-\textbf{Effective dimensionality} of the embedding space is used to characterize how much of the embedding's nominal dimensionality is actually used to separate examples.
+\textbf{MAP} (\textit{Mean Average Precision}) measures ranking quality rather than a single top-1 hit, and remains computable even when only one result is retrieved per query. For a single query, Average Precision at rank $k$ is:
+\[
+\text{AP@}k = \frac{1}{n_\text{rel}} \sum_{i=1}^{k} P(i) \cdot \text{rel}(i)
+\]
+where $\text{rel}(i) \in \{0, 1\}$ marks whether the result at rank $i$ shares the query's CVE, $P(i)$ is the precision (fraction of relevant results) within the top-$i$ results, and $n_\text{rel}$ is the number of relevant results retrieved (used as the denominator instead of the theoretical total so that AP@$k=1$ whenever every retrieved relevant result is ranked first).
+MAP is then the mean of AP@$k$ over a group of queries; grouping by CVE (rather than averaging over the whole query set) yields the per-CVE MAP scores reported in the \texttt{cve\_map\_by\_cve} plots in Chapter~\ref{chapter:results}, which surface which individual vulnerabilities are reliably retrieved versus consistently missed.
 
-\textbf{MAP}
+\paragraph{Embedding-space sanity check.} Before running retrieval, the \textbf{Effective dimensionality} of an embedder's output space is inspected as a diagnostic: the participation ratio of the eigenvalues of the embedding covariance matrix,
+\[
+\text{PR} = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2},
+\]
+where $\text{PR}=1$ indicates a collapsed space (all variance along one direction) and $\text{PR}=d$ indicates that all $d$ nominal dimensions are used uniformly \cite{ansuini2019intrinsic}. This is used to catch degenerate embedders (e.g.\ a PCA fit on too few or too homogeneous graphs) before they are passed to retrieval, rather than as a metric with results reported in this work; per-embedder effective-dimensionality values are left as a diagnostic to report alongside future retrieval runs.
 
-\subsection*{Patching Metrics}
+\subsection{Patching Metrics}
 
 \textbf{LLM-as-a-judge.} following the evaluator design of ~\cite{google2026llmjudge}.
 The evaluator receives the bug context (e.g., bug description) and the candidate patch. The LLM judge is instructed to output its validity assessment, which consists of a “thought” section capturing its thinking steps, a binary label (“VALID” or “INVALID”), and a concise justification. 
@@ -1032,9 +1043,6 @@ With this, patches that are semantically equivalent but with different phrasing 
 % TODO: Will we have time for it?
 \textbf{Patch quality (qualitative).} A subset of generated patches is additionally reviewed by security specialists, who assess correctness, completeness, and whether the patch introduces any new risk, complementing the automated metrics above with expert judgment that automated scoring cannot fully capture.
 
-
-\textbf{Experiments Comparison between Methodologies}
-Paired per-query deltas + a sign/Wilcoxon test — never compare aggregate means over different evaluated subsets (that was the original trap)
 
 ReAct, which interleaves explicit reasoning traces with tool-invoking actions so that the model's next action is conditioned on the observed result of its previous one \cite{yao2023react}.
 Self-Refine adds an iterative self-critique loop on top of this pattern, having the model evaluate and revise its own output across multiple passes without external supervision \cite{madaan2023selfrefine}.
