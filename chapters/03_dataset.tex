@@ -5,18 +5,18 @@ The AutoPatch dataset contains high-severity CVEs disclosed in 2024 and 2025 and
 For each CVE, the entry pairs were augmented using 5 LLMs:  Code Llama (13b-instruct), DeepSeek Coder (v2-lite), DeepSeek-R1 (32b), GPT-4o, and OpenAI o3-mini.
 The augmentation strategies used were: "inserting unreachable code fragments, adding random code in comments, varying whitespace and formatting, defining a useless function, and introducing extraneous newline characters".
 
-Because both datasets are referenced with several overlapping counts throughout this chapter, we fix the terminology upfront:
-\begin{itemize}
-    \item An \textbf{original CVE} is one of the 75 hand-curated vulnerability disclosures in AutoPatch (or, for CVEfixes, one entry of the National Vulnerability Database record set described in Section~\ref{sec:cvefixes}).
-    \item An \textbf{original vulnerable--patched pair} is the ground-truth (\texttt{original\_code.txt}, \texttt{original\_code\_fixed.c}) function pair recorded for that CVE — one per original CVE.
-    \item An \textbf{LLM reimplementation} is a patched-function variant independently regenerated for a given CVE by one of the 5 LLMs above (\texttt{re\_implemented\_<model>.json}); each CVE has up to 5 such variants.
-    \item A \textbf{non-semantic augmentation} is a separate, additional variant per CVE (\texttt{patch\_augmented.json}) produced by applying one of the five superficial transformations listed above to existing code \emph{without} changing its semantics; it is used to test retrieval/patching robustness to surface-level noise rather than to add new ground-truth pairs.
-    \item An \textbf{index record} is a function pair (original, reimplemented, or CVEfixes method pair) stored in the FAISS/HNSW retrieval knowledge base.
-    \item A \textbf{retrieval query} is a held-out function pair whose vulnerability subgraph $G_{\text{vuln}}$ (or $G_{\text{before}}$, for LLM-generated variants) is embedded and searched against the index.
-    \item A \textbf{patch-generation attempt} is one LLM call asking the patching agent to fix a query's vulnerable function; a fraction of attempts end in a parse error (the agent's output cannot be extracted into a compilable patch) rather than a scored patch, which reduces the number of \emph{evaluated} patches below the number of attempts (see Chapter~\ref{chapter:results}).
-\end{itemize}
+% Because both datasets are referenced with several overlapping counts throughout this chapter, we fix the terminology upfront:
+% \begin{itemize}
+%     \item An \textbf{original CVE} is one of the 75 hand-curated vulnerability disclosures in AutoPatch (or, for CVEfixes, one entry of the National Vulnerability Database record set described in Section~\ref{sec:cvefixes}).
+%     \item An \textbf{original vulnerable--patched pair} is the ground-truth (\texttt{original\_code.txt}, \texttt{original\_code\_fixed.c}) function pair recorded for that CVE — one per original CVE.
+%     \item An \textbf{LLM reimplementation} is a patched-function variant independently regenerated for a given CVE by one of the 5 LLMs above (\texttt{re\_implemented\_<model>.json}); each CVE has up to 5 such variants.
+%     \item A \textbf{non-semantic augmentation} is a separate, additional variant per CVE (\texttt{patch\_augmented.json}) produced by applying one of the five superficial transformations listed above to existing code \emph{without} changing its semantics; it is used to test retrieval/patching robustness to surface-level noise rather than to add new ground-truth pairs.
+%     \item An \textbf{index record} is a function pair (original, reimplemented, or CVEfixes method pair) stored in the FAISS/HNSW retrieval knowledge base.
+%     \item A \textbf{retrieval query} is a held-out function pair whose vulnerability subgraph $G_{\text{vuln}}$ (or $G_{\text{before}}$, for LLM-generated variants) is embedded and searched against the index.
+%     \item A \textbf{patch-generation attempt} is one LLM call asking the patching agent to fix a query's vulnerable function; a fraction of attempts end in a parse error (the agent's output cannot be extracted into a compilable patch) rather than a scored patch, which reduces the number of \emph{evaluated} patches below the number of attempts (see Chapter~\ref{chapter:results}).
+% \end{itemize}
 
-For AutoPatch, this yields $75$ original pairs and $75 \times 5 = 375$ LLM reimplementations, i.e.\ $450$ original-plus-reimplemented pairs in total, plus one non-semantic augmented variant per CVE (up to $75$ additional entries) used only for robustness analysis (Section~\ref{sec:variant-analysis}).
+For AutoPatch, this yields $75$ original pairs and $75 \times 5 = 375$ LLM reimplementations, i.e.\ $450$ original-plus-reimplemented pairs in total, plus one non-semantic augmented variant per CVE (up to $75$ additional entries).
 
 % \begin{table}[H]
 % \centering
@@ -83,6 +83,16 @@ For AutoPatch, this yields $75$ original pairs and $75 \times 5 = 375$ LLM reimp
 
 Table \ref{tab:autopatch_cwe_distribution} shows the CWE distribution in the AutoPatch dataset across the 75 entries. It is dominated by validation/logic issues (CWE-20, CWE-252) and concurrency issues (CWE-362); the remaining dataset has memory safety CWEs (CWE-416, CWE-476, CWE-122, CWE-125, CWE-787).
 
+\subsection{Fix Description Encoding}
+ 
+The AutoPatch dataset is organized into directories where each entry is stored in a folder containing a description JSON (\texttt{db\_entry.json} file=, which includes a field describing the remediation strategy at a symbolic, variable-agnostic level (\texttt{fix\_list}).
+The fix description uses symbolic names with variable and function
+mappings (e.g., \textit{''add a NULL check before dereferencing the
+pointer''}) lets a fixed pattern learned from one example
+be transferred to a structurally similar target function. 
+With this description, the LLM is expected to use the abstract fix description to apply the required changes to the target using the actual identifiers. 
+Section~\ref{chapter:methodology} details how this field is used when constructing prompts for patch generation.
+
 \section{CVEfixes}\label{sec:cvefixes}
 
 CVEfixes\cite{moonen2024cvefixes} is a vulnerability dataset for data-driven security research automatically collected and curated from Common Vulnerabilities and Exposures (CVE) records from the public U.S. National Vulnerability Database (NVD). 
@@ -127,14 +137,6 @@ This project uses version v1.0.8, which covers all published CVEs up to 23 July 
 
 \subsection{Fix Description Encoding}
  
-The AutoPatch dataset is organized into directories where each entry is stored in a folder containing a description JSON (\texttt{db\_entry.json} file=, which includes a field describing the remediation strategy at a symbolic, variable-agnostic level (\texttt{fix\_list}).
-The fix description uses symbolic names with variable and function
-mappings (e.g., \textit{''add a NULL check before dereferencing the
-pointer''}) lets a fixed pattern learned from one example
-be transferred to a structurally similar target function. 
-With this description, the LLM is expected to use the abstract fix description to apply the required changes to the target using the actual identifiers. 
-Section~\ref{chapter:methodology} details how this field is used when constructing prompts for patch generation.
-
 The extracted corpus is predominantly C code (92\%), consistent with the kernel- and
 system-level focus of the pipeline; on average, a patch adds 22 lines and
 removes 5 lines, reflecting the generally asymmetric nature of security
@@ -176,6 +178,8 @@ that also uses CPG, but in their case to create a vulnerability classifier.
 
 The 450-entry corpus is not a direct subsample of the 1,618-entry CWE-overlap filter above; it is built by a separate, reproducible 6-step pipeline that queries the CVEfixes database directly for the 6 target CWEs and applies successive validity filters. Table~\ref{tab:cvefixes_pipeline_steps} reports the row count remaining after each step.
 
+
+% TODO: refine this table
 \begin{table}[htbp]
 \centering
 \caption{CVEfixes Final Index/Query Corpus Construction Pipeline}
@@ -196,7 +200,7 @@ The 450-entry corpus is not a direct subsample of the 1,618-entry CWE-overlap fi
 \end{tabular}
 \end{table}
 
-Step 5 (\emph{Joern parse success}) is the CVEfixes analogue of the ``patch-generation attempt'' unit defined above: a method pair is only usable once Joern successfully parses both its before- and after-code into a non-empty CPG; parse failures (malformed snippets, missing includes, truncated methods) are excluded rather than imputed. The resulting 450 records are then split 80/20 per CWE into 360 index and 90 query entries, described next. 
+Step 5 (\emph{Joern parse success}) is the CVEfixes analog of the patch-generation attempt unit defined above: a method pair is only usable once Joern successfully parses both its before- and after-code into a non-empty CPG; parse failures (malformed snippets, missing includes, truncated methods) are excluded rather than imputed. The resulting 450 records are then split 80/20 per CWE into 360 index and 90 query entries, described next. 
 
  
 \begin{table}[htbp]
@@ -221,71 +225,70 @@ AutoPatch's CVEs are drawn from late 2024 through 2025. Table~\ref{tab:overlap_f
 \subsection{Final Evaluation Corpus Construction}
 
 The final dataset was split into an index set for the retrieval knowledge base and a query set for testing at an 80/20 ratio per CWE category. 
-This yields 360 index entries and 90 query entries, 450 records in total, each CWE
-category equally composing both splits by 16.7\%.
-Table~\ref{tab:cwe_distribution} shows the resulting CWE distribution.
 
-\begin{table}[htbp]
-\centering
-\caption{CWE Frequency Distribution Across Index and Query (Test) Datasets}
-\label{tab:cwe_distribution}
-\small
-\begin{tabular}{llccc}
-\toprule
-\textbf{Split} & \textbf{CWE / Category} & \textbf{Count ($N$)} & \textbf{Frequency (\%)}\\
-\midrule
-\multirow{8}{*}{\textbf{Index}} 
-  & CWE-362 & 60 & 16.7\% & \\
-  & CWE-476 & 60 & 16.7\% & \\
-  & CWE-416 & 60 & 16.7\% & \\
-  & CWE-20  & 60 & 16.7\% & \\
-  & CWE-190 & 60 & 16.7\% & \\
-  & CWE-787 & 60 & 16.7\% & \\
-  \cmidrule(lr){2-4}
-  & \textit{Subtotal} & \textit{360} & \textit{100.0\%} & \\
-\midrule
-\multirow{8}{*}{\textbf{Query (Test)}} 
-  & CWE-362 & 15 & 16.7\% & \\
-  & CWE-476 & 15 & 16.7\% & \\
-  & CWE-416 & 15 & 16.7\% & \\
-  & CWE-20  & 15 & 16.7\% & \\
-  & CWE-190 & 15 & 16.7\% & \\
-  & CWE-787 & 15 & 16.7\% & \\
-  \cmidrule(lr){2-4}
-  & \textit{Subtotal} & \textit{90} & \textit{100.0\%} & \\
-\midrule
-\midrule
-\multirow{8}{*}{\textbf{Total (Combined)}} 
-  & CWE-362 & 75 & 16.7\% & \\
-  & CWE-476 & 75 & 16.7\% & \\
-  & CWE-416 & 75 & 16.7\% & \\
-  & CWE-20  & 75 & 16.7\% & \\
-  & CWE-190 & 75 & 16.7\% & \\
-  & CWE-787 & 75 & 16.7\% & \\
-  \cmidrule(lr){2-4}
-  & \textbf{Dataset Total} & \textbf{450} & \textbf{100.0\%} & \\
-\bottomrule
-\end{tabular}
-\end{table}
+To maintain an equal, uniform distribution across categories, both the index and query (test) datasets are balanced across the six Common Weakness Enumerations: CWE-362, CWE-476, CWE-416, CWE-20, CWE-190, and CWE-787. 
+Each of the six CWE types accounts for exactly 16.7\% of the data within every split, comprising 60 records per category in the index ($N = 360$ total) and 15 records per category in the query dataset ($N = 90$ total). Across the overall dataset of 450 items, each CWE category contributes precisely 75 records (16.7\%), ensuring that no single vulnerability class biases retrieval indexing or evaluation performance.
+
+% \begin{table}[htbp]
+% \centering
+% \caption{CWE Frequency Distribution Across Index and Query (Test) Datasets}
+% \label{tab:cwe_distribution}
+% \small
+% \begin{tabular}{llccc}
+% \toprule
+% \textbf{Split} & \textbf{CWE / Category} & \textbf{Count ($N$)} & \textbf{Frequency (\%)}\\
+% \midrule
+% \multirow{8}{*}{\textbf{Index}} 
+%   & CWE-362 & 60 & 16.7\% & \\
+%   & CWE-476 & 60 & 16.7\% & \\
+%   & CWE-416 & 60 & 16.7\% & \\
+%   & CWE-20  & 60 & 16.7\% & \\
+%   & CWE-190 & 60 & 16.7\% & \\
+%   & CWE-787 & 60 & 16.7\% & \\
+%   \cmidrule(lr){2-4}
+%   & \textit{Subtotal} & \textit{360} & \textit{100.0\%} & \\
+% \midrule
+% \multirow{8}{*}{\textbf{Query (Test)}} 
+%   & CWE-362 & 15 & 16.7\% & \\
+%   & CWE-476 & 15 & 16.7\% & \\
+%   & CWE-416 & 15 & 16.7\% & \\
+%   & CWE-20  & 15 & 16.7\% & \\
+%   & CWE-190 & 15 & 16.7\% & \\
+%   & CWE-787 & 15 & 16.7\% & \\
+%   \cmidrule(lr){2-4}
+%   & \textit{Subtotal} & \textit{90} & \textit{100.0\%} & \\
+% \midrule
+% \midrule
+% \multirow{8}{*}{\textbf{Total (Combined)}} 
+%   & CWE-362 & 75 & 16.7\% & \\
+%   & CWE-476 & 75 & 16.7\% & \\
+%   & CWE-416 & 75 & 16.7\% & \\
+%   & CWE-20  & 75 & 16.7\% & \\
+%   & CWE-190 & 75 & 16.7\% & \\
+%   & CWE-787 & 75 & 16.7\% & \\
+%   \cmidrule(lr){2-4}
+%   & \textbf{Dataset Total} & \textbf{450} & \textbf{100.0\%} & \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
 
 
 % I could confidently verify/attribute a subset of CVEs to a CWE either because your own chapter text already names them, or because I found their CWE in NVD/vendor advisories. For the remainder (mostly Linux kernel and library CVEs from the 2020–2023 CWE-416/CWE-476 range), I could not verify a specific CWE within reasonable search effort, and I've flagged those explicitly rather than guess — misattributing a CWE in a difficulty analysis would undermine the analysis itself.
 \subsection{Complexity Description}
-\paragraph{CWE-787: Out-of-Bounds Write :} occurs when a program writes data past the end, or before the beginning, of an intended memory buffer. This flaw can lead to memory corruption, process crashes, or the execution of arbitrary code. The testing sample consists of C++ implementation files from the TensorFlow and TensorFlow Lite runtime/kernel libraries, focusing on kernel operations, tensor management, custom audio operators, and model-building infrastructure.
+\paragraph{CWE-787: Out-of-Bounds Write :} occurs when a program writes data beyond the end or before the beginning of an intended memory buffer. 
+This flaw can lead to memory corruption, process crashes, or the execution of arbitrary code. 
+The testing sample consists of C++ implementation files from the TensorFlow and TensorFlow Lite runtime/kernel libraries, focusing on kernel operations, tensor management, custom audio operators, and model-building infrastructure.
 
 \paragraph{CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization / Race Condition :}Occurs when a program performs two or more operations concurrently, and the outcome depends on the non-deterministic sequence of execution. If shared resources (memory spaces, sockets, files) are accessed without proper synchronization primitives, concurrent threads can manipulate memory unexpectedly, leading to privilege escalation, data corruption, or crashes.
-
-The CWE-362 sample is predominantly composed by lower-level C code within the Linux Kernel (network stack \texttt{net/ipv4}, storage systems fs/ext4) and cryptographic/communication libraries (e.g., OpenSSL/SRTP).
-
-Rather than relying on naive global locks, the ground-truth patches exhibit high domain-specific synchronization complexity:
-
+The CWE-362 sample is predominantly composed of lower-level C code within the Linux Kernel (network stack \texttt{net/ipv4}, storage systems fs/ext4) and cryptographic/communication libraries (e.g., OpenSSL/SRTP).
+Rather than relying on naive global locks, the ground-truth patches exhibit high domain-specific synchronization complexity, for example:
 Fixes rely on socket-specific concurrency macros (\texttt{lock\_sock}/\texttt{release\_sock}) and kernel-level Read-Copy Update (\texttt{rcu\_dereference}, \texttt{rcu\_assign\_pointer}) primitives to safely manage \texttt{ip\_options} memory across concurrent socket writes.
 File System Read-Write Inconsistencies \& Semaphores involve ext4 race conditions between page faults and file truncation (\texttt{fallocate}/\texttt{truncate}), requiring reader-writer semaphores (\texttt{i\_mmap\_sem}) or explicit inconsistency flags instead of adding simple mutexes.
 Structural Decoupling \& Flagging is solved either by passing objects directly to eliminate state copies or by enforcing strict synchronization across concurrent SSL resource access paths without basic \texttt{lock}/\texttt{unlock} wrappers.
 
 
 \paragraph{CWE-20: Improper Input Validation :}
-Occurs when an application fails to validate, sanitize, or verify input before processing it, based on the expected structural, length, or character format requirements.
+Occurs when an application fails to validate, sanitize, or verify input before processing it, based on expected structural, length, or character-format requirements.
 The fix pattern consists of inserting input-character bounds checks (e.g., validating hex strings via \texttt{isxdigit()}) to ensure that user-supplied input strings conform to expected formats before execution.
 
 \paragraph{CWE-190: Integer Overflow or Wraparound :}
@@ -293,10 +296,12 @@ Occurs when an arithmetic calculation produces an integer value outside the repr
 The fix pattern requires inserting safe integer-arithmetic checks before dynamic memory operations (\texttt{malloc}, \texttt{realloc}) to prevent small, wrapped-integer sizes from being allocated for large data streams.
 
 \paragraph{CWE-416: Use After Free (UAF) :}
-Occurs when an application continues to use a memory pointer after it has been explicitly deallocated or freed. This can lead to arbitrary code execution, heap corruption, or diversion of execution paths.
-The sample contains C/C++ network stack and media-streaming components vulnerabilities, including Linux IPv6 socket lifecycle, and SRTP session cleanup. The patch consists of resetting dangling pointers to \texttt{nullptr}, managing reference counts, or ensuring that asynchronous destructor routines do not access freed memory blocks.
+Occurs when an application continues to use a memory pointer after it has been explicitly deallocated or freed. 
+This can lead to arbitrary code execution, heap corruption, or diversion of execution paths.
+The sample contains C/C++ network stack and media-streaming components vulnerabilities, including Linux IPv6 socket lifecycle and SRTP session cleanup. 
+The patch consists of resetting dangling pointers to \texttt{nullptr}, managing reference counts, or ensuring that asynchronous destructor routines do not access freed memory blocks.
 
 \paragraph{CWE-476: NULL Pointer Dereference :}
 Occurs when a program attempts to read or write memory using a pointer variable that evaluates to \texttt{nullptr}, leading to Denial of Service of the application.
-The sample includes media processing frameworks and proxy servers, such as GPAC multimedia handling, and Istio/Envoy proxy handling. 
+The sample includes media processing frameworks and proxy servers, such as GPAC multimedia handling and Istio/Envoy proxy handling. 
 The patches consist of applying explicit null-check guards (\texttt{if (ptr == nullptr) return;}) or safe-access wrappers before accessing the fields.
