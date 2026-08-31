@@ -1,13 +1,13 @@
 \chapter{Results}\label{chapter:results}
 
-\section{AutoPatch: Retriever Explotation Experiments}
+\section{AutoPatch: Retriever Evaluation Experiments}
 
 \subsection{ AutoPatch Dataset Results}
   % \textbf{Goal:} Validate that structural embeddings match CodeBERT performance.
 
 \begin{table}[H]
 \centering
-\caption{Embedder Retrieval Performance Comparison for AutoPatch Dataset}\label{tab:retrieval_autopatch}
+\caption{Embedder Retrieval Performance Comparison for AutoPatch Dataset (Full Dataset, $n=225$, Default Pipeline Configuration)}\label{tab:retrieval_autopatch}
 \small
 \begin{tabular}{lrrrr}
   \toprule
@@ -70,11 +70,12 @@ Therefore, L2 normalization is validated as part of the pipeline.
 % \end{table}}
 In table \ref{tab:retrieval_autopatch}, the Topological Structure embedder achieves the best performance across all metrics, reaching 0.8904 hit@1, surpassing both CodeBERT variants.
 This suggests that the graph-only signal is expressive on this dataset, whereas CodeBERT's semantic signal is less relevant.
+Note that Table~\ref{tab:retrieval_autopatch} is evaluated on the full AutoPatch dataset ($n=225$ queries) using the default pipeline configuration (PCA + L2-normalization), whereas the ablation in Table~\ref{tab:pca_l2} below uses a smaller, fixed $n=73$ query subset (with $n=376$ indexed graphs) to isolate the effect of L2-normalization and PCA in a controlled setting. The absolute hit@1/MRR values therefore differ between the two tables, even though both use the same PCA + L2 configuration.
 
 
 \begin{table}
 \centering
-  \caption{Embedder Retrieval Ablation Study Performance for L2-Normalization and PCA}\label{tab:pca_l2}
+  \caption{Embedder Retrieval Ablation Study Performance for L2-Normalization and PCA (Fixed $n=73$ Query Subset, $n=376$ Indexed Graphs)}\label{tab:pca_l2}
   \begin{tabular}{l *{2}{c} c *{2}{c} c *{2}{c}}
     \toprule
     & \multicolumn{2}{c}{\textbf{PCA + L2}}
@@ -90,7 +91,7 @@ This suggests that the graph-only signal is expressive on this dataset, whereas 
     Topological Structure
       & \chit{0.822} & \chit{0.860}
       && \cwarn{0.808} & 0.844 
-      && \cmiss{0.136} & 0.060 \\
+      && \cmiss{0.014} & 0.061 \\
     Semantic
       & 0.877 & 0.899
       && 0.877 & 0.899
@@ -98,7 +99,7 @@ This suggests that the graph-only signal is expressive on this dataset, whereas 
     GIN
       & 0.658 & 0.734
       && 0.658 & 0.729
-      && \cmiss{0.055} & 0.048 \\
+      && \cmiss{0.055} & 0.073 \\
     CodeBERT pat.
       & 0.863 & 0.880
       && 0.849 & 0.880
@@ -201,7 +202,7 @@ This confirms that for memory-safety and concurrency vulnerabilities in the Auto
 Regardless of this performance, the Topological embedder has a lower average similarity score (0.697) than Semantic+Structure (0.846).
 This indicates that the topological embeddings are sufficient when the code is short, curated, and well represented in the dataset, whereas surface-level code similarity yields high similarity, thereby mixing the vulnerability patterns.
 
-\subsection{Variant Analysis}
+\subsection{Variant Analysis}\label{sec:variant-analysis}
 
 The AutoPatch dataset contains variants of each CVE, consisting of LLM-generated re-implementations (DeepSeek, GPT-4o, Llama, o3-mini) and a further augmented set that increases the dataset's variability. The retrieval difficulty varies by variant type as shown by Table~\ref{tab:autopatch_variants}.
 
@@ -263,8 +264,8 @@ This high volume of high-ranking false positives likely occurs because a vulnera
 
 \begin{figure}
     \centering
-    \includegraphics[width=1\linewidth]{img/retrieval/retriever_comparison_by_cwe.png}
-    \caption{Ranking score distribution by CWE and Embedding strategy}
+    \includegraphics[width=1\linewidth]{img/retrieval/retriever_comparison_by_cwe.pdf}
+    \caption{Ranking score distribution by CWE and embedding strategy. Correct matches are shown in solid green; errors (incorrect retrievals) are shown in hatched red, so the two groups remain distinguishable in grayscale or for colorblind readers.}
     \label{img:retrieval_boxplots}
 \end{figure}
 
@@ -276,10 +277,10 @@ For instance, the retrieval accuracy for Out-of-bounds Writes (CWE-787) goes fro
 Conversely, pure topological descriptors fail to capture the localized lexical nuances that differentiate the CWEs; in a diverse dataset, code complexity likely creates graphs that require deeper processing by graph embedders than the approach used in this work, resulting in a collapse in overall retrieval performance.
 % add space stats
 
-\subsection{CVE level analysis}
+\subsection{CVE-level analysis}
 
 The Semantic+Structure model achieves good performance in retrieving localized data-flow and bounds-check patterns. 
-For example, (CWE-20) CVE-2021-26788 ($0.93$) and (CWE-20) CVE-2020-15211 ($0.73$) involve localized input validation and bounds checking (e.g., adding \texttt{isxdigit()} checks or guarding pointers within a single block). 
+For example, (CWE-20) CVE-2021-26788 ($0.93$) and (CWE-787) CVE-2020-15211 ($0.73$) involve localized input validation and bounds checking (e.g., adding \texttt{isxdigit()} checks or guarding pointers within a single block). 
 This good performance is explained by the match code, which is based on AST/CPG structural syntax. 
 Good performance is also observed when the patch modifies an existing AST node (e.g., reordering calls or tweaking conditionals, as in (CWE-362) CVE-2011-1768).
 
@@ -300,9 +301,11 @@ Broad refactoring or multi-file architectural changes, such as locking macros or
 
 \begin{figure}
     \centering
-    \includegraphics[width=1\linewidth]{img/retrieval/codebert_pattern_cve_map_by_cve.png}
-    \caption{Semantic+Structure CVE mAP}
+    \includegraphics[width=0.92\linewidth]{img/retrieval/cve_map_by_cve_combined.pdf}
+    \caption{Per-CVE mAP for the top 15 CVEs by query count (CVEfixes), with a shared CVE ordering and axis scale across the three retrieval strategies (Semantic+Structure, Semantic, Topological Structure) to enable direct comparison.}
     \label{img:codebert_pattern_cve_map}
+    \label{img:codebert_seq_cve_map}
+    \label{img:combined_cve_map}
 \end{figure}
 
 In general, multi-file changes and configuration-dependent issues perform poorly across all the embedding methods explored. 
@@ -315,28 +318,13 @@ The remaining feature groups of the pattern embedding are unrelated vulnerabilit
 As a result, the structural vector becomes near-constant noise. 
 As the Semantic+Structure model concatenates the structural pattern vector with the CodeBERT embedding and then applies PCA, the semantic signal is diluted, leading to incorrect retrieval with this embedder.  
 
-Similarly, CVE-2021-326862, an issue in the Linux kernel that allows local users to hold an incorrect lock during the ioctl operation and trigger a race condition, and CVE-2020-1265, a race condition in SSL sockets under heavy TLS loads where the IP socket option handling can lead to denial of service of open-source multimedia communication libraries, are not correctly retrieved. These errors occur because these cases use domain-specific identifiers that are not directly related to kernel locking primitives misuse and therefore cannot be matched by the vulnerability flow rules. 
+Similarly, CVE-2021-32686, an issue in the Linux kernel that allows local users to hold an incorrect lock during the ioctl operation and trigger a race condition, and CVE-2020-12652, a race condition in SSL sockets under heavy TLS loads where the IP socket option handling can lead to denial of service of open-source multimedia communication libraries, are not correctly retrieved. These errors occur because these cases use domain-specific identifiers that are not directly related to kernel locking primitives misuse and therefore cannot be matched by the vulnerability flow rules. 
 As a consequence, the vectors that flag concurrency vulnerabilities remain empty for both evaluated vulnerable functions, following the same error pattern described previously.  
 
 On the other hand, semantics is insufficient for cases like CVE-2016-3841 (a Linux IPv6 options UAF), where structural embeddings capture the missing cleanup node better than token sequences. 
 As a consequence, the performance of this CVE retrieval rises from $\sim0.33$ (Semantic) to $\sim0.67$ (Structure + Semantic). 
 Another example is CVE-2020-15211, in which structural embeddings isolate the AST subgraph of the missing bounds check or double-indexing pattern in TensorFlow Lite's array-indexing code. 
 With that, the MAP rises from $\sim0.26$ (Semantic) to $\sim0.73$ (Structure + Semantic).
-
-\begin{figure}
-    \centering
-    \includegraphics[width=1\linewidth]{img/retrieval/codebert_seq_cve_map_by_cve.png}
-    \caption{Semantic CVE mAP}
-    \label{img:codebert_seq_cve_map}
-\end{figure}
-
-
-\begin{figure}
-    \centering
-    \includegraphics[width=1\linewidth]{img/retrieval/combined_cve_map_by_cve.png}
-    \caption{Topological Structure CVE mAP}
-    \label{img:combined_cve_map}
-\end{figure}
 
 The cases in which the Topological Structure embedder succeeded, as shown in Figure~\ref{img:combined_cve_map}, reveal its potential for vulnerability investigation. 
 The Topological Structure embedder successfully identified integer overflow vulnerabilities in dynamic memory functions (e.g., arithmetic in \texttt{realloc}/\texttt{malloc} calls, as seen in CVE-2023-36326). 
@@ -358,7 +346,7 @@ Possible justifications for this are:
     Whereas CVEfixes contains real-world multi-file patches with few interventions to adapt the format to the dataset storage structure, containing domain-specific identifiers that CodeBERT's vocabulary captures.
   \item CVEfixes vulnerabilities demand greater expertise; for example, the race conditions (CWE-362) often involve domain-specific locking primitives (e.g., \texttt{ip\_setup\_cork}) that the regex-based pattern embedder cannot match.
         On the other hand, AutoPatch locking patterns use standard primitives (\texttt{mutex\_lock}, \texttt{spin\_lock}) more commonly found in codebases, making them more generalizable and easier to identify and patch.
-  \item By construction, AutoPatch queries draw from structurally similar augmentations of the same CVE, whereas CVEfixes embedders must emerge patterns that distinguish queries among different vulnerability instances, a harder task.
+  \item By construction, AutoPatch queries draw from structurally similar augmentations of the same CVE, whereas CVEfixes embedders must distinguish patterns among different vulnerability instances, a harder task.
 \end{enumerate}
 
 This indicates that the choice of embedder architecture may depend on the pipeline application context, since no single approach dominates across all vulnerability retrieval scenarios.
@@ -400,42 +388,42 @@ Consequently, even though the agent workflow verifies the correctness of the ret
     \textbf{CWE Category} & \textbf{Method} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-190}} 
-      & Codex-5.3 Baseline                 & \cmiss{$0.163 \pm 0.197^*$} & 0.402 & \chit{$0.698 \pm 0.251^*$} \\
+      & Codex-5.3 Baseline                 & \cmiss{$0.163 \pm 0.197^{\text{L}}$} & 0.402 & \chit{$0.698 \pm 0.251^{\text{L}}$} \\
       & Tool Calling Agent (w/o Retr.)    & $0.696 \pm 0.369$ & 0.790 & $0.607 \pm 0.492$ \\
       & Semantic                         & $0.695 \pm 0.371$ & \chit{0.791} & $0.616 \pm 0.483$ \\
       & Semantic+Structure                & $0.696 \pm 0.369$ & $0.790 \pm 0.287$ & $0.615 \pm 0.483$ \\
       & Topological Structure             & $0.694 \pm 0.369$ & 0.788 & $0.607 \pm 0.489$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
-      & Codex-5.3 Baseline                 & $0.348 \pm 0.242^*$ & 0.342 & $0.834 \pm 0.080^{\ddagger}$ \\
+      & Codex-5.3 Baseline                 & $0.348 \pm 0.242^{\text{L}}$ & 0.342 & $0.834 \pm 0.080^{\text{H}}$ \\
       & Tool Calling Agent (w/o Retr.)    & $0.907 \pm 0.160$ & 0.924 & $0.863 \pm 0.234$ \\
       & Semantic                         & $0.911 \pm 0.156$ & 0.929 & \chit{$0.864 \pm 0.234$} \\
       & Semantic+Structure                & $0.911 \pm 0.156$ & $0.927 \pm 0.070$ & $0.864 \pm 0.234$ \\
       & Topological Structure             & $0.911 \pm 0.156$ & \chit{0.928} & $0.864 \pm 0.234$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
-      & Codex-5.3 Baseline                 & $0.352 \pm 0.234^*$ & 0.379 & $0.905 \pm 0.065^{\S}$ \\
+      & Codex-5.3 Baseline                 & $0.352 \pm 0.234^{\text{L}}$ & 0.379 & $0.905 \pm 0.065^{\text{VH}}$ \\
       & Tool Calling Agent (w/o Retr.)    & $0.957 \pm 0.088$ & 0.992 & $0.998 \pm 0.003$ \\
       & Semantic                         & \chit{$0.974 \pm 0.071$} & 0.994 & \chit{$0.999 \pm 0.002$} \\
       & Semantic+Structure                & $0.914 \pm 0.214$ & $0.937 \pm 0.203$ & $0.988 \pm 0.034$ \\
       & Topological Structure             & $0.967 \pm 0.087$ & \chit{0.997} & $0.998 \pm 0.003$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
-      & Codex-5.3 Baseline                 & $0.302 \pm 0.210^*$ & 0.235 & $0.864 \pm 0.108^{\mathparagraph}$ \\
+      & Codex-5.3 Baseline                 & $0.302 \pm 0.210^{\text{L}}$ & 0.235 & $0.864 \pm 0.108^{\text{M}}$ \\
       & Tool Calling Agent (w/o Retr.)    & $0.884 \pm 0.287$ & 0.918 & $0.907 \pm 0.267$ \\
       & Semantic                         & \chit{$0.939 \pm 0.209$} & \chit{0.972} & \chit{$0.934 \pm 0.240$} \\
       & Semantic+Structure                & $0.918 \pm 0.248$ & $0.960 \pm 0.103$ & $0.899 \pm 0.311$ \\
       & Topological Structure             & $0.937 \pm 0.209$ & 0.969 & $0.925 \pm 0.264$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
-      & Codex-5.3 Baseline                 & $0.198 \pm 0.153^*$ & 0.170 & $0.824 \pm 0.230^*$ \\
+      & Codex-5.3 Baseline                 & $0.198 \pm 0.153^{\text{L}}$ & 0.170 & $0.824 \pm 0.230^{\text{L}}$ \\
       & Tool Calling Agent (w/o Retr.)    & $0.933 \pm 0.183$ & 0.924 & $0.844 \pm 0.361$ \\
       & Semantic                         & \chit{$0.928 \pm 0.190$} & \chit{0.917} & \chit{$0.832 \pm 0.372$} \\
       & Semantic+Structure                & $0.915 \pm 0.205$ & $0.899 \pm 0.208$ & $0.801 \pm 0.400$ \\
       & Topological Structure             & $0.851 \pm 0.318$ & 0.843 & $0.829 \pm 0.371$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
-      & Codex-5.3 Baseline                 & $0.069 \pm 0.075^{\ddagger}$ & 0.216 & $0.035 \pm 0.037^{\S}$ \\
+      & Codex-5.3 Baseline                 & $0.069 \pm 0.075^{\text{H}}$ & 0.216 & $0.035 \pm 0.037^{\text{VH}}$ \\
       & Tool Calling Agent (w/o Retr.)    & $0.510 \pm 0.057$ & 0.925 & $0.000 \pm 0.000$ \\
       & Semantic                         & $0.523 \pm 0.046$ & 0.935 & $0.128 \pm 0.249$ \\
       & Semantic+Structure                & \chit{$0.524 \pm 0.044$} & \chit{$0.937 \pm 0.042$} & \chit{$0.189 \pm 0.270$} \\
@@ -444,9 +432,9 @@ Consequently, even though the agent workflow verifies the correctness of the ret
   \end{tabular}
   \vspace{1ex}
   \raggedright
-  \scriptsize
-  \dag\ \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$. Each CWE category evaluates $n = 15$ records (except CWE-476, where $n = 14$), out of $N = 89$ total evaluated records. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
-  \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
+  \footnotesize
+  \dag\ \textbf{Confidence \& Sample Size Notes:} Values represent $\text{Mean} \pm \text{SD}$. Each CWE category evaluates $n = 15$ records (except CWE-476, where $n = 14$), out of $N = 89$ total evaluated records. The superscript labels below are \emph{not} statistical-significance markers; they classify, for each cell, the maximum confidence level at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
+  \quad $^{\text{VH}}$ Very High Confidence ($99\%$) \quad $^{\text{H}}$ High Confidence ($95\%$) \quad $^{\text{M}}$ Moderate Confidence ($90\%$) \quad $^{\text{L}}$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
 \end{table}
 
 \begin{table}[H]
@@ -459,53 +447,53 @@ Consequently, even though the agent workflow verifies the correctness of the ret
     \textbf{CWE Category} & \textbf{Method} & \textbf{Support ($n$)} & \textbf{BERTScore $\text{F}_1$} & \textbf{ROUGE-L $\text{F}_1$} & \textbf{Hunk $\text{F}_1$} \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-190}} 
-      & Codex-5.3 Baseline                 & -- & \cmiss{$0.163 \pm 0.196^*$} & 0.402 & \chit{$0.698 \pm 0.251^*$} \\
-      & Tool Calling Baseline              & 3  & $0.734 \pm 0.431^*$ & $0.928 \pm 0.115^*$ & $0.689 \pm 0.513^*$ \\
-      & Semantic                          & 2  & $0.615 \pm 0.535^*$ & $0.893 \pm 0.144^*$ & $0.533 \pm 0.661^*$ \\
-      & Semantic+Structure                 & 4  & $0.624 \pm 0.420^*$ & $0.808 \pm 0.253^*$ & $0.559 \pm 0.494^*$ \\
+      & Codex-5.3 Baseline                 & -- & \cmiss{$0.163 \pm 0.196^{\text{L}}$} & 0.402 & \chit{$0.698 \pm 0.251^{\text{L}}$} \\
+      & Tool Calling Baseline              & 3  & $0.734 \pm 0.431^{\text{L}}$ & $0.928 \pm 0.115^{\text{L}}$ & $0.689 \pm 0.513^{\text{L}}$ \\
+      & Semantic                          & 2  & $0.615 \pm 0.535^{\text{L}}$ & $0.893 \pm 0.144^{\text{L}}$ & $0.533 \pm 0.661^{\text{L}}$ \\
+      & Semantic+Structure                 & 4  & $0.624 \pm 0.420^{\text{L}}$ & $0.808 \pm 0.253^{\text{L}}$ & $0.559 \pm 0.494^{\text{L}}$ \\
       & Topological Structure              & -- & $0.694 \pm 0.369$ & 0.787 & $0.607 \pm 0.489$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-20}} 
-      & Codex-5.3 Baseline                 & -- & $0.348 \pm 0.242^*$ & 0.342 & $0.834 \pm 0.080^{\ddagger}$ \\
-      & Tool Calling Baseline              & 5  & $0.800 \pm 0.246^*$ & $0.894 \pm 0.097^*$ & $0.755 \pm 0.365^*$ \\
-      & Semantic                          & 4  & \chit{$0.907 \pm 0.068^*$} & \chit{$0.945 \pm 0.045^{\dagger}$} & \chit{$0.934 \pm 0.067^*$} \\
-      & Semantic+Structure                 & 4  & $0.780 \pm 0.276^*$ & $0.929 \pm 0.119^*$ & $0.775 \pm 0.437^*$ \\
+      & Codex-5.3 Baseline                 & -- & $0.348 \pm 0.242^{\text{L}}$ & 0.342 & $0.834 \pm 0.080^{\text{H}}$ \\
+      & Tool Calling Baseline              & 5  & $0.800 \pm 0.246^{\text{L}}$ & $0.894 \pm 0.097^{\text{L}}$ & $0.755 \pm 0.365^{\text{L}}$ \\
+      & Semantic                          & 4  & \chit{$0.907 \pm 0.068^{\text{L}}$} & \chit{$0.945 \pm 0.045^{\text{F}}$} & \chit{$0.934 \pm 0.067^{\text{L}}$} \\
+      & Semantic+Structure                 & 4  & $0.780 \pm 0.276^{\text{L}}$ & $0.929 \pm 0.119^{\text{L}}$ & $0.775 \pm 0.437^{\text{L}}$ \\
       & Topological Structure              & -- & $0.911 \pm 0.156$ & 0.928 & $0.864 \pm 0.234$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-362}} 
-      & Codex-5.3 Baseline                 & -- & $0.352 \pm 0.234^*$ & 0.379 & $0.905 \pm 0.065^{\S}$ \\
-      & Tool Calling Baseline              & 9  & $0.972 \pm 0.083^{\dagger}$ & $0.997 \pm 0.005^{\S}$ & $0.998 \pm 0.003^{\S}$ \\
-      & Semantic                          & 7  & $0.965 \pm 0.094^*$ & $0.996 \pm 0.006^{\S}$ & \chit{$0.998 \pm 0.004^{\S}$} \\
-      & Semantic+Structure                 & 5  & \chit{$1.000 \pm 0.000^{\S}$} & \chit{$1.000 \pm 0.000^{\S}$} & $0.999 \pm 0.001^{\S}$ \\
+      & Codex-5.3 Baseline                 & -- & $0.352 \pm 0.234^{\text{L}}$ & 0.379 & $0.905 \pm 0.065^{\text{VH}}$ \\
+      & Tool Calling Baseline              & 9  & $0.972 \pm 0.083^{\text{F}}$ & $0.997 \pm 0.005^{\text{VH}}$ & $0.998 \pm 0.003^{\text{VH}}$ \\
+      & Semantic                          & 7  & $0.965 \pm 0.094^{\text{L}}$ & $0.996 \pm 0.006^{\text{VH}}$ & \chit{$0.998 \pm 0.004^{\text{VH}}$} \\
+      & Semantic+Structure                 & 5  & \chit{$1.000 \pm 0.000^{\text{VH}}$} & \chit{$1.000 \pm 0.000^{\text{VH}}$} & $0.999 \pm 0.001^{\text{VH}}$ \\
       & Topological Structure              & -- & $0.967 \pm 0.087$ & 0.997 & $0.998 \pm 0.003$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-416}} 
-      & Codex-5.3 Baseline                 & -- & $0.302 \pm 0.210^*$ & 0.235 & $0.864 \pm 0.107^{\mathparagraph}$ \\
-      & Tool Calling Baseline              & 7  & $0.874 \pm 0.292^*$ & $0.941 \pm 0.123^*$ & $0.850 \pm 0.375^*$ \\
-      & Semantic                          & 7  & \chit{$0.882 \pm 0.295^*$} & \chit{$0.948 \pm 0.118^*$} & \chit{$0.869 \pm 0.339^*$} \\
-      & Semantic+Structure                 & 5  & $0.723 \pm 0.385^*$ & $0.768 \pm 0.346^*$ & $0.780 \pm 0.438^*$ \\
+      & Codex-5.3 Baseline                 & -- & $0.302 \pm 0.210^{\text{L}}$ & 0.235 & $0.864 \pm 0.107^{\text{M}}$ \\
+      & Tool Calling Baseline              & 7  & $0.874 \pm 0.292^{\text{L}}$ & $0.941 \pm 0.123^{\text{L}}$ & $0.850 \pm 0.375^{\text{L}}$ \\
+      & Semantic                          & 7  & \chit{$0.882 \pm 0.295^{\text{L}}$} & \chit{$0.948 \pm 0.118^{\text{L}}$} & \chit{$0.869 \pm 0.339^{\text{L}}$} \\
+      & Semantic+Structure                 & 5  & $0.723 \pm 0.385^{\text{L}}$ & $0.768 \pm 0.346^{\text{L}}$ & $0.780 \pm 0.438^{\text{L}}$ \\
       & Topological Structure              & -- & $0.937 \pm 0.209$ & 0.969 & $0.925 \pm 0.264$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-476}} 
-      & Codex-5.3 Baseline                 & -- & $0.198 \pm 0.152^*$ & 0.170 & $0.824 \pm 0.230^*$ \\
-      & Tool Calling Baseline              & 9  & $0.898 \pm 0.225^*$ & $0.932 \pm 0.189^*$ & $0.778 \pm 0.441^*$ \\
-      & Semantic                          & 9  & $0.826 \pm 0.350^*$ & $0.835 \pm 0.337^*$ & \chit{$0.879 \pm 0.331^*$} \\
-      & Semantic+Structure                 & 7  & \chit{$0.963 \pm 0.099^*$} & \chit{$0.992 \pm 0.017^{\S}$} & $0.856 \pm 0.377^*$ \\
+      & Codex-5.3 Baseline                 & -- & $0.198 \pm 0.152^{\text{L}}$ & 0.170 & $0.824 \pm 0.230^{\text{L}}$ \\
+      & Tool Calling Baseline              & 9  & $0.898 \pm 0.225^{\text{L}}$ & $0.932 \pm 0.189^{\text{L}}$ & $0.778 \pm 0.441^{\text{L}}$ \\
+      & Semantic                          & 9  & $0.826 \pm 0.350^{\text{L}}$ & $0.835 \pm 0.337^{\text{L}}$ & \chit{$0.879 \pm 0.331^{\text{L}}$} \\
+      & Semantic+Structure                 & 7  & \chit{$0.963 \pm 0.099^{\text{L}}$} & \chit{$0.992 \pm 0.017^{\text{VH}}$} & $0.856 \pm 0.377^{\text{L}}$ \\
       & Topological Structure              & -- & $0.851 \pm 0.318$ & 0.843 & $0.829 \pm 0.371$ \\
     \midrule
     \multirow{5}{*}{\textbf{CWE-787}} 
-      & Codex-5.3 Baseline                 & -- & $0.069 \pm 0.075^{\ddagger}$ & 0.216 & $0.035 \pm 0.036^{\S}$ \\
-      & Tool Calling Baseline              & 8  & $0.437 \pm 0.179^*$ & $0.796 \pm 0.312^*$ & $0.003 \pm 0.010^{\S}$ \\
-      & Semantic                          & 8  & \chit{$0.531 \pm 0.059^{\ddagger}$} & $0.925 \pm 0.039^{\S}$ & $0.145 \pm 0.270^*$ \\
-      & Semantic+Structure                 & 11 & $0.466 \pm 0.155^*$ & $0.844 \pm 0.274^*$ & \chit{$0.195 \pm 0.270^*$} \\
+      & Codex-5.3 Baseline                 & -- & $0.069 \pm 0.075^{\text{H}}$ & 0.216 & $0.035 \pm 0.036^{\text{VH}}$ \\
+      & Tool Calling Baseline              & 8  & $0.437 \pm 0.179^{\text{L}}$ & $0.796 \pm 0.312^{\text{L}}$ & $0.003 \pm 0.010^{\text{VH}}$ \\
+      & Semantic                          & 8  & \chit{$0.531 \pm 0.059^{\text{H}}$} & $0.925 \pm 0.039^{\text{VH}}$ & $0.145 \pm 0.270^{\text{L}}$ \\
+      & Semantic+Structure                 & 11 & $0.466 \pm 0.155^{\text{L}}$ & $0.844 \pm 0.274^{\text{L}}$ & \chit{$0.195 \pm 0.270^{\text{L}}$} \\
       & Topological Structure              & -- & $0.516 \pm 0.052$ & 0.914 & $0.000 \pm 0.000$ \\
     \bottomrule
 \end{tabular}
   \vspace{1ex}
   \raggedright
-  \scriptsize
-  \dag\ \textbf{Confidence \& Support Notes:} Values represent $\text{Mean} \pm \text{SD}$. Total evaluated records per method: $N = 41$ for Tool Calling Baseline, $N = 37$ for Semantic, and $N = 36$ for Semantic+Structure. Confidence levels indicate the maximum statistical confidence at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
-  \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^{\dagger}$ Fair Confidence ($80\%-85\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
+  \footnotesize
+  \dag\ \textbf{Confidence \& Support Notes:} Values represent $\text{Mean} \pm \text{SD}$. Total evaluated records per method: $N = 41$ for Tool Calling Baseline, $N = 37$ for Semantic, and $N = 36$ for Semantic+Structure. The superscript labels below are \emph{not} statistical-significance markers; they classify, for each cell, the maximum confidence level at which the 95\% CI half-width remains within the margin threshold of $\le 0.05$: \\
+  \quad $^{\text{VH}}$ Very High Confidence ($99\%$) \quad $^{\text{H}}$ High Confidence ($95\%$) \quad $^{\text{M}}$ Moderate Confidence ($90\%$) \quad $^{\text{F}}$ Fair Confidence ($80\%-85\%$) \quad $^{\text{L}}$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
 \end{table}
 
 
@@ -620,7 +608,7 @@ for (int i = 0; i < flat_size; ++i) {
 It shows that even though the retriever supplies the patcher agent with a similar historical example (its vulnerable and patched code, fix-list metadata (TODO: correctly describe fix list), a patch CoT, and root cause), and the query's own CWE is already known to the pipeline (Chapter~\ref{chapter:methodology}), the model can still generate a patch for a different vulnerability than the one queried. 
 A similar behavior was found in another test set entry, 
 % with (\#78), 
-where the CVE and CWE were correctly retrieved according to the dataset, but the actual fix generated by the LLM consisted of replacing \texttt{GetInput}, \texttt{GetOutput}, and \texttt{GetVariableInput} with their \texttt{*Safe} equivalents and guarding them with \texttt{TF\_LITE\_ENSURE\_OK}, even though it had correctly identified that \texttt{bw\_output} retrieval based on the \texttt{merge\_outputs} flag. However, this pattern is related to CVE-2021-29532, a Null Pointer Dereference (CWE-476) that results in a segmentation fault and a Denial of Service (DoS) crash when \texttt{GetInput} returns a \texttt{nullpt} and it's dereferenced. Nevertheless, when submitting its reasoning, the model's own justification illustrates the problem: 
+where the CVE and CWE were correctly retrieved according to the dataset, but the actual fix generated by the LLM consisted of replacing \texttt{GetInput}, \texttt{GetOutput}, and \texttt{GetVariableInput} with their \texttt{*Safe} equivalents and guarding them with \texttt{TF\_LITE\_ENSURE\_OK}, even though it had correctly identified that \texttt{bw\_output} retrieval based on the \texttt{merge\_outputs} flag. However, this pattern is related to CVE-2021-29532, a Null Pointer Dereference (CWE-476) that results in a segmentation fault and a Denial of Service (DoS) crash when \texttt{GetInput} returns a \texttt{nullptr} and it's dereferenced. Nevertheless, when submitting its reasoning, the model's own justification illustrates the problem: 
 
 "Applied the CVE-2020-15211 fix pattern by replacing unchecked tensor accessors with safe accessors that validate index/range and return status, preventing invalid tensor pointer dereference and subsequent out-of-bounds memory writes. Specifically: in Prepare and Eval, replaced GetInput/GetOutput/GetVariableInput with GetInputSafe/GetOutputSafe/GetVariableInputSafe plus TF\_LITE\_ENSURE\_OK checks, and guarded optional bw\_output retrieval when merge\_outputs is false. This is a minimal targeted hardening consistent with the known upstream fix style for this CVE/CWE class."
 
@@ -695,7 +683,7 @@ Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \m
  %    combined / tool\_calling / 20260814\_210430\_patching\_e785e2 / tool\_calling\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 8759373 & 725275 & 9484648 & \$2.0342 & \$0.022856 \\\
 
 
-\subsection{Patch Powered by GPT-4o}
+\subsection{Patch Generation with GPT-4o}
 
 The results in Table \ref{tab:cwe_comparison_gpt4o} follow similar patterns to those observed in Table \ref{tab:cwe_comparison_all_methods}. Tool Calling Agent, both with and without retrieval for CodeBERT variations, outperformed the prompt-only GPT-4o baseline. Comparing token-level metrics, prompt-only BERTScore/ROUGE scores hover in the 0.10–0.35 range, while Tool Calling raises them to 0.60–0.99.
 
@@ -789,7 +777,7 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
 
 
 
-\begin{table}[t]
+\begin{table}[H]
   \centering
   \scriptsize
   \setlength{\tabcolsep}{1pt}
@@ -900,18 +888,18 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
     & Single Turn  & 89 & 33.7 & 16.8 & 23.6 & 0.083 & 1.00 & 0.0 \\
     & Tool Calling & 89 & 46.1 & 16.8 & 23.6 & 0.432 & 5.36 & 6.7 \\
     \midrule
-    \textbf{Baseline (No Retr.)} & Tool Calling & 89 & 42.7 & 53.9 & 60.6 & 0.425 & 5.22 & 21.3 \\
+    \textbf{Baseline (No Retr.)} & Tool Calling & 89 & 42.7 & N/A & N/A & N/A & 5.22 & 21.3 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 Tables \ref{tab:patch_analysis_summary_deepseek} and \ref{tab:patch_analysis_summary_by_cwe_DeepSeek-V4-Flash} show the patching performance of the DeepSeek-V4-Flash model. As previously remarked, they reinforce the need for agentic multi-turn workflows for automated program repair.
 
-Prompt-only generation fails to produce functionally valid code. Despite achieving token-based evaluation success rates of 28.1\% to 33.7\%, the prompt-only LLM Judge Valid rates hover between 0.0\% and 1.1\%. On the other hand, the multi-turn Tool Calling pipeline powered by  DeepSeek shows higher judge-assessed validity. The \textit{Semantic+Structure} and \textit{Structure} retrieval methods achieve valid rates of 27.0\% and 25.8\%, respectively, outperforming baseline Tool Calling without retrieval (21.3\%). This demonstrates that for pipelines powered by less powerful models, such as DeepSeek, enriching the context with the semantic and structural root causes of vulnerabilities via RAG can increase performance. Whereas relying on the model generation capacity may result in syntactically plausible edits being predicted. Nevertheless, it is notable that performance is lower than that of proprietary OpenAI models from previous subsections. Therefore, it reinforces the need for compensation in engineering effort when the pipeline uses open-weight models.  
+Prompt-only generation fails to produce functionally valid code. Despite achieving token-based evaluation success rates of 28.1\% to 33.7\%, the prompt-only LLM Judge Valid rates hover between 0.0\% and 1.1\%. On the other hand, the multi-turn Tool Calling pipeline powered by  DeepSeek shows higher judge-assessed validity. The \textit{Semantic+Structure} and \textit{Semantic} retrieval methods achieve valid rates of 27.0\% and 25.8\%, respectively, outperforming baseline Tool Calling without retrieval (21.3\%). This demonstrates that for pipelines powered by less powerful models, such as DeepSeek, enriching the context with the semantic and structural root causes of vulnerabilities via RAG can increase performance. Whereas relying on the model generation capacity may result in syntactically plausible edits being predicted. Nevertheless, it is notable that performance is lower than that of proprietary OpenAI models from previous subsections. Therefore, it reinforces the need for compensation in engineering effort when the pipeline uses open-weight models.  
 
 % Additionally, DeepSeek exhibits a higher iteration overhead compared to Codex and GPT-4o. The model averages 5.2 to 5.5 turns per patch generation, suggesting a more exploratory and error-prone reasoning process before converging on a final solution. 
 
-Furthermore, the \textit{Topological Structure} retrieval strategy has the LLM Judge judge-assessed validity of 6.7\%. Repeating the behavior observed in GPT-4o, DeepSeek struggles to recover the vulnerability identification errors of the retriever, which composes with the errors of the model itself.
+Furthermore, the \textit{Topological Structure} retrieval strategy has the LLM Judge judge-assessed validity of 6.7\%. Repeating the behavior observed in GPT-4o, DeepSeek struggles to recover the vulnerability identification errors of the retriever, which compounds the model's errors.
 
 Vulnerability-specific patterns are also reproduced under the DeepSeek experiment. As seen in Table \ref{tab:patch_analysis_summary_by_cwe_DeepSeek-V4-Flash}, Tool Calling with Pattern retrieval achieves 73.3\% syntax success and a 93.3\% verify rate on CWE-787. Yet, high performance does not translate to LLM as a Judge's judge-assessed validity for out-of-bounds writes. DeepSeek's performance confirms the overall evaluation that reliable automated vulnerability patching demands agentic, iterative tool use coupled with isolated, targeted retrieval, even though further exploration on the agentic workflow is required to meet reliable performance for production code.
 
@@ -952,8 +940,8 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
       & C++ & 24 & 62.5 & 8.3 & 8.3 & 0.552 \\
     \midrule
     \multirow{2}{*}{Tool Calling (No Retr.)} 
-      & C   & 65 & 40.0 & 52.3 & 61.5 & 0.393 \\
-      & C++ & 24 & 50.0 & 58.3 & 58.3 & 0.512 \\
+      & C   & 65 & 40.0 & N/A & N/A & N/A \\
+      & C++ & 24 & 50.0 & N/A & N/A & N/A \\
     \bottomrule
   \end{tabular}
   \\[0.75em]
@@ -1020,7 +1008,7 @@ Vulnerability-specific patterns are also reproduced under the DeepSeek experimen
     Topological Structure (Single-turn) & 89 & 33.7 & 16.8 & 23.6 & 0.083 & 1.00 & 0.0 \\
     Topological Structure (Tool-calling) & 89 & 46.1 & 16.8 & 23.6 & 0.432 & 5.36 & 6.7 \\
     \addlinespace
-    Tool-calling (No Retrieval)    & 89 & 42.7 & 53.9 & 60.6 & 0.425 & 5.22 & 21.3 \\
+    Tool-calling (No Retrieval)    & 89 & 42.7 & N/A & N/A & N/A & 5.22 & 21.3 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1133,12 +1121,12 @@ Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs
 
 \paragraph{DeepSeek-V4-Flash.} As expected, DeepSeek offers the most cost-effective option with an average of \$0.022--0.024 per entry across all configurations of Agent with tools and retrieval. The model baseline costs only \$0.003 per entry. However, as discussed in Table~\ref{tab:patch_analysis_summary_deepseek}, the generation pipeline with DeepSeek experienced output-formatting issues that limited the patch generation rate. Therefore, the pipeline might include fallbacks and Human-in-the-Loop verifications if this model is deployed in production. The DeepSeek performance is an example that raw cost efficiency must be weighed against functional reliability.
 
-Analyzing the Figure \ref{img:cost_bertscore_cvefixes}, GPT-5.3-Codex presents the highest BERTScore ($\sim0.825$) with the Semantic retrieval pipeline at \$0.075/entry. GPT-4o delivers performance similar to GPT-5.3-Codex but is twice as expensive (\$0.16-0.17/entry). The model baselines are low-cost but low-performing, reinforcing the previously found indication that the patching task requires tooling to succeed. Similarly, the cost of one prompt with the code, represented by the squares, can be even higher than if you use the retriever that filters the context to be passed, even though the cost is not translated into the BERTScore-F1 metric.
+Analyzing Figure~\ref{img:cost_bertscore_cvefixes}, GPT-5.3-Codex with tool calling reaches the highest patch success rates ($\sim$0.95--1.00) at \$0.02--0.09/entry. GPT-4o requires roughly \$0.16--0.26/entry for comparable or lower success rates, and the prompt-only model baselines are cheap but among the lowest-success configurations, reinforcing the previous finding that the patching task requires tooling to succeed. Since Table~\ref{tab:llmjudge_codex53} shows that syntactic success does not imply a functionally valid patch, this figure uses the completion/success rate --- rather than BERTScore, which the CWE-787 and CWE-362 comparisons above show can be uninformative or misleading --- as the quality axis; judge-assessed validity (Section~\ref{sec:variant-analysis} and Table~\ref{tab:llmjudge_codex53}) should be consulted alongside it for a functional-correctness view.
 
 \begin{figure}
     \centering
-    \includegraphics[width=1\linewidth]{img/patching/cost_vs_quality.png}
-    \caption{CVEFixes Patching Cost vs. BERTScore as quality measure.}
+    \includegraphics[width=1\linewidth]{img/patching/cost_vs_quality.pdf}
+    \caption{CVEFixes patching cost vs.\ patch success rate as quality measure.}
     \label{img:cost_bertscore_cvefixes}
 \end{figure}
 
@@ -1441,12 +1429,12 @@ Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \m
 
 \begin{figure}
     \centering
-    \includegraphics[width=1\linewidth]{img/patching/cost_vs_quality_autopatch.png}
-    \caption{AutoPatch Patching Cost vs. BERTScore as quality measure.}
+    \includegraphics[width=1\linewidth]{img/patching/cost_vs_quality_autopatch.pdf}
+    \caption{AutoPatch patching cost vs.\ patch success rate as quality measure.}
     \label{img:cost_bertscore_autopatch}
 \end{figure}
 
-\section{conclusion}
+\section{Conclusion}
 the retrieval-augmented pipeline achieves high success rates (70--85\% Judge validity with Codex, 56--65\% with GPT-4o) with AutoPatch dataset. 
 The key findings prioritize model capability: GPT-5.3-Codex substantially dominates, outperforming GPT-4o regardless of retrieval strategy. 
 Also, when using less capable models, retrieval augmentation is particularly beneficial. 
