@@ -143,9 +143,11 @@ While the Semantic embedder achieves the highest overall retrieval performance (
 This is especially relevant because topological graphs depend on structural invariants rather than code natural language and can be computed efficiently on CPU-only infrastructure.
 Furthermore, structural embedders can be an alternative for rare, legacy, or domain-specific languages where pretrained models lack coverage.
 Given that this baseline is completely unsupervised, supervised fine-tuning of lightweight graph neural networks presents a viable, compute-efficient strategy to surpass transformer-based retrieval baselines without requiring dedicated GPU infrastructure.
-Therefore, a viable direction for future work is to train GIN as an alternative for out-of-distribution codebases, which can simultaneously explore the emergence of graph representation patterns that better capture vulnerabilities across a larger dimensional region, currently limited to  2.19, with PCA, and 6.83, without PCA .
+Therefore, a viable direction for future work is to train GIN as an alternative for out-of-distribution codebases, which can simultaneously explore the emergence of graph representation patterns that better capture vulnerabilities across a larger dimensional region, currently limited to  2.19, with PCA, and 6.83, without PCA.
 
-Participation ratio of PCA eigenvalues: $(\sum \lambda_i)^2 / \sum \lambda_i^2$. Value of 1 means the space has collapsed to one direction; value of $d$ means all dimensions are used equally.
+As GIN and WL are reported just as a reference, we consider the Semantic and Topological Structure embedders performance for the 
+
+% Participation ratio of PCA eigenvalues: $(\sum \lambda_i)^2 / \sum \lambda_i^2$. Value of 1 means the space has collapsed to one direction; value of $d$ means all dimensions are used equally.
 
   % \vspace{0.3em}
   % {\small
@@ -402,6 +404,30 @@ For instance, the retrieval accuracy for Out-of-bounds Writes (CWE-787) goes fro
 Conversely, pure topological descriptors fail to capture the localized lexical nuances that differentiate the CWEs; in a diverse dataset, code complexity likely creates graphs that require deeper processing by graph embedders than the approach used in this work, resulting in a collapse in overall retrieval performance.
 % add space stats
 
+\begin{table}[htbp]
+  \centering
+  \caption{Retrieval Performance and Average Similarity Score by Vulnerability Category}
+  \label{tab:vulnerability_retrieval_performance}
+  \small
+  \begin{tabular}{l *{6}{c}}
+    \toprule
+    & \multicolumn{2}{c}{\textbf{Structure}} 
+    & \multicolumn{2}{c}{\textbf{Semantic + Structure}} 
+    & \multicolumn{2}{c}{\textbf{Semantic}} \\
+    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+    \textbf{Vulnerabilities} & \textbf{Hit@1} & \textbf{\shortstack{Avg. Sim.\\Score}} 
+                             & \textbf{Hit@1} & \textbf{\shortstack{Avg. Sim.\\Score}} 
+                             & \textbf{Hit@1} & \textbf{\shortstack{Avg. Sim.\\Score}} \\
+    \midrule
+    Race Condition (CWE-362) & 0.2000 & 0.3922 & 0.4667 & 0.7621 & 0.5333 & 0.7400 \\
+    NULL Pointer Dereference (CWE-476) & 0.0714 & 0.3954 & 0.4286 & 0.8082 & 0.3571 & 0.8835 \\
+    Use After Free (CWE-416) & 0.2000 & 0.2979 & 0.6667 & 0.6446 & 0.4667 & 0.7117 \\
+    Improper Validation (CWE-20) & 0.2000 & 0.4390 & 0.9333 & 0.7985 & 0.9333 & 0.8353 \\
+    Integer Overflow (CWE-190) & 0.5333 & 0.4529 & 0.6670 & 0.8404 & 0.6667 & 0.8575 \\
+    Out-of-Bounds Write (CWE-787) & 0.0667 & 0.4059 & 0.7333 & 0.4791 & 0.2667 & 0.5794 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 \subsection{CWE level analysis}
 
 Evaluating retrieval performance across vulnerability classes reveals that structural and semantic embedders exhibit distinct and complementary failure modes depending on whether a weakness is localized to AST subgraphs or distributed across inter-procedural state and synchronization logic.
