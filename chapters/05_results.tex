@@ -477,20 +477,6 @@ For example, in memory safety instances where structural embeddings capture the 
 Another example is array indexing and bounds checking (CWE-20 and CWE-125), where structural embeddings isolate the CPG subgraph corresponding to the missing bounds check or double-indexing pattern in TensorFlow Lite's array-indexing code(CVE-2020-15211). 
 With that, the MAP rises from $\sim0.26$ (Semantic) to $\sim0.73$ (Structure + Semantic).
 
-% \begin{figure}
-%     \centering
-%     \includegraphics[width=1\linewidth]{img/retrieval/codebert_seq_cve_map_by_cve.png}
-%     \caption{Semantic CVE mAP}
-%     \label{img:codebert_seq_cve_map}
-% \end{figure}
-
-
-% \begin{figure}
-%     \centering
-%     \includegraphics[width=1\linewidth]{img/retrieval/combined_cve_map_by_cve.png}
-%     \caption{Topological Structure CVE mAP}
-%     \label{img:combined_cve_map}
-% \end{figure}
 
 The cases in which the Topological Structure embedder succeeded reveal its potential for vulnerability investigation. 
 The Topological Structure embedder successfully identified integer overflow vulnerabilities in dynamic memory functions (e.g., arithmetic in \texttt{realloc}/\texttt{malloc} calls, as seen in Arithmetic Allocation Pipelines (CWE-190, e.g., CVE-2023-36326). 
@@ -958,49 +944,6 @@ In C++, a vulnerability might stem from an inherited method or an improperly ins
 When GPT-4o is provided with topological RAG context for C++, dense object-oriented graphs seem to further degrade retrieval performance and, consequently, generation. The model correctly uses tools to navigate the C++ headers, but if the retrieved RAG context misaligns the complex C++ object lifecycle, the model may generate patches that are syntactically valid (compilable C++) but functionally bypass the vulnerable patching logic entirely. The wrong context causes 28 parse errors, which indicates that the LLM either failed to generate a patch, generated output that couldn't be parsed into valid code, or produced malformed/incomplete responses. In summary, for complex object-oriented vulnerabilities, relying solely on Tool Calling to trace the actual execution path is far more reliable than injecting pre-computed topological structures.
 
 
-
-% TODO: Check whtether it is still worth adding
-% \begin{table}[t]
-%   \centering
-  % \scriptsize
-  % \setlength{\tabcolsep}{1pt}
-  % \caption{CVEFixes: Patch generation summary by embedding variant / mode GPT-4o}
-  % \label{tab:patch_analysis_summary}
-  % \textit{(a) Completion and retrieval}
-
-  % \begin{tabular}{lrrrrrr}
-  %   \toprule
-  %   \textbf{Source} & \textbf{$N$} & \textbf{Success (\%)} & \textbf{CVE Match (\%)} & \textbf{CWE Match (\%)} & \makecell{\bfseries Retrieval\\Sim.} & \makecell{\bfseries Avg.\\Turns} \\
-  %   \midrule
-  %   S+S / ST & 89 & 78.7 & 49.4 & 54.0 & 0.161 & 1.00 \\
-  %   S+S / TC & 89 & 74.2 & 49.4 & 54.0 & 0.641 & 4.18 \\
-  %   Sem. / ST & 89 & 67.4 & 49.4 & 54.0 & 0.137 & 1.00 \\
-  %   Sem. / TC & 89 & 67.4 & 49.4 & 54.0 & 0.572 & 4.45 \\
-  %   \bottomrule
-  % \end{tabular}
-  % \\[0.75em]
-%   \textit{(b) Patch quality and functional validity}
-
-%   \begin{tabular}{lrrrrrrr}
-%     \toprule
-%     \textbf{Source} & \makecell{\bfseries LLM Judge\\Valid (\%)} & \textbf{BLEU-4} & \makecell{\bfseries BERTScore\\F$_1$} & \makecell{\bfseries ROUGE-1\\F$_1$} & \makecell{\bfseries ROUGE-2\\F$_1$} & \makecell{\bfseries ROUGE-L\\F$_1$} & \makecell{\bfseries Hunk\\F$_1$} \\
-%     \midrule
-%     S+S / ST & 0.0 & 0.146 & 0.342 & 0.416 & 0.254 & 0.310 & 0.661 \\
-%     S+S / TC & 0.0 & 0.920 & 0.854 & 0.953 & 0.944 & 0.948 & 0.755 \\
-%     Sem. / ST & 1.1 & 0.088 & 0.246 & 0.328 & 0.225 & 0.269 & 0.687 \\
-%     Sem. / TC & 23.6 & 0.809 & 0.910 & 0.873 & 0.835 & 0.872 & 0.903 \\
-%     \bottomrule
-%   \end{tabular}
-%   \\[2pt]
-%   \begin{minipage}{\linewidth}
-%     \scriptsize S+S = Semantic+Structure; Sem. = Semantic; ST = Single Turn; TC = Tool Calling.
-%   \end{minipage}
-% \end{table}
-
-% \subsection{Patch Pipeline Powered by GPT-4o}
-
-% This section compares patch generation performance when using GPT-4o as the underlying LLM. As noted earlier, GPT-4o exhibits different behavior with retrieval compared to GPT-5.3-Codex, particularly in how it handles contextual information.
-
 % Evaluation files sources (from cvefixes_experiments/output/):
 % - Codex Baseline: cvefixes_baseline/gpt/20260816_124756_patching_227e33/codex_baseline__default__precomputed__gpt-4o/evaluation_summary.json
 % - Tool Calling (w/o Retr.): tool_calling_no_retrieval_baseline/20260816_175051_patching_baeec0/tool_calling_no_retrieval__default__precomputed__gpt-4o/evaluation_summary.json
@@ -1062,34 +1005,6 @@ When GPT-4o is provided with topological RAG context for C++, dense object-orien
   \end{minipage}
 \end{table}
 
-% TODO: check whether add comparison between single turn vs tool calling between different retrievers. i dont think so, it repeats the same pattern as the general results
-% \subsection{Patch Powered by DeepSeek-V4-Flash}
-% \begin{table}[H]
-%   \centering
-%   \small
-%   \setlength{\tabcolsep}{4pt}
-%   \caption{CVEFixes: Overall Patch Generation Summary for DeepSeek-V4-Flash by Embedding Variant and Mode}
-%   \label{tab:patch_analysis_summary_deepseek}
-%   \begin{tabular}{llccccccc}
-%     \toprule
-%     \textbf{Method} & \textbf{Mode} & \textbf{N} & \makecell{\bfseries Succ.\\\bfseries(\%)} & \makecell{\bfseries CVE\\\bfseries Match (\%)} & \makecell{\bfseries CWE\\\bfseries Match (\%)} & \makecell{\bfseries Retr.\\\bfseries Sim.} & \makecell{\bfseries Avg.\\\bfseries Turns} & \makecell{\bfseries LLM Judge\\\bfseries Valid (\%)} \\
-%     \midrule
-%     \multirow{2}{*}{\textbf{Semantic+Structure}}
-%     & Single Turn  & 89 & 33.7 & 53.9 & 60.6 & 0.149 & 1.00 & 1.1 \\
-%     & Tool Calling & 89 & 40.4 & 53.9 & 60.6 & 0.399 & 5.40 & 27.0 \\
-%     \midrule
-%     \multirow{2}{*}{\textbf{Semantic}}
-%     & Single Turn  & 89 & 28.1 & 49.4 & 54.0 & 0.115 & 1.00 & 0.0 \\
-%     & Tool Calling & 89 & 41.6 & 49.4 & 54.0 & 0.390 & 5.55 & 25.8 \\
-%     \midrule
-%     \multirow{2}{*}{\textbf{Topological Structure}}
-%     & Single Turn  & 89 & 33.7 & 16.8 & 23.6 & 0.083 & 1.00 & 0.0 \\
-%     & Tool Calling & 89 & 46.1 & 16.8 & 23.6 & 0.432 & 5.36 & 6.7 \\
-%     \midrule
-%     \textbf{Baseline (No Retr.)} & Tool Calling & 89 & 42.7 & 53.9 & 60.6 & 0.425 & 5.22 & 21.3 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
 
 \subsubsection{DeepSeek-V4-Flash: Breaking the Prior Ceiling}
 
@@ -1169,167 +1084,11 @@ The patching performance of the DeepSeek-V4-Flash model (Tables \ref{tab:cvefixe
 
 Unlike the sharp contrasts seen in GPT-4o, DeepSeek's baseline prompt-only generation achieves a 21.7\% functional validity rate (18 valid out of 83 evaluated), performing on par with its Tool Calling without retrieval pipeline (19 out of 89, or 21.3\%). This suggests that the model's internal reasoning capacity has hit a ceiling, and that giving it tools does not readily improve its ability to synthesize a security fix if it lacks the deep internal priors of a model like Codex or GPT-4o.
 
-Unlike GPT-4o, which collapsed under RAG, equipping DeepSeek with retrieval contexts significantly elevates its performance. The Semantic+Structure and Semantic retrieval methods yield 24 and 23 valid patches, respectively (pushing validity rates to approximately 27.0\% and 25.8\%). Because DeepSeek seems to have weaker memorization of CVEs, it depends on the retrieved context rather than being hurt by it. The retrieved examples provide the necessary semantic trajectory that the model cannot generate zero-shot. This demonstrates that for open-weight models, enriching the context via RAG potentially can break the performance ceiling of the model's native generation capabilities.
+Unlike GPT-4o, which collapsed under RAG, DeepSeek, when equipped with retrieval contexts, significantly improves its performance. The Semantic+Structure and Semantic retrieval methods yield 24 and 23 valid patches, respectively (pushing validity rates to approximately 27.0\% and 25.8\%). Because DeepSeek seems to have weaker memorization of CVEs, it depends on the retrieved context rather than being hurt by it. The retrieved examples provide the necessary semantic trajectory that the model cannot generate zero-shot. This demonstrates that, for open-weight models, enriching the context via RAG can potentially break the performance ceiling of the model's native generation capabilities.
 
 % TODO: add citation
 Nevertheless, DeepSeek shares the common failure mode of confident hallucination. Despite the improved validity under RAG, the model still generates a vast number of syntactically flawless patches that fail the functional test. The Topological Structure strategy highlights this issue: it resulted in only 6 valid patches (Table \ref{tab:deepseek_judge_summary}). When the retriever supplies poor or purely structural context without semantic grounding, DeepSeek mimics the syntax perfectly but fails to grasp the root cause, compounding the retriever's error rather than correcting it.
 
-
-
-
-
-% TODO: Check whether we want to  add C/C++ analysis
-% \begin{table}[H]
-%   \centering
-%   \small
-%   \setlength{\tabcolsep}{2pt}
-%   \caption{CVEFixes: Patch generation summary by embedding variant/mode -- by language DeepSeek-V4-Flash}
-%   \label{tab:patch_analysis_summary_by_language_deepseek_v4}
-%   \textit{(a) Completion and retrieval}
-
-%   \begin{tabular}{llrrrrr}
-%     \toprule
-%     \textbf{Mode} & \textbf{Lang.} & \textbf{$N$} & \makecell{\bfseries Success\\(\%)} & \makecell{\bfseries CVE Match\\(\%)} & \makecell{\bfseries CWE Match\\(\%)} & \makecell{\bfseries Retrieval\\Similarity} \\
-%     \midrule
-%     \multirow{2}{*}{Semantic+Structure (Single Turn)} 
-%       & C   & 65 & 29.2 & 52.3 & 61.5 & 0.097 \\
-%       & C++ & 24 & 45.8 & 58.3 & 58.3 & 0.289 \\
-%     \midrule
-%     \multirow{2}{*}{Semantic+Structure (Tool Calling)} 
-%       & C   & 65 & 32.3 & 52.3 & 61.5 & 0.322 \\
-%       & C++ & 24 & 62.5 & 58.3 & 58.3 & 0.608 \\
-%     \midrule
-%     \multirow{2}{*}{Semantic (Single Turn)} 
-%       & C   & 65 & 20.0 & 56.9 & 63.1 & 0.074 \\
-%       & C++ & 24 & 50.0 & 29.2 & 29.2 & 0.225 \\
-%     \midrule
-%     \multirow{2}{*}{Semantic (Tool Calling)} 
-%       & C   & 65 & 36.9 & 56.9 & 63.1 & 0.360 \\
-%       & C++ & 24 & 54.2 & 29.2 & 29.2 & 0.473 \\
-%     \midrule
-%     \multirow{2}{*}{Topological Structure (Single Turn)} 
-%       & C   & 65 & 32.3 & 20.0 & 29.2 & 0.048 \\
-%       & C++ & 24 & 37.5 & 8.3 & 8.3 & 0.176 \\
-%     \midrule
-%     \multirow{2}{*}{Topological Structure (Tool Calling)} 
-%       & C   & 65 & 40.0 & 20.0 & 29.2 & 0.388 \\
-%       & C++ & 24 & 62.5 & 8.3 & 8.3 & 0.552 \\
-%     \midrule
-%     \multirow{2}{*}{Tool Calling (No Retr.)} 
-%       & C   & 65 & 40.0 & 52.3 & 61.5 & 0.393 \\
-%       & C++ & 24 & 50.0 & 58.3 & 58.3 & 0.512 \\
-%     \bottomrule
-%   \end{tabular}
-%   \\[0.75em]
-%   \textit{(b) Lexical patch quality}
-
-%   \begin{tabular}{llrrr}
-%     \toprule
-%     \textbf{Mode} & \textbf{Lang.} & \textbf{BLEU-4} & \makecell{\bfseries BERTScore\\F$_1$} & \makecell{\bfseries Hunk\\F$_1$} \\
-%     \midrule
-%     \multirow{2}{*}{Semantic+Structure (Single Turn)}
-%       & C   & 0.310 & 0.376 & 0.790 \\
-%       & C++ & 0.593 & 0.644 & 0.236 \\
-%     \midrule
-%     \multirow{2}{*}{Semantic+Structure (Tool Calling)}
-%       & C   & 0.864 & 0.829 & 0.821 \\
-%       & C++ & 0.839 & 0.579 & 0.342 \\
-%     \midrule
-%     \multirow{2}{*}{Semantic (Single Turn)}
-%       & C   & 0.324 & 0.314 & 0.756 \\
-%       & C++ & 0.409 & 0.268 & 0.371 \\
-%     \midrule
-%     \multirow{2}{*}{Semantic (Tool Calling)}
-%       & C   & 0.919 & 0.899 & 0.870 \\
-%       & C++ & 0.832 & 0.608 & 0.467 \\
-%     \midrule
-%     \multirow{2}{*}{Topological Structure (Single Turn)}
-%       & C   & 0.132 & 0.128 & 0.798 \\
-%       & C++ & 0.422 & 0.272 & 0.109 \\
-%     \midrule
-%     \multirow{2}{*}{Topological Structure (Tool Calling)}
-%       & C   & 0.902 & 0.880 & 0.839 \\
-%       & C++ & 0.843 & 0.652 & 0.400 \\
-%     \midrule
-%     \multirow{2}{*}{Tool Calling (No Retr.)}
-%       & C   & -- & -- & -- \\
-%       & C++ & -- & -- & -- \\
-%     \bottomrule
-%   \end{tabular}
-%   \\[2pt]
-%   \begin{minipage}{\linewidth}
-%     \scriptsize Source $N$ is the number of queries in the run. Lexical metrics are means over successfully evaluated patches; their language-specific supports vary by run. The no-retrieval baseline lacks a persisted evaluation file, so its unavailable metrics are shown as --.
-%   \end{minipage}
-% \end{table}
-
-% TODO: verify if this table is relevant in the end generation/verification table,
-% Table 2: Breakdown by CWE
-% \begin{table}[H]
-%   \centering
-%   \caption{Patch generation summary by embedding variant and mode, broken down by CWE DeepSeek-V4-Flash}
-%   \label{tab:patch_analysis_summary_by_cwe_DeepSeek-V4-Flash}
-%   \small
-%   \begin{tabular}{l l r r r r r}
-%     \toprule
-%     Embedding / Mode & CWE & $N$ & Success (\%) & Avg. Turns & Verify Rate (\%) & Violation Rate (\%) \\
-%     \midrule
-%     \multirow{6}{*}{Semantic+Structure}
-%       & CWE-190 & 15 & 26.7 & 5.80 & 80.0 & 6.7 \\
-%       & CWE-20  & 15 & 26.7 & 5.53 & 100.0 & 0.0 \\
-%       & CWE-362 & 15 & 33.3 & 5.67 & 100.0 & 0.0 \\
-%       & CWE-416 & 15 & 45.5 & 5.18 & 81.8 & 0.0 \\
-%       & CWE-476 & 14 & 58.3 & 5.25 & 75.0 & 16.7 \\
-%       & CWE-787 & 15 & 73.3 & 4.87 & 93.3 & 6.7 \\
-%     \midrule
-%     \multirow{6}{*}{Semantic}
-%       & CWE-190 & 15 & 13.3 & 6.00 & 80.0 & 6.7 \\
-%       & CWE-20  & 15 & 26.7 & 5.73 & 93.3 & 0.0 \\
-%       & CWE-362 & 15 & 46.7 & 5.53 & 93.3 & 6.7 \\
-%       & CWE-416 & 15 & 46.7 & 5.33 & 86.7 & 13.3 \\
-%       & CWE-476 & 14 & 64.3 & 5.21 & 85.7 & 0.0 \\
-%       & CWE-787 & 15 & 53.3 & 5.47 & 100.0 & 6.7 \\
-%     \midrule
-%     \multirow{6}{*}{Topological Structure}
-%       & CWE-190 & 15 & 20.0 & 5.80 & 86.7 & 0.0 \\
-%       & CWE-20  & 15 & 33.3 & 5.53 & 100.0 & 0.0 \\
-%       & CWE-362 & 15 & 60.0 & 5.07 & 93.3 & 20.0 \\
-%       & CWE-416 & 15 & 46.7 & 5.47 & 93.3 & 0.0 \\
-%       & CWE-476 & 14 & 64.3 & 5.00 & 100.0 & 0.0 \\
-%       & CWE-787 & 15 & 53.3 & 5.27 & 100.0 & 6.7 \\
-%     \midrule
-%     \multirow{6}{*}{Tool-calling} 
-%       & CWE-190 & 15 & 53.3 & 5.40 & 93.3 & 0.0 \\
-%       & CWE-20  & 15 & 60.0 & 4.87 & 100.0 & 0.0 \\
-%       & CWE-362 & 15 & 33.3 & 5.20 & 100.0 & 0.0 \\
-%       & CWE-416 & 15 & 27.3 & 5.64 & 100.0 & 0.0 \\
-%       & CWE-476 & 14 & 50.0 & 5.08 & 100.0 & 8.3 \\
-%       & CWE-787 & 15 & 46.7 & 5.20 & 100.0 & 0.0 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-% \begin{table}[H]
-%   \centering
-%   \small
-%   \caption{DeepSeek-V4-Flash: Model-baseline LLM judge metrics by CWE}
-%   \label{tab:deepseek_model_baseline_judge_by_cwe}
-%   \begin{tabular}{lrrrr}
-%     \toprule
-%     CWE & Judge $N$ & Valid & Invalid & Errors \\
-%     \midrule
-%     CWE-190 & 14 & 2 & 12 & 0 \\
-%     CWE-20  & 15 & 6 & 9  & 0 \\
-%     CWE-362 & 15 & 0 & 15 & 0 \\
-%     CWE-416 & 12 & 4 & 7  & 1 \\
-%     CWE-476 & 13 & 3 & 9  & 1 \\
-%     CWE-787 & 14 & 3 & 11 & 0 \\
-%     \midrule
-%     \textbf{Total} & \textbf{83} & \textbf{18} & \textbf{63} & \textbf{2} \\
-%     \bottomrule
-%   \end{tabular}
-%   \\[2pt]
-%   {\scriptsize Counts are computed from the persisted LLM judge output. The judge denominator is smaller than the 89-query source run because one empty patch was deduplicated.}
-% \end{table}
 
 % ─────────────────────────────────────────────────────────────────────────────
 % SOURCE FILES FOR TABLE tab:patch_similarity_by_cwe_deepseek
@@ -1449,48 +1208,6 @@ Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \m
   \end{tabular}
 \end{table}
 
-% TODO: verify which table is the correct one
-% \begin{table}[H]
-%   \centering
-%   \caption{Generation Cost Summary Across All Models and Experiments Configurations for CVEFixes dataset}
-%   \label{tab:generation_cost_summary_condensed_cvefixes}
-%   \begin{tabular}{llrrrrrr}
-%     \toprule
-% Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
-%     \midrule
-%     Sem.+Struc - Tool & codex & 89 & 3.7M & 91.8K & 3.8M & \$7.81 & \$0.088 \\
-%     % codebert\_pattern / tool\_calling & gpt-5.3-codex & 89 & 3.3M & 87.2K & 3.4M & \$6.94 & \$0.078 \\
-%     Semantic - Tool & codex & 89 & 4.2M & 100.0K & 4.3M & \$8.80 & \$0.099 \\
-%     Topology -Tool & codex & 89 & 4M & 107K & 4.1M & \$8.44 & \$0.095 \\
-%     Model baseline & codex & 89 & 1.1M & 65K & 1.2M & \$2.88 & \$0.0324 \\
-%     Tool w/o retrieval & codex & 89 & 2.6M & 59K & 2.7M & \$5.34 & \$0.061 \\
-%     \midrule
-%     Sem.+Struc - Tool & GPT-4o & 89 & 6.0M & 95.8K & 6.1M & \$24.03 & \$0.270 \\
-%     Semantic - Tool & GPT-4o & 89 & 6M & 70K & 6M & \$23.35 & \$0.262 \\
-%     Topology - Tool & GPT-4o & 89 & 6.3M & 84.5K & 6.3M & \$24.74 & \$0.278 \\
-%     Model baseline & GPT-4o & 82 & 872.5K & 72.6K & 945.1K & \$4.36 & \$0.053 \\
-%     Tool w/o retrieval & GPT-4o & 82 & 4.6M & 83.3K & 4.6M & \$18.37 & \$0.224 \\
-%     \midrule
-%     % Sem.+Struc - prompt & DeepSeek & 89 & 3.4M & 300.2K & 3.7M & \$0.80 & \$0.009 \\
-%     Sem.+Struc - Tool & DeepSeek & 89 & 8.4M & 724.9K & 9.1M & \$1.97 & \$0.022 \\
-%     Semantic - Tool & DeepSeek & 89 & 9.2M & 762.8K & 9.9M & \$2.13 & \$0.024 \\
-%     % Topology - prompt & DeepSeek & 89 & 4.0M & 324.9K & 4.3M & \$0.93 & \$0.010 \\
-%     Topology - Tool & DeepSeek & 89 & 8.8M & 660.6K & 9.5M & \$2.02 & \$0.023 \\
-%     Model baseline & DeepSeek & 89 & 1.1M & 98.1K & 1.2M & \$0.26 & \$0.003 \\
-%     Tool w/o retrieval & DeepSeek & 89 & 8.0M & 726.5K & 8.7M & \$1.88 & \$0.021 \\
-%     % single\_turn\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 3699287 & 341326 & 4040613 & \$0.8769 & \$0.009853 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
- % codebert\_pattern / single\_turn / 20260814\_143902\_patching\_34c2b8 / single\_turn\_\_default\_\_precomputed\_\_gpt-4o & gpt-4o & 89 & 3359797 & 115836 & 3475633 & \$14.3368 & \$0.161087 \\\
- %    codebert\_pattern / tool\_calling / 20260814\_133226\_patching\_ce42e0 / tool\_calling\_\_default\_\_precomputed\_\_gpt-4o & gpt-4o & 89 & 5567670 & 54586 & 5622256 & \$21.6976 & \$0.243793 \\\
- %    codebert\_seq / single\_turn / 20260814\_201651\_patching\_fc8dab / single\_turn\_\_default\_\_precomputed\_\_gpt-4o & gpt-4o & 89 & 3359797 & 110660 & 3470457 & \$14.2591 & \$0.160215 \\\
-    
- %    combined / single\_turn / 20260815\_002540\_patching\_c53269 / single\_turn\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 3998683 & 320341 & 4319024 & \$0.9231 & \$0.010372 \\\
- %    combined / tool\_calling / 20260814\_210430\_patching\_e785e2 / tool\_calling\_\_default\_\_precomputed\_\_DeepSeek-V4-Flash & DeepSeek-V4-Flash & 89 & 8759373 & 725275 & 9484648 & \$2.0342 & \$0.022856 \\\
-
-
 Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs for the CVEFixes dataset experiments across different models and pipeline configurations. 
 
 \paragraph{GPT-5.3-Codex.} Codex baseline costs \$0.03 per entry, while tool-calling without retrieval averages \$0.06 per entry. The retrieval-augmented tool-calling variants average \$0.08--0.10 per entry. This is approximately 2.5 times cheaper than GPT-4o for comparable configurations (see below), and therefore more cost-efficient for CVEFixes. This cost advantage, combined with stronger performance metrics (Table~\ref{tab:cwe_comparison_all_methods}), makes it the preferred choice for production deployments.
@@ -1504,31 +1221,14 @@ Therefore, the pipeline might include fallbacks and Human-in-the-Loop verificati
 Figure \ref{img:cost_bertscore_cvefixes} shows that GPT-5.3-Codex presents the highest BERTScore ($\sim0.825$) with the Semantic retrieval pipeline at \$0.075/entry. GPT-4o delivers performance similar to GPT-5.3-Codex but is twice as expensive (\$0.16-0.17/entry). The model baselines are low-cost but low-performing, reinforcing the previously found indication that the patching task requires tooling to succeed. Similarly, the cost of one prompt with the code, represented by the squares, can be even higher than if you use the retriever that filters the context to be passed.
 % even though the cost is not translated into the BERTScore-F1 metric.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=1\linewidth]{img/patching/cost_vs_quality.png}
-    \caption{CVEFixes Patching Cost vs. BERTScore as quality measure.}
-    \label{img:cost_bertscore_cvefixes}
-\end{figure}
-
-Notice that the figure also includes an ablation study of the performance of the pipelines when we use, instead of an agent with tools, only a prompt with the retrieved CWE context.
-
-% Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs for the CVEFixes dataset experiments across different models and pipeline configurations. 
-
-% \paragraph{Codex-5.3.} The baseline costs \$0.03 per entry, while tool-calling without retrieval averages \$0.06 per entry. The retrieval-augmented tool-calling variants average \$0.08--0.10 per entry. Because Codex maintains high functional validity while utilizing retrieval, this translates to a highly efficient cost-to-performance ratio. This cost advantage, combined with stronger functional metrics across complex vulnerabilities (Table~\ref{tab:cwe_comparison_all_methods}), makes it a highly viable choice for production deployments.
-
-% \paragraph{GPT-4o.} The tool-calling pipeline with retrieval incurs the highest costs in the study, averaging \$0.24--0.26 per entry, driven by the massive accumulation of prompt tokens during agentic RAG loops. The tool-calling baseline without retrieval costs \$0.22 per entry, while the prompt-only baseline costs just \$0.05. Crucially, when cross-referencing these costs with functional validity, spending the absolute highest premium (\$0.26) on GPT-4o with Semantic+Structure retrieval actively degraded performance (yielding only 4 valid patches). Therefore, for GPT-4o, the only financially and functionally justifiable configuration is Tool Calling without retrieval.
-
-% \paragraph{DeepSeek-V4-Flash.} As expected for an open-weight model, DeepSeek offers the most aggressive cost-efficiency, averaging \$0.022--\$0.024 per entry across all agentic and retrieval configurations, with a negligible baseline cost of \$0.003. Unlike GPT-4o, DeepSeek successfully translated its RAG context into higher functional validity. Even accounting for output formatting issues that require fallback parsing or human-in-the-loop verification, DeepSeek's retrieval pipelines offer an unmatched cost-per-valid-patch ratio, proving that robust open-weight models can democratize automated repair when paired with high-quality structural retrieval.
-
-% Figure~\ref{img:cost_bertscore_cvefixes} plots the generation cost against BERTScore. While GPT-4o delivers lexical performance (BERTScore $\sim0.80$) similar to Codex-5.3 at more than double the cost (\$0.16--\$0.17 vs. \$0.075/entry), this lexical perspective masks the functional reality. The model baselines remain low-cost but low-performing in both metrics, reinforcing that patching requires tooling. Furthermore, the square markers indicate that aggressively filtering context via the retriever is often more cost-effective than utilizing a single, massive prompt containing the entire unfiltered codebase.
-
-% \begin{figure}[htbp]
+% \begin{figure}
 %     \centering
 %     \includegraphics[width=1\linewidth]{img/patching/cost_vs_quality.png}
-%     \caption{CVEFixes Patching Cost vs. BERTScore. Note that while lexical quality (BERTScore) scales with cost for proprietary models, high costs do not universally guarantee functional validity.}
+%     \caption{CVEFixes Patching Cost vs. BERTScore as quality measure.}
 %     \label{img:cost_bertscore_cvefixes}
 % \end{figure}
+
+Notice that the figure also includes an ablation study of the performance of the pipelines when we use, instead of an agent with tools, only a prompt with the retrieved CWE context.
 
 
 
@@ -1945,16 +1645,6 @@ The Tool w/o retrieval baseline achieves $82.7\%$ validity and $96.0\%$ completi
     \label{img:autopatch_gpt4o_bertscore}
 \end{figure}
 
-% \textbf{Failure Mode Analysis \& Judge Discrepancies}
-
-% To understand the gap between retrieval strategies, the failing runs recorded in Table~\ref{tab:llmjudge_autopatch_codex} can be categorized into two main classes, which stem from two invalid behavior patterns:
-
-% \begin{enumerate}
-%     \item \textbf{Over-Fixing and Side Effects:} In $38\%$ of invalid cases under Topological Structure, the model introduced unnecessary variable redefinitions or refactored non-vulnerable lines in the target function. Because Topological retrieval provides syntactically similar structural patterns from unrelated modules, the model frequently over-fits to extraneous structural details rather than applying minimal edits.
-%     \item \textbf{Incomplete Boundary Handling:} For Numeric/Type (CWE-190) and Memory Safety (CWE-476) errors, invalid patches often added partial null-checks or overflow guards that failed to cover all boundary condition paths.
-% \end{enumerate}
-
-% Furthermore, execution errors ($N=6$ in Semantic+Structure) occurred when the model generated patches that required context-specific helper definitions not provided in the localized single-function snippet.
 
 Figure~\ref{img:autopatch_gpt4o_bertscore} reveals semantic performance heterogeneity for GPT-4o, different when compared to Codex. The Tool-only baseline exhibits the largest confidence intervals, with certain CWE categories yielding a BERTScore of 0 (e.g., NULL Pointer Dereference) due to output formatting errors, such as unclosed SEARCH\&REPLACE blocks or the retrieval of only placeholder text instead of the code. In contrast, retrieval pipeline variants maintain more consistent performance across categories.
 
@@ -2075,68 +1765,6 @@ Tables~\ref{tab:autopatch_pipeline_by_cwe_category_deepseek} and~\ref{tab:autopa
 % Tool w/o retrieval	99	99	58	35	6
 
 
-% \begin{table}[H]
-%   \centering
-%   \caption{DeepSeek-V4-Flash: Pipeline performance by CWE category on the autopatch dataset}
-%   \label{tab:autopatch_pipeline_by_cwe_category_deepseek}
-%   \begin{tabular}{llrrrr}
-%     \toprule
-%     Source & Category & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
-%     \midrule
-%     \multirow{4}{*}{Semantic+Structure} & Memory Safety & 30 & 0.874 & 0.560 & 0.932 \\
-%     & Concurrency & 30 & 0.825 & 0.549 & 0.889 \\
-%     & Numeric/Type & 10 & 0.846 & 0.346 & 0.910 \\
-%     & Resource Mgmt & 14 & 0.730 & 0.464 & 0.827 \\
-%     \midrule
-%     \multirow{4}{*}{Semantic} & Memory Safety & 30 & 0.823 & 0.532 & 0.904 \\
-%     & Concurrency & 26 & 0.843 & 0.528 & 0.912 \\
-%     & Numeric/Type & 9 & 0.850 & 0.319 & 0.903 \\
-%     & Resource Mgmt & 12 & 0.749 & 0.486 & 0.833 \\
-%     \midrule
-%     \multirow{4}{*}{Topological Structure} & Memory Safety & 36 & 0.822 & 0.541 & 0.901 \\
-%     & Concurrency & 24 & 0.853 & 0.534 & 0.886 \\
-%     & Numeric/Type & 8 & 0.860 & 0.356 & 0.921 \\
-%     & Resource Mgmt & 15 & 0.754 & 0.473 & 0.842 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-% \begin{table}[H]
-%   \centering
-%   \caption{DeepSeek-V4-Flash: Pipeline performance by CWE category ($N=75$ per pipeline)}
-%   \label{tab:autopatch_pipeline_by_cwe_category_deepseek}
-%   \begin{tabular}{llrrrrrrrr}
-%     \toprule
-%     Source & Category & Total & Passed & Failures & Pass \% & Fail \% & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
-%     \midrule
-%     \multirow{4}{*}{Semantic+Structure} & Memory Safety & 28 & 22 & 6 & 78.9\% & 21.1\% & 0.874 & 0.560 & 0.932 \\
-%     & Concurrency & 26 & 22 & 4 & 85.7\% & 14.3\% & 0.825 & 0.549 & 0.889 \\
-%     & Numeric/Type & 9 & 8 & 1 & 88.9\% & 11.1\% & 0.846 & 0.346 & 0.910 \\
-%     & Resource Mgmt & 12 & 10 & 2 & 83.3\% & 16.7\% & 0.730 & 0.464 & 0.827 \\
-%     \midrule
-%     \multirow{4}{*}{Semantic} & Memory Safety & 28 & 22 & 6 & 78.9\% & 21.1\% & 0.823 & 0.532 & 0.904 \\
-%     & Concurrency & 26 & 19 & 7 & 74.3\% & 25.7\% & 0.843 & 0.528 & 0.912 \\
-%     & Numeric/Type & 9 & 7 & 2 & 77.8\% & 22.2\% & 0.850 & 0.319 & 0.903 \\
-%     & Resource Mgmt & 12 & 9 & 3 & 75.0\% & 25.0\% & 0.749 & 0.486 & 0.833 \\
-%     \midrule
-%     \multirow{4}{*}{Topological Structure} & Memory Safety & 28 & 27 & 1 & 96.4\% & 3.6\% & 0.822 & 0.541 & 0.901 \\
-%     & Concurrency & 26 & 18 & 8 & 68.6\% & 31.4\% & 0.853 & 0.534 & 0.886 \\
-%     & Numeric/Type & 9 & 6 & 3 & 66.7\% & 33.3\% & 0.860 & 0.356 & 0.921 \\
-%     & Resource Mgmt & 12 & 11 & 1 & 93.8\% & 6.2\% & 0.754 & 0.473 & 0.842 \\
-%     \midrule
-%     \multirow{4}{*}{Model baseline} & Memory Safety & 28 & 25 & 3 & 89.3\% & 10.7\% & 0.802 & 0.593 & 0.886 \\
-%     & Concurrency & 26 & 25 & 1 & 96.2\% & 3.8\% & 0.831 & 0.632 & 0.902 \\
-%     & Numeric/Type & 9 & 8 & 1 & 88.9\% & 11.1\% & 0.785 & 0.522 & 0.860 \\
-%     & Resource Mgmt & 12 & 12 & 0 & 100.0\% & 0.0\% & 0.703 & 0.525 & 0.794 \\
-%     \midrule
-%     \multirow{4}{*}{Tool w/o retrieval} & Memory Safety & 28 & 21 & 7 & 75.0\% & 25.0\% & 0.859 & 0.576 & 0.924 \\
-%     & Concurrency & 26 & 21 & 5 & 80.8\% & 19.2\% & 0.858 & 0.571 & 0.926 \\
-%     & Numeric/Type & 9 & 3 & 6 & 33.3\% & 66.7\% & 0.840 & 0.390 & 0.907 \\
-%     & Resource Mgmt & 12 & 11 & 1 & 91.7\% & 8.3\% & 0.770 & 0.483 & 0.854 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-% Broke down into:
 \begin{table}[H]
   \centering
   \caption{AutoPatch: DeepSeek-V4-Flash generative similarity metrics by CWE category}
@@ -2222,42 +1850,6 @@ Compared to GPT-4o (Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o}), D
 Compared to GPT-4o (Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o}), DeepSeek's BERTScore F1 is 3--5pp lower on Memory Safety but comparable on Concurrency, indicating that the cost savings do not come at a uniform quality cost across vulnerability classes.
 
 
-%   \centering
-%   \caption{GPT-4o: Generation cost summary by run}
-%   \label{tab:generation_cost_summary_by_run_gpt4o}
-%   \begin{tabular}{llrrrrrrr}
-%     \toprule
-%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
-%     \midrule
-%     codebert\_pattern / single\_turn & gpt-4o & 75 & 384527 & 69479 & 454006 & \$2.4842 & \$0.033122 \\
-%     codebert\_pattern / tool\_calling & gpt-4o & 75 & 558624 & 57310 & 615934 & \$2.9545 & \$0.039393 \\
-%     codebert\_seq / single\_turn & gpt-4o & 75 & 405989 & 76320 & 482309 & \$2.6673 & \$0.035563 \\
-%     codebert\_seq / tool\_calling & gpt-4o & 75 & 625030 & 55592 & 680622 & \$3.1777 & \$0.042370 \\
-%     combined / single\_turn & gpt-4o & 75 & 425738 & 78016 & 503754 & \$2.7668 & \$0.036890 \\
-%     combined / tool\_calling & gpt-4o & 75 & 637081 & 63424 & 700505 & \$3.3404 & \$0.044539 \\
-%     tool\_calling\_no\_retrieval & gpt-4o & 20 & 113308 & 16570 & 129878 & \$0.6735 & \$0.033673 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-% \begin{table}[H]
-%   \centering
-%   \caption{GPT-5.3-Codex: Generation cost summary by run}
-%   \label{tab:generation_cost_summary_by_run}
-%   \begin{tabular}{llrrrrrrr}
-%     \toprule
-%     Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & Cost (USD) & Avg Cost/Entry (USD) \\
-%     \midrule
-%     codebert\_pattern / tool\_calling & gpt-5.3-codex & 
-%     % codebert\_pattern / tool\_calling / & gpt-4o & 20 & 140323 & 10423 & 150746 & \$0.6826 & \$0.034128 \\
-%     codebert\_seq / tool\_calling & 
-%     combined / tool\_calling & gpt-5.3-codex & 75 & 398051 & 55285 & 453336 & \$1.4706 & \$0.019608 \\
-    
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-
 \begin{table}[H]
   \centering
   \caption{Generation Cost Summary Across All Models and Experiments Configurations for AutoPatch dataset}
@@ -2324,16 +1916,6 @@ This reframes the earlier working assumption that agentic tooling is what drives
 DeepSeek-V4-Flash remains the most economical option, averaging \$0.0047 per entry across the three tool-augmented retrieval variants (Sem.+Struc., Semantic, Topological) -- approximately 4.1$\times$ cheaper than Codex-5.3 and 8.8$\times$ cheaper than GPT-4o on the same variants, despite generating a comparable volume of total tokens ($\sim$1.1M across 75 queries). These multipliers are lower than earlier estimates for this table (previously stated as 5$\times$ and 10--12$\times$); the earlier figures did not hold up against the per-entry values actually printed in the table.
 
 Comparing AutoPatch to CVEFixes (Table~\ref{tab:cvefixes_generation_cost_summary}) for matched pipeline/model configurations, AutoPatch is cheaper in every case, but not uniformly by 3--6$\times$ as previously stated. The retrieval-augmented tool-calling configurations cluster in a 4.3--6.2$\times$ range (e.g., Codex Semantic: \$0.099 $\to$ \$0.0195, 5.1$\times$; GPT-4o Semantic: \$0.262 $\to$ \$0.0424, 6.2$\times$; DeepSeek Semantic: \$0.024 $\to$ \$0.0047, 5.1$\times$), consistent with AutoPatch's single-function scope requiring less context per query. Two configurations fall well outside this range and are worth flagging rather than averaging away: GPT-4o's Tool w/o Retrieval drops 9.3$\times$ (\$0.224 $\to$ \$0.024), and GPT-4o's Model baseline barely changes at all (\$0.053 $\to$ \$0.053, a $\sim$1.0$\times$ ratio) -- the one configuration where dataset scope does not translate into lower cost.
-
-% TODO: two data-quality issues to resolve before finalizing this table:
-% (1) The table's own "Avg Cost/Entry" column does not match Cost/N for two Codex rows:
-%     Model baseline states $0.012 but $1.18/75 = $0.0157; Tool w/o retrieval states
-%     $0.014 but $1.39/75 = $0.0185. Verify which figure (the stated average or the
-%     raw cost/N) is correct and correct the other.
-% (2) DeepSeek's Model baseline and Tool w/o retrieval rows use N=101 here, but the
-%     corresponding AutoPatch judge table (Table~\ref{tab:llmjudge_autopatch_deepseek})
-%     gives Source N=100 and N=99 respectively for the same two pipelines. Reconcile
-%     before citing N or cost/entry for these two rows elsewhere in the chapter.
 
 Finally, DeepSeek's earlier CVEFixes-only limitation -- severe output-formatting failures that suppressed usable patch generation -- is far less pronounced on AutoPatch, where its single-function scope apparently keeps the model within its reliable generation range more often. The resulting picture is that DeepSeek's cost advantage is real and substantial on both datasets, but its reliability advantage is dataset-dependent, and any production cost/quality tradeoff should be evaluated per-task rather than as a single global multiplier.
 
