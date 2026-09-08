@@ -45,10 +45,9 @@ For AutoPatch, this yields $75$ original pairs and $75 \times 5 = 375$ LLM reimp
 % \end{tabularx}
 % \end{table}
 
-% TODO: Check what CWE is missing
 \begin{table}
 \centering
-\caption{Distribution of CWE Types in the AutoPatch Dataset}
+\caption{Distribution of CWE Types in the AutoPatch Dataset ($N = 75$)}
 \label{tab:autopatch_cwe_distribution}
 \begin{tabular}{llc}
     \toprule
@@ -56,7 +55,7 @@ For AutoPatch, this yields $75$ original pairs and $75 \times 5 = 375$ LLM reimp
     \midrule
     CWE-416 & Use After Free & 13 \\
     CWE-190 & Integer Overflow or Wraparound & 10 \\
-    CWE-476 & NULL Pointer Dereference & 9 \\
+    CWE-476 & NULL Pointer Dereference & 10 \\
     CWE-667 & Improper Locking & 7 \\
     CWE-362 & Race Condition & 4 \\
     CWE-843 & Access of Resource Using Incompatible Type (Type Confusion) & 3 \\
@@ -86,10 +85,10 @@ Table \ref{tab:autopatch_cwe_distribution} shows the CWE distribution in the Aut
 
 \subsection{Fix Description Encoding}
  
-The AutoPatch dataset is organized into directories, where each entry is stored in a folder containing a description JSON file (\texttt{db\_entry.json}) that includes a field describing the remediation strategy at a symbolic, variable-agnostic level (\texttt{fix\_list}).
-The fix description uses symbolic names with variable and functions
+The AutoPatch dataset is organized into directories where each entry is stored in a folder containing a description JSON (\texttt{db\_entry.json} file=, which includes a field describing the remediation strategy at a symbolic, variable-agnostic level (\texttt{fix\_list}).
+The fix description uses symbolic names with variable and function
 mappings (e.g., \textit{''add a NULL check before dereferencing the
-pointer''}) Let's use a fixed pattern learned from one example
+pointer''}) lets a fixed pattern learned from one example
 be transferred to a structurally similar target function. 
 With this description, the LLM is expected to use the abstract fix description to apply the required changes to the target using the actual identifiers. 
 Section~\ref{chapter:methodology} details how this field is used when constructing prompts for patch generation.
@@ -97,7 +96,7 @@ Section~\ref{chapter:methodology} details how this field is used when constructi
 \section{CVEfixes}\label{sec:cvefixes}
 
 CVEfixes\cite{moonen2024cvefixes} is a vulnerability dataset for data-driven security research automatically collected and curated from Common Vulnerabilities and Exposures (CVE) records from the public U.S. National Vulnerability Database (NVD). 
-The dataset includes detailed information about the Pull Request CVE resolution, such as the commit-, file-, and method-level, as well as the repository- and CVE-level.
+The dataset includes detailed information about the Pull Request CVE resolution, such as the commit-, file-, and method level, as well as the repository- and CVE level.
 The general statistics are shown below: 
 
 \begin{itemize}
@@ -110,7 +109,7 @@ The general statistics are shown below:
 \end{itemize}
 
 % Origin, Collection method, Composition used
-This project uses version v1.0.8, which covers all published CVEs up to 23 July 2024. According to the authors, the projects considered in this dataset include all open-source projects reported in CVE records in the NVD during this time frame and with publicly available Git repositories. The dataset is stored in a relational database and contains 272 different CWE types across 12107 vulnerability-fixing commits from 4249 open-source projects. The dataset includes the source code before and after changing 51342 files. Each function change is stored as two rows in \texttt{method\_change} (one \texttt{before\_change} snapshot, one after), so the 277,948 raw rows correspond to 138,974 distinct before/after function-pair changes.
+This project uses version v1.0.8, which covers all published CVEs up to 23 July 2024. According to the authors, the projects considered in this dataset include all open-source projects that were reported in CVE records in the NVD in this time frame and had publicly available git repositories. The dataset is stored in a relational database, containing 272 different CWE types across 12107 vulnerability-fixing commits from 4249 open-source projects. The dataset includes the source code before and after changing 51342 files. Each function change is stored as two rows in \texttt{method\_change} (one \texttt{before\_change} snapshot, one after), so the 277,948 raw rows correspond to 138,974 distinct before/after function-pair changes.
 
 \begin{table}[htbp]
 \centering
@@ -173,35 +172,37 @@ CWE-401 & Memory Leak              & 77  \\
 \end{tabular}
 \end{table}
  
-Following the goal of having comparable results, a stratified sample of 450 entries was extracted from this subset of CWE, the same size as the AutoPatch augmented dataset size. To ensure sufficient representation of CVEs in the index and query subset, only 6 CWEs were considered to generate the subset: CWE-476, CWE-416, CWE-20, CWE-787, CWE-362, and CWE-190. This list was built using as a reference the paper
+Following the goal of having comparable results, a stratified sample of 450 entries was extracted from this subset of CWE, the same size as the AutoPatch augmented dataset size. To ensure sufficient representation of CVEs in the index and query subset, only 6 CWEs were considered to generate the subset: CWE-476, CWE-416, CWE-20, CWE-787, CWE-362, and CWE-190. This list was built using the paper as a reference ~\cite{shao2025graphfvd}
 % Shao, M., Ding, Y., Cao, J., \& Li, Y. (2025). GraphFVD: Property graph-based fine-grained vulnerability detection. Computers & Security, 151, 104350. https://doi.org/10.1016/j.cose.2025.104350 
-that also uses CPG, but in their case to create a vulnerability classifier.
+that also uses CPG, but in their case, to create a vulnerability classifier.
 
-The 450-entry corpus is not a direct subsample of the 1,618-entry CWE-overlap filter above; it is built by a separate, reproducible 6-step pipeline that queries the CVEfixes database directly for the 6 target CWEs and applies successive validity filters. Table~\ref{tab:cvefixes_pipeline_steps} reports the row count remaining after each step.
+The 450-entry corpus is built by a separate, reproducible 6-step pipeline that queries the CVEfixes database directly for the 6 target CWEs that contain only C/C++ methods, totaling 5,056 entries. It follows some filters, such as keeping unique functions, which avoids having a function with multiple vulnerabilities and reduces noise in the evaluation, and keeps only the rows that are parsable with Joern. Finally, the pipeline makes a stratified sample, selecting 75 entries per CWE. 
+The resulting 450 records are then split 80/20 per CWE into 360 index and 90 query entries, described next. 
+
+% % TODO: refine this table
+% \begin{table}[htbp]
+% \centering
+% \caption{CVEfixes Final Index/Query Corpus Construction Pipeline}
+% \label{tab:cvefixes_pipeline_steps}
+% \small
+% \begin{tabular}{llrrr}
+% \toprule
+% \textbf{Step} & \textbf{Purpose} & \textbf{Rows} & \textbf{Removed}\\
+% \midrule
+% 0. Raw entries        & Direct DB query, 6 target CWEs, C/C++ methods     & 5,063 & --    \\
+% 1. CWE filter          & Confirms single-CWE attribution (no-op here)      & 5,063 & 0    \\
+% 2. Exact deduplication & Removes identical (CVE, function) rows            & 2,972 & 2,091\\
+% 3. Cross-CVE contamination removal & Function-pair matching: drops functions shared across CVEs & 2,374 & 598 \\
+% 4. Min-CVE-count filter & Keeps CWEs/CVEs with $\geq$5 occurrences          & 1,278 & 1,096 \\
+% 5. Joern parse success & Graph-availability check: drops entries without a valid CPG & 726 & 552 \\
+% 6. CWE-balanced sampling & Stratified sampling to 75 entries/CWE (final corpus) & 450 & 276 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
 
 
-% TODO: refine this table
-\begin{table}[htbp]
-\centering
-\caption{CVEfixes Final Index/Query Corpus Construction Pipeline}
-\label{tab:cvefixes_pipeline_steps}
-\small
-\begin{tabular}{llrrr}
-\toprule
-\textbf{Step} & \textbf{Purpose} & \textbf{Rows} & \textbf{Removed}\\
-\midrule
-0. Raw entries        & Direct DB query, 6 target CWEs, C/C++ methods     & 5,063 & --    \\
-1. CWE filter          & Confirms single-CWE attribution (no-op here)      & 5,063 & 0    \\
-2. Exact deduplication & Removes identical (CVE, function) rows            & 2,972 & 2,091\\
-3. Cross-CVE contamination removal & Function-pair matching: drops functions shared across CVEs & 2,374 & 598 \\
-4. Min-CVE-count filter & Keeps CWEs/CVEs with $\geq$5 occurrences          & 1,278 & 1,096 \\
-5. Joern parse success & Graph-availability check: drops entries without a valid CPG & 726 & 552 \\
-6. CWE-balanced sampling & Stratified sampling to 75 entries/CWE (final corpus) & 450 & 828 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Step 5 (\emph{Joern parse success}) is the CVEfixes analog of the patch-generation attempt unit defined above: a method pair is only usable once Joern successfully parses both its before- and after-code into a non-empty CPG; parse failures (malformed snippets, missing includes, truncated methods) are excluded rather than imputed. The resulting 450 records are then split 80/20 per CWE into 360 index and 90 query entries, described next. 
+However, despite the effort to create a comparable dataset, there is no CVE overlap between the two datasets, since CVEfixes' coverage ends in July 2024, while
+AutoPatch's CVEs are drawn from late 2024 through 2025. Table~\ref{tab:overlap_filter} summarises the filtering outcome.
 
  
 \begin{table}[htbp]
@@ -218,9 +219,6 @@ Coverage of method-pair corpus & 35.1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-However, despite the effort to create a comparable dataset, there is no CVE overlap between the two datasets, since CVEfixes' coverage ends in July 2024 while
-AutoPatch's CVEs are drawn from late 2024 through 2025. Table~\ref{tab:overlap_filter} summarises the filtering outcome.
 
 
 \subsection{Final Evaluation Corpus Construction}
@@ -306,4 +304,3 @@ The patch consists of resetting dangling pointers to \texttt{nullptr}, managing 
 Occurs when a program attempts to read or write memory using a pointer variable that evaluates to \texttt{nullptr}, leading to Denial of Service of the application.
 The sample includes media processing frameworks and proxy servers, such as GPAC multimedia handling and Istio/Envoy proxy handling. 
 The patches consist of applying explicit null-check guards (\texttt{if (ptr == nullptr) return;}) or safe-access wrappers before accessing the fields.
-
