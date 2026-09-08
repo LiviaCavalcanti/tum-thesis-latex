@@ -492,7 +492,7 @@ The baseline prompt uses the Autopatch paper's approach as reference, and is pow
 % TODO: justify temperature
 The AutoPatch approach separates the example from the system instructions, allowing the LLM to clearly distinguish between what the task is, the example, and the target input. To do so, the approach uses a few-shot prompt and builds 4 messages assembled from template files declared in \texttt{registry.yaml}, a record of historically available prompt templates. 
 
-The first prompt is a system message that establishes the agent's persona and task \ref{sec:apprendix_agentprompt}. It contains the CWE and CVE identifiers of the retrieved example, and symbolic, variable-agnostic fix steps extracted from the example, stored in JSON (in the AutoPatch dataset).
+The first prompt is a system message that establishes the agent's persona and task \ref{sec:appendix_agentprompt}. It contains the CWE and CVE identifiers of the retrieved example, and symbolic, variable-agnostic fix steps extracted from the example, stored in JSON (in the AutoPatch dataset).
 The system prompt instructs step-by-step reasoning ending with a structured output. 
 
 After that, the user messages are passed to the model using their own templates. The first user message (user\_example.txt) contains the retrieved example as the few-shot demonstration.
@@ -906,7 +906,7 @@ We evaluate the system along two axes: \textit{retrieval metrics}, which assess 
 % \textbf{CVE hit@1} is a stricter version of the CWE hit@1. It measures whether the top-1 retrieved example corresponds to the same underlying CVE (or CVE-fix pair) as the query, rather than merely the same vulnerability class.
 % It is implemented as an exact CVE identifier match rather than fix-commit lineage, so every entry filed under the same CVE (e.g.\ multiple affected functions from the same fix) counts as a hit.
 
-\textbf{Confidence Score} is the similarity score assigned by the retriever to its top-1 match, used to measure the ranking signal quality. It can also be used as a threshold to reject low-confidence retrievals rather than return wrong CWE.
+\textbf{Ranking Score} is the similarity score assigned by the retriever to its top-1 match, used to measure the ranking signal quality. It can also be used as a threshold to reject low-confidence retrievals rather than return the wrong CWE.
 
 \textbf{MAP} (\textit{Mean Average Precision}) measures ranking quality rather than a single top-1 hit, and remains computable even when only one result is retrieved per query. For a single query, Average Precision at rank $k$ is:
 \[
@@ -915,12 +915,14 @@ We evaluate the system along two axes: \textit{retrieval metrics}, which assess 
 where $\text{rel}(i) \in \{0, 1\}$ marks whether the result at rank $i$ shares the query's CWE, $P(i)$ is the precision (fraction of relevant results) within the top-$i$ results, and $n_\text{rel}$ is the number of relevant results retrieved (used as the denominator instead of the theoretical total so that AP@$k=1$ whenever every retrieved relevant result is ranked first).
 MAP is then the mean of AP@$k$ over a group of queries; grouping by CWE (rather than averaging over the whole query set) yields the per-CWE MAP scores reported in Chapter~\ref{chapter:results}, which surface which individual vulnerabilities are reliably retrieved versus consistently missed.
 
+
+
 % TODO: this still needs to be added
-% \paragraph{Embedding-space sanity check.} Before running retrieval, the \textbf{Effective dimensionality} of an embedder's output space is inspected as a diagnostic: the participation ratio of the eigenvalues of the embedding covariance matrix,
-% \[
-% \text{PR} = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2},
-% \]
-% where $\text{PR}=1$ indicates a collapsed space (all variance along one direction) and $\text{PR}=d$ indicates that all $d$ nominal dimensions are used uniformly \cite{ansuini2019intrinsic}. This is used to catch degenerate embedders (e.g.\ a PCA fit on too few or too homogeneous graphs) before they are passed to retrieval, rather than as a metric with results reported in this work; per-embedder effective-dimensionality values are left as a diagnostic to report alongside future retrieval runs.
+\paragraph{Embedding-space sanity check.} Before running retrieval, the \textbf{Effective dimensionality} of an embedder's output space is inspected as a diagnostic: the participation ratio of the eigenvalues of the embedding covariance matrix,
+\[
+\text{PR} = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2},
+\]
+where $\text{PR}=1$ indicates a collapsed space (all variance along one direction) and $\text{PR}=d$ indicates that all $d$ nominal dimensions are used uniformly \cite{ansuini2019intrinsic}. This is used to catch degenerate embedders (e.g.\ a PCA fit on too few or too homogeneous graphs) before they are passed to retrieval, rather than as a metric with results reported in this work; per-embedder effective-dimensionality values are left as a diagnostic to report alongside future retrieval runs.
 
 \subsection{Patching Metrics}
 % TODO: add introduction
@@ -970,8 +972,13 @@ MAP is then the mean of AP@$k$ over a group of queries; grouping by CWE (rather 
 \]
 
 With this, patches that are semantically equivalent but with different phrasing not to be penalized, but rather have a high score.
+% \paragraph{Baseline rescaling.} 
 
-\paragraph{LLM-as-a-judge verification.} To complement execution-based checks with automated semantic reasoning, we adopt an LLM-as-a-judge evaluation paradigm following the design of ~\cite{google2026llmjudge}.
+Following ~\cite{Zhang2020BERTScore}, raw BERTScore cosine similarities are rescaled as $\hat{s} = \max(0, (s - b) / (1 - b))$, where $b$ is an empirical similarity floor observed for unrelated code pairs under CodeBERT. We use a fixed $b=0.85$ across all reported experiments so
+that scores remain comparable across pipelines and datasets. As a sanity check, we estimated $b$ directly from each dataset by sampling
+random mismatched function pairs from its ground-truth corpus: this yields $b\approx0.91$ for AutoPatch and a lower value for CVEfixes, consistent with AutoPatch's shorter, more syntactically uniform snippets producing a higher raw-similarity floor. Because the dataset-specific $b$ is higher than our fixed constant, the reported AutoPatch BERTScore values are, if anything, a conservative (i.e. not overly generous) estimate relative to that floor.
+
+\paragraph{LLM-as-a-judge verification.} To have automated semantic reasoning, we adopt an LLM-as-a-judge evaluation paradigm following the design of ~\cite{google2026llmjudge}.
 The evaluator receives the bug context (e.g., bug description) and the candidate patch. The LLM judge is instructed to output its validity assessment, consisting of a “thought” section capturing its reasoning steps, a binary label (“VALID” or “INVALID”), and a concise justification. 
 Both the label and justification are stored for further analysis, such as identifying patterns in why certain patches are accepted or rejected, related to code language or structure.
 
