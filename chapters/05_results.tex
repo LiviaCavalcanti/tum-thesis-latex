@@ -1040,12 +1040,12 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
     DeepSeek Baseline & 93.3 & $0.146 \pm 0.071$ & $0.280 \pm 0.133$ & 20.2 \\
     Tool Calling (w/o Retrieval) & 100.0 & $0.883 \pm 0.041$ & $0.889 \pm 0.042$ & $13.5$ \\
     Semantic+Structure  & 100.0 & $0.862 \pm 0.039$ & $0.877 \pm 0.037$ &$32.6$ \\
-    Semantic  & 100.0 & $0.887 \pm 0.037$ & $0.904 \pm 0.033$ & $22.6$ \\
+    Semantic  & 100.0 & $0.887 \pm 0.037$ & $0.904 \pm 0.033$ & $39.3$ \\
     Topological Structure & 100.0 & $0.881 \pm 0.041$ & $0.796 \pm 0.089$ & $36.0$ \\
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\scriptsize \textbf{Completion \%} = successful patch generation rate. Lexical metrics computed over successfully generated patches. LLM Judge Valid is percent of evaluated patches deemed functionally valid. Standard deviations computed from individual patch evaluations in source evaluation.jsonl files.}
+  {\scriptsize \textbf{Completion \%} = successful patch generation rate. Lexical metrics computed over successfully generated patches. LLM Judge Valid is the percentage of evaluated patches deemed functionally valid. Standard deviations computed from individual patch evaluations in source evaluation.jsonl files.}
 \end{table}
 
 The patching performance of the DeepSeek-V4-Flash model (Tables \ref{tab:cvefixes_overall_pipeline_performance_deepseek}, \ref{tab:patch_similarity_by_cwe_deepseek} and \ref{tab:deepseek_judge_summary}) presents a different dynamic, exemplifying the behavioral differences between proprietary frontier models and more constrained open-weight models. 
@@ -1124,9 +1124,9 @@ The patching performance of the DeepSeek-V4-Flash model (Tables \ref{tab:cvefixe
 %     CWE-476       total= 27  valid=11  invalid=16  valid_rate=40.7%
 %     CWE-787       total= 28  valid=0  invalid=28  valid_rate=0.0%
 
-Unlike the sharp contrasts seen in GPT-4o, DeepSeek's baseline prompt-only generation achieves a 21.7\% functional validity rate (18 valid out of 83 evaluated), performing on par with its Tool Calling without retrieval pipeline (19 out of 89, or 21.3\%). This suggests that the model's internal reasoning capacity has hit a ceiling, and that giving it tools does not readily improve its ability to synthesize a security fix if it lacks the deep internal priors of a model like Codex or GPT-4o.
+Unlike the sharp contrasts seen in GPT-4o, DeepSeek's baseline prompt-only generation achieves a 20.2\% functional validity rate, performing on par with its Tool Calling without a retrieval pipeline. This suggests that the model's internal reasoning capacity has hit a ceiling, and that giving it tools does not readily improve its ability to synthesize a security fix if it lacks the deep internal priors of a model like Codex or GPT-4o.
 
-Unlike GPT-4o, which collapsed under RAG, DeepSeek, when equipped with retrieval contexts, significantly improves its performance. The Semantic+Structure and Semantic retrieval methods yield 24 and 23 valid patches, respectively (pushing validity rates to approximately 27.0\% and 25.8\%). Because DeepSeek seems to have weaker memorization of CVEs, it depends on the retrieved context rather than being hurt by it. The retrieved examples provide the necessary semantic trajectory that the model cannot generate zero-shot. This demonstrates that, for open-weight models, enriching the context via RAG can potentially break the performance ceiling of the model's native generation capabilities.
+Unlike GPT-4o, which collapsed under RAG, DeepSeek, when equipped with retrieval contexts, significantly improves its performance. The Semantic+Structure and Semantic retrieval methods yield 35 and 32 valid patches, respectively (pushing validity rates to approximately 39.3\% and 32.6\%). Because DeepSeek seems to have weaker memorization of CVEs, it depends on the retrieved context rather than being hurt by it. The retrieved examples provide the necessary semantic trajectory that the model cannot generate zero-shot. This demonstrates that, for open-weight models, enriching the context via RAG can potentially improve the performance ceiling of the model's native generation capabilities.
 
 % TODO: add citation
 Nevertheless, DeepSeek shares the common failure mode of confident hallucination. Despite the improved validity under RAG, the model still generates a vast number of syntactically flawless patches that fail the functional test. The Semantic+Structure strategy highlights this issue: it resulted in only 65 valid patches (Table \ref{tab:deepseek_judge_summary}). When the retriever supplies poor or purely structural context without semantic grounding, DeepSeek mimics the syntax perfectly but fails to grasp the root cause, compounding the retriever's error rather than correcting it.
@@ -1153,47 +1153,47 @@ Nevertheless, DeepSeek shares the common failure mode of confident hallucination
   \label{tab:patch_similarity_by_cwe_deepseek}
   \begin{tabular}{llrrrrr}
     \toprule
-    Pipeline & CWE & $N$ & BLEU-4 & \makecell{BERTScore\\F$_1$} & \makecell{ROUGE-L\\F$_1$} & \makecell{Hunk\\F$_1$} \\
+    Pipeline & CWE & BLEU-4 & \makecell{BERTScore\\F$_1$} & \makecell{ROUGE-L\\F$_1$} & \makecell{Hunk\\F$_1$} \\
     \midrule
     \multirow{6}{*}{Semantic+Structure}
-      & CWE-190 & 4 & $0.777 \pm 0.043$ & $0.624 \pm 0.051$ & $0.808 \pm 0.038$ & $0.559 \pm 0.068$ \\
-      & CWE-20  & 4 & $0.884 \pm 0.035$ & $0.780 \pm 0.044$ & $0.929 \pm 0.025$ & $0.775 \pm 0.061$ \\
-      & CWE-362 & 5 & $1.000 \pm 0.000$ & $1.000 \pm 0.000$ & $1.000 \pm 0.000$ & $0.999 \pm 0.001$ \\
-      & CWE-416 & 5 & $0.696 \pm 0.050$ & $0.723 \pm 0.049$ & $0.768 \pm 0.043$ & $0.780 \pm 0.060$ \\
-      & CWE-476 & 7 & $0.990 \pm 0.008$ & $0.963 \pm 0.025$ & $0.992 \pm 0.008$ & $0.856 \pm 0.058$ \\
-      & CWE-787 & 11 & $0.790 \pm 0.041$ & $0.466 \pm 0.063$ & $0.844 \pm 0.039$ & $0.195 \pm 0.088$ \\
+      & CWE-190 & $0.777 \pm 0.043$ & $0.624 \pm 0.051$ & $0.808 \pm 0.038$ & $0.559 \pm 0.068$ \\
+      & CWE-20 & $0.884 \pm 0.035$ & $0.780 \pm 0.044$ & $0.929 \pm 0.025$ & $0.775 \pm 0.061$ \\
+      & CWE-362 & $1.000 \pm 0.000$ & $1.000 \pm 0.000$ & $1.000 \pm 0.000$ & $0.999 \pm 0.001$ \\
+      & CWE-416 & $0.696 \pm 0.050$ & $0.723 \pm 0.049$ & $0.768 \pm 0.043$ & $0.780 \pm 0.060$ \\
+      & CWE-476 & $0.990 \pm 0.008$ & $0.963 \pm 0.025$ & $0.992 \pm 0.008$ & $0.856 \pm 0.058$ \\
+      & CWE-787 & $0.790 \pm 0.041$ & $0.466 \pm 0.063$ & $0.844 \pm 0.039$ & $0.195 \pm 0.088$ \\
     \midrule
     \multirow{6}{*}{Semantic}
-      & CWE-190 & 2 & $0.873 \pm 0.065$ & $0.615 \pm 0.062$ & $0.893 \pm 0.045$ & $0.533 \pm 0.075$ \\
-      & CWE-20  & 4 & $0.882 \pm 0.037$ & $0.907 \pm 0.030$ & $0.945 \pm 0.020$ & $0.934 \pm 0.041$ \\
-      & CWE-362 & 7 & $0.992 \pm 0.006$ & $0.965 \pm 0.019$ & $0.996 \pm 0.004$ & $0.998 \pm 0.002$ \\
-      & CWE-416 & 7 & $0.921 \pm 0.036$ & $0.882 \pm 0.036$ & $0.948 \pm 0.023$ & $0.869 \pm 0.051$ \\
-      & CWE-476 & 9 & $0.812 \pm 0.050$ & $0.826 \pm 0.047$ & $0.835 \pm 0.046$ & $0.879 \pm 0.053$ \\
-      & CWE-787 & 8 & $0.861 \pm 0.045$ & $0.531 \pm 0.059$ & $0.925 \pm 0.032$ & $0.146 \pm 0.098$ \\
+      & CWE-190 & $0.873 \pm 0.065$ & $0.615 \pm 0.062$ & $0.893 \pm 0.045$ & $0.533 \pm 0.075$ \\
+      & CWE-20 & $0.882 \pm 0.037$ & $0.907 \pm 0.030$ & $0.945 \pm 0.020$ & $0.934 \pm 0.041$ \\
+      & CWE-362 & $0.992 \pm 0.006$ & $0.965 \pm 0.019$ & $0.996 \pm 0.004$ & $0.998 \pm 0.002$ \\
+      & CWE-416 & $0.921 \pm 0.036$ & $0.882 \pm 0.036$ & $0.948 \pm 0.023$ & $0.869 \pm 0.051$ \\
+      & CWE-476 & $0.812 \pm 0.050$ & $0.826 \pm 0.047$ & $0.835 \pm 0.046$ & $0.879 \pm 0.053$ \\
+      & CWE-787 & $0.861 \pm 0.045$ & $0.531 \pm 0.059$ & $0.925 \pm 0.032$ & $0.146 \pm 0.098$ \\
     \midrule
     \multirow{6}{*}{Topological Structure}
-      & CWE-190 & 3 & $0.912 \pm 0.038$ & $0.734 \pm 0.051$ & $0.929 \pm 0.032$ & $0.689 \pm 0.067$ \\
-      & CWE-20  & 5 & $0.805 \pm 0.046$ & $0.800 \pm 0.048$ & $0.894 \pm 0.037$ & $0.755 \pm 0.062$ \\
-      & CWE-362 & 8 & $0.862 \pm 0.048$ & $0.841 \pm 0.051$ & $0.884 \pm 0.044$ & $0.989 \pm 0.013$ \\
-      & CWE-416 & 7 & $0.911 \pm 0.037$ & $0.874 \pm 0.039$ & $0.941 \pm 0.024$ & $0.850 \pm 0.056$ \\
-      & CWE-476 & 10 & $0.978 \pm 0.015$ & $0.969 \pm 0.021$ & $0.989 \pm 0.012$ & $0.998 \pm 0.002$ \\
-      & CWE-787 & 12 & $0.806 \pm 0.043$ & $0.824 \pm 0.045$ & $0.863 \pm 0.038$ & $0.736 \pm 0.062$ \\
+      & CWE-190 & $0.912 \pm 0.038$ & $0.734 \pm 0.051$ & $0.929 \pm 0.032$ & $0.689 \pm 0.067$ \\
+      & CWE-20  & $0.805 \pm 0.046$ & $0.800 \pm 0.048$ & $0.894 \pm 0.037$ & $0.755 \pm 0.062$ \\
+      & CWE-362 & $0.862 \pm 0.048$ & $0.841 \pm 0.051$ & $0.884 \pm 0.044$ & $0.989 \pm 0.013$ \\
+      & CWE-416 & $0.911 \pm 0.037$ & $0.874 \pm 0.039$ & $0.941 \pm 0.024$ & $0.850 \pm 0.056$ \\
+      & CWE-476 & $0.978 \pm 0.015$ & $0.969 \pm 0.021$ & $0.989 \pm 0.012$ & $0.998 \pm 0.002$ \\
+      & CWE-787 & $0.806 \pm 0.043$ & $0.824 \pm 0.045$ & $0.863 \pm 0.038$ & $0.736 \pm 0.062$ \\
     \midrule
     \multirow{6}{*}{Tool w/o retrieval}
-      & CWE-190 & 6 & $0.739 \pm 0.048$ & $0.716 \pm 0.050$ & $0.790 \pm 0.041$ & $0.777 \pm 0.059$ \\
-      & CWE-20  & 9 & $0.870 \pm 0.039$ & $0.877 \pm 0.037$ & $0.932 \pm 0.024$ & $0.844 \pm 0.055$ \\
-      & CWE-362 & 8 & $0.988 \pm 0.010$ & $0.969 \pm 0.021$ & $0.994 \pm 0.006$ & $0.999 \pm 0.001$ \\
-      & CWE-416 & 3 & $0.986 \pm 0.010$ & $1.000 \pm 0.000$ & $0.991 \pm 0.008$ & $0.997 \pm 0.003$ \\
-      & CWE-476 & 9 & $0.919 \pm 0.038$ & $0.915 \pm 0.041$ & $0.934 \pm 0.031$ & $0.889 \pm 0.052$ \\
-      & CWE-787 & 11 & $0.762 \pm 0.044$ & $0.457 \pm 0.062$ & $0.825 \pm 0.040$ & $0.015 \pm 0.071$ \\
+      & CWE-190 & $0.739 \pm 0.048$ & $0.716 \pm 0.050$ & $0.790 \pm 0.041$ & $0.777 \pm 0.059$ \\
+      & CWE-20 & $0.870 \pm 0.039$ & $0.877 \pm 0.037$ & $0.932 \pm 0.024$ & $0.844 \pm 0.055$ \\
+      & CWE-362 & $0.988 \pm 0.010$ & $0.969 \pm 0.021$ & $0.994 \pm 0.006$ & $0.999 \pm 0.001$ \\
+      & CWE-416 & $0.986 \pm 0.010$ & $1.000 \pm 0.000$ & $0.991 \pm 0.008$ & $0.997 \pm 0.003$ \\
+      & CWE-476 & $0.919 \pm 0.038$ & $0.915 \pm 0.041$ & $0.934 \pm 0.031$ & $0.889 \pm 0.052$ \\
+      & CWE-787 & $0.762 \pm 0.044$ & $0.457 \pm 0.062$ & $0.825 \pm 0.040$ & $0.015 \pm 0.071$ \\
     \midrule
     \multirow{6}{*}{Model baseline}
-      & CWE-190 & 15 & $0.233 \pm 0.070$ & $0.152 \pm 0.065$ & $0.366 \pm 0.080$ & $0.224 \pm 0.092$ \\
-      & CWE-20  & 15 & $0.225 \pm 0.069$ & $0.410 \pm 0.086$ & $0.407 \pm 0.085$ & $0.170 \pm 0.089$ \\
-      & CWE-362 & 15 & $0.188 \pm 0.063$ & $0.366 \pm 0.082$ & $0.342 \pm 0.080$ & $0.009 \pm 0.031$ \\
-      & CWE-416 & 11 & $0.090 \pm 0.055$ & $0.449 \pm 0.084$ & $0.280 \pm 0.074$ & $0.081 \pm 0.078$ \\
-      & CWE-476 & 12 & $0.084 \pm 0.054$ & $0.307 \pm 0.081$ & $0.237 \pm 0.071$ & $0.097 \pm 0.081$ \\
-      & CWE-787 & 15 & $0.030 \pm 0.043$ & $0.049 \pm 0.047$ & $0.214 \pm 0.065$ & $0.045 \pm 0.063$ \\
+      & CWE-190 & $0.233 \pm 0.070$ & $0.152 \pm 0.065$ & $0.366 \pm 0.080$ & $0.224 \pm 0.092$ \\
+      & CWE-20 & $0.225 \pm 0.069$ & $0.410 \pm 0.086$ & $0.407 \pm 0.085$ & $0.170 \pm 0.089$ \\
+      & CWE-362 & $0.188 \pm 0.063$ & $0.366 \pm 0.082$ & $0.342 \pm 0.080$ & $0.009 \pm 0.031$ \\
+      & CWE-416 & $0.090 \pm 0.055$ & $0.449 \pm 0.084$ & $0.280 \pm 0.074$ & $0.081 \pm 0.078$ \\
+      & CWE-476 & $0.084 \pm 0.054$ & $0.307 \pm 0.081$ & $0.237 \pm 0.071$ & $0.097 \pm 0.081$ \\
+      & CWE-787 & $0.030 \pm 0.043$ & $0.049 \pm 0.047$ & $0.214 \pm 0.065$ & $0.045 \pm 0.063$ \\
     \bottomrule
   \end{tabular}
   \\[2pt]
@@ -1218,28 +1218,28 @@ Nevertheless, DeepSeek shares the common failure mode of confident hallucination
   \label{tab:cvefixes_generation_cost_summary}
   \begin{tabular}{llrrrrrr}
     \toprule
-Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+Run & Model & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
     \midrule
     % Sem.+Struc (Single) & GPT-4o & 89 & 3.4M & 116K & 3.5M & \$14.34 & \$0.161 \\
-    Sem.+Struc & GPT-4o & 89 & 5.6M & 55K & 5.6M & \$21.70 & \$0.244 \\
+    Sem.+Struc & GPT-4o & 5.6M & 55K & 5.6M & \$21.70 & \$0.244 \\
     % Semantic (Single) & GPT-4o & 89 & 3.4M & 111K & 3.5M & \$14.26 & \$0.160 \\
-    Semantic & GPT-4o & 89 & 5.9M & 70K & 6.0M & \$23.35 & \$0.262 \\
-    Model baseline & GPT-4o & 82 & 873K & 73K & 945K & \$4.36 & \$0.053 \\
-    Tool w/o retrieval & GPT-4o & 82 & 4.6M & 83K & 4.6M & \$18.37 & \$0.224 \\
+    Semantic & GPT-4o & 5.9M & 70K & 6.0M & \$23.35 & \$0.262 \\
+    Model baseline & GPT-4o & 873K & 73K & 945K & \$4.36 & \$0.053 \\
+    Tool w/o retrieval & GPT-4o & 4.6M & 83K & 4.6M & \$18.37 & \$0.224 \\
     \midrule
-    Sem.+Struc (Tool) & codex & 89 & 3.3M & 87K & 3.4M & \$6.94 & \$0.078 \\
-    Semantic (Tool) & codex & 89 & 4.2M & 100K & 4.3M & \$8.80 & \$0.099 \\
-    Topology (Tool) & codex & 89 & 4.0M & 106K & 4.1M & \$8.44 & \$0.095 \\
-    Model baseline & codex & 89 & 1.1M & 65K & 1.2M & \$2.88 & \$0.032 \\
-    Tool w/o retrieval & codex & 89 & 2.6M & 59K & 2.7M & \$5.40 & \$0.061 \\
+    Sem.+Struc (Tool) & codex & 3.3M & 87K & 3.4M & \$6.94 & \$0.078 \\
+    Semantic (Tool) & codex & 4.2M & 100K & 4.3M & \$8.80 & \$0.099 \\
+    Topology (Tool) & codex & 4.0M & 106K & 4.1M & \$8.44 & \$0.095 \\
+    Model baseline & codex & 1.1M & 65K & 1.2M & \$2.88 & \$0.032 \\
+    Tool w/o retrieval & codex & 2.6M & 59K & 2.7M & \$5.40 & \$0.061 \\
     \midrule
     % Sem.+Struc (Single) & DeepSeek & 89 & 3.4M & 300K & 3.7M & \$0.80 & \$0.009 \\
-    Sem.+Struc & DeepSeek & 89 & 8.4M & 725K & 9.1M & \$1.97 & \$0.022 \\
-    Semantic & DeepSeek & 89 & 9.2M & 763K & 9.9M & \$2.13 & \$0.024 \\
+    Sem.+Struc & DeepSeek & 8.4M & 725K & 9.1M & \$1.97 & \$0.022 \\
+    Semantic & DeepSeek & 9.2M & 763K & 9.9M & \$2.13 & \$0.024 \\
     % Topology (Single) & DeepSeek & 89 & 4.0M & 325K & 4.3M & \$0.93 & \$0.010 \\
-    Topology & DeepSeek & 89 & 8.8M & 661K & 9.5M & \$2.02 & \$0.023 \\
-    Model baseline & DeepSeek & 89 & 1.1M & 98K & 1.2M & \$0.26 & \$0.003 \\
-    Tool w/o retrieval & DeepSeek & 89 & 8.0M & 727K & 8.7M & \$1.88 & \$0.021 \\
+    Topology & DeepSeek & 8.8M & 661K & 9.5M & \$2.02 & \$0.023 \\
+    Model baseline & DeepSeek & 1.1M & 98K & 1.2M & \$0.26 & \$0.003 \\
+    Tool w/o retrieval & DeepSeek & 8.0M & 727K & 8.7M & \$1.88 & \$0.021 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1592,32 +1592,32 @@ In light of the higher percentage of completion patches in the Topological Struc
   \label{tab:autopatch_pipeline_by_cwe_category_gpt_codex}
   \begin{tabular}{llrrrr}
     \toprule
-    Source & Category & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
+    Source & Category & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
     \midrule
-    \multirow{4}{*}{Semantic+Structure} & Memory Safety & 22 & $0.842 \pm 0.139$ & $0.539 \pm 0.123$ & $0.917 \pm 0.078$ \\
-    & Concurrency & 28 & $0.799 \pm 0.153$ & $0.518 \pm 0.117$ & $0.867 \pm 0.094$ \\
-    & Numeric/Type & 10 & $0.865 \pm 0.151$ & $0.314 \pm 0.098$ & $0.911 \pm 0.117$ \\
-    & Resource Mgmt & 8 & $0.711 \pm 0.264$ & $0.487 \pm 0.090$ & $0.812 \pm 0.168$ \\
+    \multirow{4}{*}{Semantic+Structure} & Memory Safety & $0.842 \pm 0.139$ & $0.539 \pm 0.123$ & $0.917 \pm 0.078$ \\
+    & Concurrency & $0.799 \pm 0.153$ & $0.518 \pm 0.117$ & $0.867 \pm 0.094$ \\
+    & Numeric/Type & $0.865 \pm 0.151$ & $0.314 \pm 0.098$ & $0.911 \pm 0.117$ \\
+    & Resource Mgmt & $0.711 \pm 0.264$ & $0.487 \pm 0.090$ & $0.812 \pm 0.168$ \\
     \midrule
-    \multirow{4}{*}{Semantic} & Memory Safety & 25 & $0.828 \pm 0.136$ & $0.539 \pm 0.129$ & $0.906 \pm 0.079$ \\
-    & Concurrency & 30 & $0.792 \pm 0.152$ & $0.515 \pm 0.110$ & $0.862 \pm 0.095$ \\
-    & Numeric/Type & 10 & $0.868 \pm 0.122$ & $0.317 \pm 0.100$ & $0.918 \pm 0.098$ \\
-    & Resource Mgmt & 7 & $0.743 \pm 0.264$ & $0.515 \pm 0.087$ & $0.831 \pm 0.168$ \\
+    \multirow{4}{*}{Semantic} & Memory Safety  & $0.828 \pm 0.136$ & $0.539 \pm 0.129$ & $0.906 \pm 0.079$ \\
+    & Concurrency & $0.792 \pm 0.152$ & $0.515 \pm 0.110$ & $0.862 \pm 0.095$ \\
+    & Numeric/Type  & $0.868 \pm 0.122$ & $0.317 \pm 0.100$ & $0.918 \pm 0.098$ \\
+    & Resource Mgmt & $0.743 \pm 0.264$ & $0.515 \pm 0.087$ & $0.831 \pm 0.168$ \\
     \midrule
-    \multirow{4}{*}{Topological Structure} & Memory Safety & 26 & $0.830 \pm 0.126$ & $0.537 \pm 0.126$ & $0.902 \pm 0.077$ \\
-    & Concurrency & 31 & $0.804 \pm 0.142$ & $0.514 \pm 0.118$ & $0.873 \pm 0.086$ \\
-    & Numeric/Type & 11 & $0.889 \pm 0.164$ & $0.315 \pm 0.089$ & $0.931 \pm 0.126$ \\
-    & Resource Mgmt & 7 & $0.743 \pm 0.264$ & $0.515 \pm 0.087$ & $0.831 \pm 0.168$ \\
+    \multirow{4}{*}{Topological Structure} & Memory Safety & $0.830 \pm 0.126$ & $0.537 \pm 0.126$ & $0.902 \pm 0.077$ \\
+    & Concurrency & $0.804 \pm 0.142$ & $0.514 \pm 0.118$ & $0.873 \pm 0.086$ \\
+    & Numeric/Type & $0.889 \pm 0.164$ & $0.315 \pm 0.089$ & $0.931 \pm 0.126$ \\
+    & Resource Mgmt & $0.743 \pm 0.264$ & $0.515 \pm 0.087$ & $0.831 \pm 0.168$ \\
     \midrule
-    \multirow{4}{*}{Model baseline} & Memory Safety & 27 & $0.680 \pm 0.157$ & $0.528 \pm 0.120$ & $0.775 \pm 0.114$ \\
-    & Concurrency & 25 & $0.742 \pm 0.121$ & $0.541 \pm 0.095$ & $0.835 \pm 0.077$ \\
-    & Numeric/Type & 7 & $0.658 \pm 0.199$ & $0.419 \pm 0.090$ & $0.752 \pm 0.154$ \\
-    & Resource Mgmt & 11 & $0.612 \pm 0.222$ & $0.466 \pm 0.165$ & $0.716 \pm 0.173$ \\
+    \multirow{4}{*}{Model baseline} & Memory Safety & $0.680 \pm 0.157$ & $0.528 \pm 0.120$ & $0.775 \pm 0.114$ \\
+    & Concurrency & $0.742 \pm 0.121$ & $0.541 \pm 0.095$ & $0.835 \pm 0.077$ \\
+    & Numeric/Type & $0.658 \pm 0.199$ & $0.419 \pm 0.090$ & $0.752 \pm 0.154$ \\
+    & Resource Mgmt & $0.612 \pm 0.222$ & $0.466 \pm 0.165$ & $0.716 \pm 0.173$ \\
     \midrule
-    \multirow{4}{*}{Tool w/o retrieval} & Memory Safety & 27 & $0.815 \pm 0.126$ & $0.533 \pm 0.137$ & $0.898 \pm 0.078$ \\
-    & Concurrency & 25 & $0.861 \pm 0.116$ & $0.523 \pm 0.118$ & $0.914 \pm 0.083$ \\
-    & Numeric/Type & 8 & $0.769 \pm 0.153$ & $0.391 \pm 0.092$ & $0.854 \pm 0.097$ \\
-    & Resource Mgmt & 11 & $0.807 \pm 0.175$ & $0.447 \pm 0.153$ & $0.882 \pm 0.117$ \\
+    \multirow{4}{*}{Tool w/o retrieval} & Memory Safety & $0.815 \pm 0.126$ & $0.533 \pm 0.137$ & $0.898 \pm 0.078$ \\
+    & Concurrency & $0.861 \pm 0.116$ & $0.523 \pm 0.118$ & $0.914 \pm 0.083$ \\
+    & Numeric/Type & $0.769 \pm 0.153$ & $0.391 \pm 0.092$ & $0.854 \pm 0.097$ \\
+    & Resource Mgmt & $0.807 \pm 0.175$ & $0.447 \pm 0.153$ & $0.882 \pm 0.117$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1702,32 +1702,32 @@ Within Concurrency, the retrieval variants also diverge. Topological Structure a
   \label{tab:autopatch_pipeline_by_cwe_category_gpt4o}
   \begin{tabular}{llrrrr}
     \toprule
-    Source & Category & N & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
+    Source & Category & BLEU-4 & BERTScore F1 & ROUGE-L F1 \\
     \midrule
-    \multirow{4}{*}{Semantic+Structure} & Memory Safety & 21 & $0.815 \pm 0.121$ & $0.584 \pm 0.092$ & $0.903 \pm 0.075$ \\
-    & Concurrency & 21 & $0.855 \pm 0.113$ & $0.537 \pm 0.105$ & $0.912 \pm 0.060$ \\
-    & Numeric/Type & 6 & $0.736 \pm 0.131$ & $0.490 \pm 0.103$ & $0.842 \pm 0.092$ \\
-    & Resource Mgmt & 6 & $0.849 \pm 0.148$ & $0.595 \pm 0.164$ & $0.915 \pm 0.099$ \\
+    \multirow{4}{*}{Semantic+Structure} & Memory Safety & $0.815 \pm 0.121$ & $0.584 \pm 0.092$ & $0.903 \pm 0.075$ \\
+    & Concurrency & $0.855 \pm 0.113$ & $0.537 \pm 0.105$ & $0.912 \pm 0.060$ \\
+    & Numeric/Type & $0.736 \pm 0.131$ & $0.490 \pm 0.103$ & $0.842 \pm 0.092$ \\
+    & Resource Mgmt & $0.849 \pm 0.148$ & $0.595 \pm 0.164$ & $0.915 \pm 0.099$ \\
     \midrule
-    \multirow{4}{*}{Semantic} & Memory Safety & 16 & $0.872 \pm 0.114$ & $0.591 \pm 0.114$ & $0.936 \pm 0.066$ \\
-    & Concurrency & 22 & $0.850 \pm 0.220$ & $0.549 \pm 0.176$ & $0.892 \pm 0.166$ \\
-    & Numeric/Type & 10 & $0.888 \pm 0.150$ & $0.337 \pm 0.123$ & $0.938 \pm 0.100$ \\
-    & Resource Mgmt & 7 & $0.783 \pm 0.139$ & $0.550 \pm 0.087$ & $0.841 \pm 0.131$ \\
+    \multirow{4}{*}{Semantic} & Memory Safety & $0.872 \pm 0.114$ & $0.591 \pm 0.114$ & $0.936 \pm 0.066$ \\
+    & Concurrency & $0.850 \pm 0.220$ & $0.549 \pm 0.176$ & $0.892 \pm 0.166$ \\
+    & Numeric/Type & $0.888 \pm 0.150$ & $0.337 \pm 0.123$ & $0.938 \pm 0.100$ \\
+    & Resource Mgmt & $0.783 \pm 0.139$ & $0.550 \pm 0.087$ & $0.841 \pm 0.131$ \\
     \midrule
-    \multirow{4}{*}{Topological Structure} & Memory Safety & 17 & $0.895 \pm 0.119$ & $0.582 \pm 0.109$ & $0.948 \pm 0.066$ \\
-    & Concurrency & 25 & $0.914 \pm 0.119$ & $0.524 \pm 0.123$ & $0.962 \pm 0.066$ \\
-    & Numeric/Type & 10 & $0.878 \pm 0.165$ & $0.322 \pm 0.103$ & $0.932 \pm 0.109$ \\
-    & Resource Mgmt & 6 & $0.743 \pm 0.159$ & $0.573 \pm 0.096$ & $0.835 \pm 0.129$ \\
+    \multirow{4}{*}{Topological Structure} & Memory Safety & $0.895 \pm 0.119$ & $0.582 \pm 0.109$ & $0.948 \pm 0.066$ \\
+    & Concurrency & $0.914 \pm 0.119$ & $0.524 \pm 0.123$ & $0.962 \pm 0.066$ \\
+    & Numeric/Type & $0.878 \pm 0.165$ & $0.322 \pm 0.103$ & $0.932 \pm 0.109$ \\
+    & Resource Mgmt & $0.743 \pm 0.159$ & $0.573 \pm 0.096$ & $0.835 \pm 0.129$ \\
     \midrule
-    \multirow{4}{*}{Model baseline} & Memory Safety & 37 & $0.688 \pm 0.073$ & $0.730 \pm 0.133$ & $0.818 \pm 0.043$ \\
-    & Concurrency & 35 & $0.743 \pm 0.022$ & $0.764 \pm 0.041$ & $0.858 \pm 0.007$ \\
-    & Numeric/Type & 12 & $0.692 \pm 0.052$ & $0.666 \pm 0.044$ & $0.783 \pm 0.062$ \\
-    & Resource Mgmt & 16 & $0.720 \pm 0.130$ & $0.750 \pm 0.111$ & $0.812 \pm 0.112$ \\
+    \multirow{4}{*}{Model baseline} & Memory Safety & $0.688 \pm 0.073$ & $0.730 \pm 0.133$ & $0.818 \pm 0.043$ \\
+    & Concurrency & $0.743 \pm 0.022$ & $0.764 \pm 0.041$ & $0.858 \pm 0.007$ \\
+    & Numeric/Type & $0.692 \pm 0.052$ & $0.666 \pm 0.044$ & $0.783 \pm 0.062$ \\
+    & Resource Mgmt & $0.720 \pm 0.130$ & $0.750 \pm 0.111$ & $0.812 \pm 0.112$ \\
     \midrule
-    \multirow{4}{*}{Tool-only} & Memory Safety & 27 & $0.766 \pm 0.114$ & $0.527 \pm 0.054$ & $0.854 \pm 0.080$ \\
-    & Concurrency & 20 & $0.703 \pm 0.170$ & $0.444 \pm 0.044$ & $0.776 \pm 0.137$ \\
-    & Numeric/Type & 10 & $0.762 \pm 0.046$ & $0.470 \pm 0.092$ & $0.850 \pm 0.036$ \\
-    & Resource Mgmt & 15 & $0.764 \pm 0.192$ & $0.456 \pm 0.169$ & $0.828 \pm 0.173$ \\
+    \multirow{4}{*}{Tool-only} & Memory Safety & $0.766 \pm 0.114$ & $0.527 \pm 0.054$ & $0.854 \pm 0.080$ \\
+    & Concurrency & $0.703 \pm 0.170$ & $0.444 \pm 0.044$ & $0.776 \pm 0.137$ \\
+    & Numeric/Type & $0.762 \pm 0.046$ & $0.470 \pm 0.092$ & $0.850 \pm 0.036$ \\
+    & Resource Mgmt & $0.764 \pm 0.192$ & $0.456 \pm 0.169$ & $0.828 \pm 0.173$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1898,25 +1898,25 @@ Compared to GPT-4o (Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o}), D
   \label{tab:generation_cost_summary_condensed}
   \begin{tabular}{llrrrrrr}
     \toprule
-Run & Model & N & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
+Run & Model & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makecell{Total\\Tokens} & \makecell{Cost\\(USD)} & \makecell{Avg\\Cost/Entry\\(USD)} \\
     \midrule
-    Sem.+Struc & codex & 75 & 380K & 51K & 430K & \$1.37 & \$0.018 \\
-    Semantic & codex & 75 & 400K & 55K & 452K & \$1.46 & \$0.019 \\
-    Topology & codex & 75 & 399K & 55K & 453K & \$1.47 & \$0.020 \\
-    Model baseline & codex & 75 & 238K & 33K & 269K & \$0.88 & \$0.011 \\
-    Tool w/o retrieval & codex & 75 & 247K & 43K & 290K & \$1.03 & \$0.013 \\
+    Sem.+Struc & codex & 380K & 51K & 430K & \$1.37 & \$0.018 \\
+    Semantic & codex & 400K & 55K & 452K & \$1.46 & \$0.019 \\
+    Topology & codex & 399K & 55K & 453K & \$1.47 & \$0.020 \\
+    Model baseline & codex & 238K & 33K & 269K & \$0.88 & \$0.011 \\
+    Tool w/o retrieval & codex & 247K & 43K & 290K & \$1.03 & \$0.013 \\
     \midrule
-    Sem.+Struc & GPT-4o & 75 & 559K & 57K & 616K & \$2.95 & \$0.039 \\
-    Semantic & GPT-4o & 75 & 625K & 56K & 681K & \$3.18 & \$0.042 \\
-    Topology & GPT-4o & 75 & 620K & 55K & 680K & \$3.15 & \$0.042 \\
-    Model baseline & GPT-4o & 75 & 247K & 59K & 306K & \$1.80 & \$0.024 \\
-    Tool w/o retrieval & GPT-4o & 75 & 445K & 47K & 491K & \$2.41 & \$0.032 \\
+    Sem.+Struc & GPT-4o & 559K & 57K & 616K & \$2.95 & \$0.039 \\
+    Semantic & GPT-4o & 625K & 56K & 681K & \$3.18 & \$0.042 \\
+    Topology & GPT-4o & 620K & 55K & 680K & \$3.15 & \$0.042 \\
+    Model baseline & GPT-4o & 247K & 59K & 306K & \$1.80 & \$0.024 \\
+    Tool w/o retrieval & GPT-4o & 445K & 47K & 491K & \$2.41 & \$0.032 \\
     \midrule
-    Sem.+Struc & DeepSeek & 75 & 950K & 162K & 1.11M & \$0.18 & \$0.002 \\
-    Semantic & DeepSeek & 75 & 950K & 158.5K & 1.11M & \$0.18 & \$0.002 \\
-    Topology & DeepSeek & 75 & 1M & 158.7K & 1.16M & \$0.18 & \$0.003 \\
-    Model baseline & DeepSeek & 75 & 251.4K & 47.9K & 299.3K & \$0.05 & \$0.001 \\
-    Tool w/o retrieval & DeepSeek & 75 & 939.5K & 190.9K & 1.13M & \$0.19 & \$0.003 \\
+    Sem.+Struc & DeepSeek & 950K & 162K & 1.11M & \$0.18 & \$0.002 \\
+    Semantic & DeepSeek &  950K & 158.5K & 1.11M & \$0.18 & \$0.002 \\
+    Topology & DeepSeek &  1M & 158.7K & 1.16M & \$0.18 & \$0.003 \\
+    Model baseline & DeepSeek & 251.4K & 47.9K & 299.3K & \$0.05 & \$0.001 \\
+    Tool w/o retrieval & DeepSeek & 939.5K & 190.9K & 1.13M & \$0.19 & \$0.003 \\
     \bottomrule
   \end{tabular}
 \end{table}
