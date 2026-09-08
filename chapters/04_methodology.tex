@@ -971,12 +971,14 @@ where $\text{PR}=1$ indicates a collapsed space (all variance along one directio
 \text{BERTScore} = \frac{2 \cdot Precision \cdot Recall}{Precision + Recall}
 \]
 
-With this, patches that are semantically equivalent but with different phrasing not to be penalized, but rather have a high score.
+With this, patches that are semantically equivalent but differ in phrasing should not be penalized; rather, they should receive a high score.
 % \paragraph{Baseline rescaling.} 
 
-Following ~\cite{Zhang2020BERTScore}, raw BERTScore cosine similarities are rescaled as $\hat{s} = \max(0, (s - b) / (1 - b))$, where $b$ is an empirical similarity floor observed for unrelated code pairs under CodeBERT. We use a fixed $b=0.85$ across all reported experiments so
+Following ~\cite{Zhang2020BERTScore}, raw BERTScore cosine similarities are rescaled as $\hat{s} = \max(0, (s - b) / (1 - b))$, 
+where $b$ is an empirical similarity floor observed for unrelated code pairs under CodeBERT. We use a fixed $b=0.85$ across all reported experiments so
 that scores remain comparable across pipelines and datasets. As a sanity check, we estimated $b$ directly from each dataset by sampling
-random mismatched function pairs from its ground-truth corpus: this yields $b\approx0.91$ for AutoPatch and a lower value for CVEfixes, consistent with AutoPatch's shorter, more syntactically uniform snippets producing a higher raw-similarity floor. Because the dataset-specific $b$ is higher than our fixed constant, the reported AutoPatch BERTScore values are, if anything, a conservative (i.e. not overly generous) estimate relative to that floor.
+random mismatched function pairs from its ground-truth corpus: this yields $b\approx0.91$ for AutoPatch and a lower value for CVEfixes, consistent with AutoPatch's shorter, more syntactically uniform snippets producing a higher raw-similarity floor.
+ Because the dataset-specific $b$ is higher than our fixed constant, the reported AutoPatch BERTScore values are, if anything, an inflated estimate relative to that floor.
 
 \paragraph{LLM-as-a-judge verification.} To have automated semantic reasoning, we adopt an LLM-as-a-judge evaluation paradigm following the design of ~\cite{google2026llmjudge}.
 The evaluator receives the bug context (e.g., bug description) and the candidate patch. The LLM judge is instructed to output its validity assessment, consisting of a “thought” section capturing its reasoning steps, a binary label (“VALID” or “INVALID”), and a concise justification. 
