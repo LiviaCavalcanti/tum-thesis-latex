@@ -45,9 +45,10 @@ For AutoPatch, this yields $75$ original pairs and $75 \times 5 = 375$ LLM reimp
 % \end{tabularx}
 % \end{table}
 
+% TODO: Check what CWE is missing
 \begin{table}
 \centering
-\caption{Distribution of CWE Types in the AutoPatch Dataset ($N = 75$)}
+\caption{Distribution of CWE Types in the AutoPatch Dataset}
 \label{tab:autopatch_cwe_distribution}
 \begin{tabular}{llc}
     \toprule
@@ -85,10 +86,10 @@ Table \ref{tab:autopatch_cwe_distribution} shows the CWE distribution in the Aut
 
 \subsection{Fix Description Encoding}
  
-The AutoPatch dataset is organized into directories where each entry is stored in a folder containing a description JSON (\texttt{db\_entry.json} file=, which includes a field describing the remediation strategy at a symbolic, variable-agnostic level (\texttt{fix\_list}).
-The fix description uses symbolic names with variable and function
+The AutoPatch dataset is organized into directories, where each entry is stored in a folder containing a description JSON file (\texttt{db\_entry.json}) that includes a field describing the remediation strategy at a symbolic, variable-agnostic level (\texttt{fix\_list}).
+The fix description uses symbolic names with variable and functions
 mappings (e.g., \textit{''add a NULL check before dereferencing the
-pointer''}) lets a fixed pattern learned from one example
+pointer''}) Let's use a fixed pattern learned from one example
 be transferred to a structurally similar target function. 
 With this description, the LLM is expected to use the abstract fix description to apply the required changes to the target using the actual identifiers. 
 Section~\ref{chapter:methodology} details how this field is used when constructing prompts for patch generation.
@@ -96,7 +97,7 @@ Section~\ref{chapter:methodology} details how this field is used when constructi
 \section{CVEfixes}\label{sec:cvefixes}
 
 CVEfixes\cite{moonen2024cvefixes} is a vulnerability dataset for data-driven security research automatically collected and curated from Common Vulnerabilities and Exposures (CVE) records from the public U.S. National Vulnerability Database (NVD). 
-The dataset includes detailed information about the Pull Request CVE resolution, such as the commit-, file-, and method level, as well as the repository- and CVE level.
+The dataset includes detailed information about the Pull Request CVE resolution, such as the commit-, file-, and method-level, as well as the repository- and CVE-level.
 The general statistics are shown below: 
 
 \begin{itemize}
@@ -109,7 +110,7 @@ The general statistics are shown below:
 \end{itemize}
 
 % Origin, Collection method, Composition used
-This project uses version v1.0.8, which covers all published CVEs up to 23 July 2024. According to the authors, the projects considered in this dataset include all open-source projects that were reported in CVE records in the NVD in this time frame and had publicly available git repositories. The dataset is stored in a relational database, containing 272 different CWE types across 12107 vulnerability-fixing commits from 4249 open-source projects. The dataset includes the source code before and after changing 51342 files. Each function change is stored as two rows in \texttt{method\_change} (one \texttt{before\_change} snapshot, one after), so the 277,948 raw rows correspond to 138,974 distinct before/after function-pair changes.
+This project uses version v1.0.8, which covers all published CVEs up to 23 July 2024. According to the authors, the projects considered in this dataset include all open-source projects reported in CVE records in the NVD during this time frame and with publicly available Git repositories. The dataset is stored in a relational database and contains 272 different CWE types across 12107 vulnerability-fixing commits from 4249 open-source projects. The dataset includes the source code before and after changing 51342 files. Each function change is stored as two rows in \texttt{method\_change} (one \texttt{before\_change} snapshot, one after), so the 277,948 raw rows correspond to 138,974 distinct before/after function-pair changes.
 
 \begin{table}[htbp]
 \centering
@@ -305,3 +306,4 @@ The patch consists of resetting dangling pointers to \texttt{nullptr}, managing 
 Occurs when a program attempts to read or write memory using a pointer variable that evaluates to \texttt{nullptr}, leading to Denial of Service of the application.
 The sample includes media processing frameworks and proxy servers, such as GPAC multimedia handling and Istio/Envoy proxy handling. 
 The patches consist of applying explicit null-check guards (\texttt{if (ptr == nullptr) return;}) or safe-access wrappers before accessing the fields.
+
