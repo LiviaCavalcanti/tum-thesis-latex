@@ -3,7 +3,7 @@
 \section{Motivation}
 
 Software vulnerabilities are often variations of flaws that have already been identified, disclosed, and fixed somewhere else.
-Once a vulnerability is found and patched in one project, the same bug class routinely resurfaces in other projects that share a library, a coding pattern, or simply a common ancestor in the open-source dependency graph.
+Once a vulnerability is found and patched in one project, the same bug class may resurface in other projects that share a library, a coding pattern, or simply a common ancestor in the open-source dependency graph.
 Public vulnerability catalogs exist to prevent this knowledge from being lost.
 For a given entry, the removed and/or added code marks the fix, and the surrounding, unchanged code marks the vulnerable context in which that fix had to be applied.
 Reapplying a known fix to a new, similarly vulnerable codebase is, in principle, a matter of recognizing that context elsewhere and porting an analogous change.
@@ -19,8 +19,8 @@ When a known vulnerability remains unpatched in a downstream project, it can be 
 \section{Research Background}
 
 To meet compliance requirements, organizations must adhere to international standards and regulations such as ISO/IEC~27001~\cite{iso27001}.
-This standard establishes best practices for data protection, cyber-resilience, and operational excellence.
-To satisfy it and improve development robustness, enterprises must anticipate and adapt to vulnerabilities and potential attacks.
+Standards like these establish best practices for data protection, cyber-resilience, and operational excellence.
+To satisfy it and improve the robustness of development, enterprises must anticipate and adapt to vulnerabilities and potential attacks.
 For software companies, this demands evolving software development life cycles to rapidly identify, generate, and deploy risk mitigations.
 One promising approach is to integrate automated systems that proactively generate patches for vulnerable programs.
 
@@ -38,11 +38,10 @@ However, current LLM-based approaches remain insufficient for security patching,
 
 Both failure modes above share a common root cause: the model is not provided with the right context at the right level of abstraction.
 Providing lengthy raw source code compounds this problem, since vulnerability-relevant logic is diluted by implementation details and boilerplate, degrading the quality of security analysis.
-%TODO: restore/verify the "contextenhancedYang" citation and its "Analysis Focus Drift" terminology; add BibTeX entry once source is confirmed.
-Under this effect, which prior work terms Analysis Focus Drift, the model ends up performing a generic code-quality review rather than a targeted vulnerability analysis.
+Under this effect, which prior work terms Analysis Focus Drift~\cite{contextenhancedYang}, the model ends up performing a generic code-quality review rather than a targeted vulnerability analysis.
 There is, therefore, an opportunity to develop methodologies that concentrate security-relevant information while filtering out implementation noise.
 
-Retrieval-augmented approaches are a natural fit for this gap, as, rather than asking an LLM to reason about a vulnerability from generic pretraining knowledge, they supply it with structurally similar, previously-fixed vulnerabilities as grounding evidence.
+Retrieval-augmented approaches are a natural fit for this gap, as they supply an LLM with structurally similar, previously fixed vulnerabilities as grounding evidence rather than asking it to reason about a vulnerability from generic pretraining knowledge.
 Prior work shows that knowledge bases can improve LLM responses in security applications~\cite{Seo2025AutoPatchMF, guo2025bluecodeagentblueteamingagent}.
 %TODO: restore/verify the du2025vulrag and wang2025valign citations on knowledge-base-augmented vulnerability repair; add BibTeX entries once confirmed.
 However, it remains unclear how retrieval, code representation, and historical context can improve patch quality, particularly in agentic pipelines where retrieval, reasoning, and patch generation are handled by separate components.
@@ -51,11 +50,11 @@ This thesis investigates that question by treating each historical fix as a pair
 \section{Scope and Positioning}
 
 This thesis does not aim to replace security experts or to discover previously unknown vulnerabilities.
-The proposed pipeline only works once a vulnerability has been identified and fixed by a developer; therefore, it does not detect zero-days.
-Instead, its goal is to maximize the propagation of that human knowledge, to free security experts' time to find genuinely new vulnerabilities, to reduce the window of exposure for already-known ones, and to let teams without dedicated security expertise keep their codebases free of previously cataloged flaws.
+The proposed pipeline only works once a vulnerability has been identified and its advisory has been created; therefore, it does not detect zero-days.
+Instead, its goal is to maximize the propagation of that human knowledge, free security experts' time to find genuinely new vulnerabilities, reduce the window of exposure for already-known ones, and let teams without dedicated security expertise keep their codebases free of previously cataloged flaws.
 
 % is it really necessary?
-Concretely, the system assumes that the vulnerable function to be patched, and its CWE category, are already known and given as input; detecting and localizing a vulnerability are outside the scope of this thesis. The retriever only needs the function's code, not its CWE, to find a structurally similar historical fix. 
+Concretely, the system assumes that the vulnerable function to be patched and its CWE category are already known and provided as input; detecting and localizing a vulnerability are outside the scope of this thesis. The retriever only needs the function's code, not its CWE, to find a structurally similar historical fix. 
 What this thesis contributes is (1) retrieving a structurally similar, historically fixed example for that already-characterized vulnerability, and (2) using that example's own metadata (its CWE, CVE identifier, root cause, variable/function mappings, and patched code), together with the target's CWE, to assist patch generation.
 
 %TODO: add a closing paragraph summarizing this thesis's concrete contributions (e.g. CPG-based diff embedding, FAISS/HNSW retrieval, patch-generation and evaluation pipeline) and a one-paragraph roadmap of the remaining chapters (Dataset, Methodology, Evaluation, ...).
