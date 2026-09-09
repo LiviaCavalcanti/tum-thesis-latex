@@ -47,6 +47,12 @@ Prior work shows that knowledge bases can improve LLM responses in security appl
 However, it remains unclear how retrieval, code representation, and historical context can improve patch quality, particularly in agentic pipelines where retrieval, reasoning, and patch generation are handled by separate components.
 This thesis investigates that question by treating each historical fix as a pair of code property graphs: one for the patched code and one for the code before the fix, using the latter as a vulnerability signature that can be indexed, retrieved, and handed to an LLM as targeted context.
 
+This thesis aims to answer the following research questions:
+
+\textbf{RQ1:} How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
+
+\textbf{RQ2:} What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline? 
+
 \section{Scope and Positioning}
 
 This thesis does not aim to replace security experts or to discover previously unknown vulnerabilities.
