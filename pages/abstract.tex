@@ -1,5 +1,7 @@
 \chapter{\abstractname}
 
-%TODO: Abstract
+Automated vulnerability patching promises to close the gap between vulnerability discovery and remediation. The effectiveness of retrieval-augmented, agentic LLM pipelines for this task, however, still has to be explored. 
+This thesis presents an empirical study of retrieval-augmented vulnerability patching, comparing unsupervised structural (Code Property Graph) embeddings against pretrained semantic (CodeBERT) embeddings and their hybrid combination, across two datasets (AutoPatch and CVEFixes) and three LLM backbones (GPT-5.3-Codex, GPT-4o, and DeepSeek-V4-Flash) in an agentic, tool-calling patch-generation pipeline.
 
+The results indicate that structure-aware retrieval is a viable but complementary component of automated patching pipelines, whose performance depends on the vulnerability class and the downstream model, rather than a superior design.
 
