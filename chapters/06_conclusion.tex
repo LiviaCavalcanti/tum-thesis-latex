@@ -55,15 +55,15 @@ By isolating the retrieval contribution by comparing the best retrieval pipeline
 Retrieval helps GPT-5.3-Codex, increasing validity from 21.3\% (baseline, no tooling, no retrieval) to 41.6\% with the Semantic embedder (see Table~\ref{tab:llmjudge_codex53}).
 It helps DeepSeek-V4-Flash substantially, pushing baseline 20.2\% (or Tool calling without retrieval with 13.5\%) to $\sim$32\% Semantic+Structure, as shown in Table~\ref{tab:deepseek_judge_summary}.
 However, retrieval augmentation hurts GPT-4o pipeline, reducing the Tool Calling without retrieval from 20 valid patches to 5 on average for Semantic and Semantic+Structure retrieval (see Table~\ref{tab:llmjudge_gpt4o}), performing worse than the prompt-only baseline. 
-This could be explained by the increase in the input length and complexity from injecting the retrieved code example to into the prompt. Besides, GPT-4o is less capable than GPT-5.3-Codex for such a task, as it is specialized in programming and security and can even rely on its training knowledge, for example, to recover from potential retrieval errors.
-This finding suggests that LLM selection cannot be reduced to buying the most capable general-purpose nodek outright, and reinforces the case for domain-specialist models over specialist ones. %TODO: cite works that say that
+This could be explained by the increase in the input length and complexity from injecting the retrieved code example into the prompt. Besides, GPT-4o is less capable than GPT-5.3-Codex for such a task, as it is specialized in programming and security and can even rely on its training knowledge, for example, to recover from potential retrieval errors.
+This finding suggests that LLM selection cannot be reduced to buying the most capable general-purpose model outright and reinforces the case for domain-specialist models over specialist models~\cite{vulnerabilityhallucination}.
  
 A qualitative case illustrates a further risk beyond raw validity.
 For one GPT-5.3-Codex query where the retriever returned the wrong CVE, the LLM generated a technically coherent patch for a different, correctly diagnosed vulnerability. But its own chain of thought explicitly claimed to address the CWE stated in the (wrong) retrieved prompt. 
 Even though the patch was correct, the misattributed reasoning raises trustworthiness concerns for production use and motivates stronger verification harnesses or, ultimately, specialists, to ensure the system's safety, as it remains unclear how often or in which direction this kind of dissimulation occurs.
 
 A related concern, relevant to engineering teams beyond this thesis, is that aggregated metrics can appear strong even when the patch of matter is missed.
-These errors may pass undetected , even when measurements capture a different spectrum of the evaluated object. 
+These errors may pass undetected, even when measurements capture a different spectrum of the evaluated object. 
 As discussed in the Chapter \ref{chapter:results} on the baseline, empty fixes may result in inflating lexical scores that calculate F1 based on code addition and removal. For example, Codex's near-zero \texttt{hunk\_added\_f1} (0.011) against a high \texttt{hunk\_removed\_f1} (0.719) indicates that the model deletes vulnerable code without replacing it, resulting in an empty, non-functional fix. 
 Consequently, aggregate lexical metrics (BLEU-4, BERTScore, ROUGE-L, and even whole-file Hunk F1) can stay high in cases like this, or when a patch's stated justification does not match what the model actually did. 
 Detailed dataset annotations, e.g., indicating what should be added or removed, would help surface this, but such labeling is expensive and was not feasible for this work.
@@ -104,8 +104,10 @@ Besides, a cheaper model with a higher completion rate should not be automatical
 Three takeaways summarize the answer to RQ2 and its implications for deployment.
 
 First, no embedder wins unanimously; therefore, it might be considered as an auxiliary component, and rankings flip between datasets.
-The AutoPatch numbers most favorable to Topological Structure are the ones most likely to be inflated by the dataset's single-function, topology-preserving construction. 
+The AutoPatch numbers most favorable to Topological Structure are the ones most likely to be inflated by the dataset's single-function, topology-preserving construction.
+
 Second, base model capabilities dominate retrieval and prompting choices for patch validity, meaning that choosing a stronger backbone outweighs investment in retrieval sophistication. 
+
 Third, retrieval augmentation is not a safe default. Instead, it is a per-model decision that can help (Codex, DeepSeek) or actively hurt (GPT-4o), and should not be treated as a universal upgrade, based on the results obtained in this thesis.
  
  
