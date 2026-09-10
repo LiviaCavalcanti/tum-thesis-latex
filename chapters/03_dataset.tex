@@ -3,7 +3,7 @@
 \section{AutoPatch}
 The AutoPatch dataset contains high-severity CVEs disclosed in 2024 and 2025 and collected from the GitHub Advisory Database, Openwall, and the Chromium issue tracker with a custom crawler.
 For each CVE, the entry pairs were augmented using 5 LLMs:  Code Llama (13b-instruct), DeepSeek Coder (v2-lite), DeepSeek-R1 (32b), GPT-4o, and OpenAI o3-mini.
-The augmentation strategies used were: "inserting unreachable code fragments, adding random code in comments, varying whitespace and formatting, defining a useless function, and introducing extraneous newline characters".
+The augmentation strategies used were: "inserting unreachable code fragments, adding random code in comments, varying whitespace and formatting, defining a useless function, and introducing extraneous newline characters."
 
 % Because both datasets are referenced with several overlapping counts throughout this chapter, we fix the terminology upfront:
 % \begin{itemize}
@@ -16,7 +16,7 @@ The augmentation strategies used were: "inserting unreachable code fragments, ad
 %     \item A \textbf{patch-generation attempt} is one LLM call asking the patching agent to fix a query's vulnerable function; a fraction of attempts end in a parse error (the agent's output cannot be extracted into a compilable patch) rather than a scored patch, which reduces the number of \emph{evaluated} patches below the number of attempts (see Chapter~\ref{chapter:results}).
 % \end{itemize}
 
-For AutoPatch, this yields $75$ original pairs and $75 \times 5 = 375$ LLM reimplementations, i.e.\ $450$ original-plus-reimplemented pairs in total, plus one non-semantic augmented variant per CVE (up to $75$ additional entries).
+For AutoPatch, this yields $75$ original pairs and 375 LLM reimplementations, i.e., \ $450$ original-plus-reimplemented pairs in total, plus one non-semantic augmented variant per CVE (up to $75$ additional entries).
 
 % \begin{table}[H]
 % \centering
