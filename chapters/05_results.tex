@@ -2,95 +2,6 @@
 
 \section{AutoPatch: Retriever Ablation Experiments}\label{sec:autopatch_retrieval}
 
-% \subsection{ AutoPatch Dataset Results}
-%   \textbf{Goal:} Validate that structural embeddings match CodeBERT performance.
-% TODO: Update this table
-% In table \ref{tab:retrieval_autopatch}, the Topological Structure embedder achieves the best performance across all metrics, reaching 0.8904 hit@1, surpassing both Semantic variants.
-% This suggests that the graph-only signal is expressive on this dataset, whereas CodeBERT's semantic signal is less relevant.
-
-% \begin{table}[H]
-% \centering
-% \caption{Embedder Retrieval Performance Comparison for AutoPatch Dataset}\label{tab:retrieval_autopatch}
-% \small
-% \begin{tabular}{lrrrr}
-%   \toprule
-%   \textbf{Embedder} & \textbf{H@1} & \textbf{H@5} & \textbf{MRR} & \textbf{CWE R.} \\
-%   \midrule
-%   \multicolumn{5}{c}{\textit{Structure-Only}} \\
-%   \midrule
-%   \textbf{Topological Structure} & \textbf{0.890} & \textbf{0.959} & \textbf{0.916} & \textbf{0.498} \\
-%   GIN & 0.726 & 0.877 & 0.788 & 0.443 \\
-%   WL & 0.699 & 0.795 & 0.736 & 0.439 \\
-%   \midrule
-%   \multicolumn{5}{c}{\textit{CodeBERT pretrained}} \\
-%   \midrule
-%   % CodeBERT (baseline) & 0.153 & 0.220 & 0.183 & 0.293 \\
-%   Semantic & 0.753 & 0.863 & 0.793 & 0.412 \\
-%   Semantic+Structure & 0.712 & 0.836 & 0.768 & 0.415 \\
-%   \bottomrule
-% \end{tabular}
-% % {\tiny\textcolor{notecol}{Source: \texttt{experiments/output/checkpoint5/20260505\_141347\_experiment\_f59ab1/results.json}}}
-% \end{table}
-
-% Key Code Changes Since Experiments (May 5 → Sept 1, 2026)
-% 22 commits have modified the embeddings, graph, and pipeline code. The most impactful changes are:
-
-% 1. PCA Fitting Strategy (July 16, 2026) — CRITICAL
-% Before: PCA was fit during inference time
-% After: PCA is now fit on the entire index corpus at build time
-% Impact: Directly affects embedders: combined, codebert_seq, codebert_pattern
-% This is a significant algorithmic change that can substantially alter performance
-% 2. L2 Normalization Handling (August 20, 2026)
-% Now properly handles string values ("none", "false") instead of just booleans
-% Fixes configuration parsing that could have been silently failing before
-% 3. Data Modifications (July 16, 2026)
-% Changes to how data is processed, which could affect embeddings
-% 4. New Embedder Variants
-% GNN updates from paper
-% New graph encoding variations
-% New CodeBERT variants
-% gin_codebert combination
-
-%   {\small
-%   \renewcommand{\arraystretch}{1.35}
-%   \setlength{\tabcolsep}{5pt}
-% \begin{table}
-% \centering
-%   \begin{tabular}{l *{3}{c} c *{3}{c} c *{3}{c}}
-%     \toprule
-%     & \multicolumn{3}{c}{\textbf{PCA + L2} {\footnotesize(baseline)}}
-%     && \multicolumn{3}{c}{\textbf{No PCA, L2 only} {\footnotesize(Abl.\ A)}}
-%     \rowcolor{c1!12}
-%     Combined
-%       & \chit{84.9\%} & \chit{.890} & \chit{.501}
-%       && \cwarn{74.0\%} & .780 & .398
-%       && \cmiss{1.4\%} & .047 & .071 \\
-%     CodeBERT seq
-%       & 75.3\% & .793 & .412
-%       && 76.7\% & .799 & .402
-%       && \cmiss{1.4\%} & .107 & .160 \\
-%     GIN
-%       & 72.6\% & .788 & .443
-%       && 72.6\% & .788 & .443
-%       && \cmiss{1.4\%} & .044 & .068 \\
-%     CodeBERT pat.
-%       & 71.2\% & .768 & .414
-%       && 75.3\% & .788 & .394
-%       && \cmiss{1.4\%} & .132 & .201 \\
-%     WL
-%       & 65.8\% & .720 & .423
-%       && 67.1\% & .723 & .435
-%       && \cmiss{0.0\%} & .045 & .065 \\
-%     RGCN
-%       & 60.3\% & .676 & .372
-%       && \cwarn{67.1\%} & .733 & .390
-%       && \cmiss{0.0\%} & .014 & .060 \\
-%     \bottomrule
-%   \end{tabular}
-%   \caption{Legacy embedder retrieval ablation table (not compiled)}\label{tab:pca_l2_legacy}
-% \end{table}}
-
-
 As seen in Table \ref{tab:pca_l2}, $L_2$-normalization is an important component for the retrieval performance, whereas PCA produces a marginal but consistent change across the embedding metrics.
 For the Topological Structure embedder, removing PCA results in a slight performance drop from 0.822 to 0.808 in hit@1 (and from 0.860 to 0.844 in MRR), indicating that PCA helps balance the concatenated GIN and WL representations. In contrast, removing $L_2$-normalization causes a severe degradation across all graph-based embedders, reducing Topological Structure hit@1 to 0.0136 and GIN to 0.055, confirming that vector magnitude scaling is essential before computing distance metrics.
 
@@ -135,9 +46,31 @@ For the Topological Structure embedder, removing PCA results in a slight perform
 
 To investigate why removing $L_2$-normalization causes such a performance collapse, we analyzed the effective dimensionality of the resulting embedding space. 
 Without $L_2$-normalization, raw 768-dimensional CodeBERT output vectors vary in magnitude. 
-These scale differences can dominate the distance metrics when the vectors are compressed to 128 dimensions via PCA, masking directional semantics and restricting the embedding space into roughly three effective dimensions (3.13). 
+These scale differences can dominate the distance metrics when the vectors are compressed to 128 dimensions via PCA, masking directional semantics and restricting the embedding space into roughly three effective dimensions (3.13)~\ref{tab:dimensionality}. 
 On the other hand, applying $L_2$-normalization forces all vectors onto a unit hypersphere, eliminating magnitude variance so that distance calculations depend strictly on vector orientation. 
 This keeps the semantic signal spread across nearly 16 effective dimensions (15.79), thereby preserving CodeBERT's representations and achieving the best retrieval performance (87.7\% hit@1).
+
+\begin{table}[H]
+\centering
+  \caption{Effective Dimensionality by Embedder and Normalization Strategy}\label{tab:effective_dimensionality}
+  \label{tab:dimensionality}
+  \small
+  \begin{tabular}{l c c c}
+    \toprule
+    \textbf{Embedder} & \textbf{With PCA + L2} & \textbf{No PCA, with L2} & \textbf{Without L2} \\
+    \midrule
+    Topological Structure & 2.16 & 6.34 & 2.19 \\
+    GIN & 1.70 & 2.85 & 1.70 \\
+    Semantic & 3.14 & 15.79 & 3.13 \\
+    Semantic + Structure & 3.69 & 6.83 & 2.16 \\
+    WL & 1.43 & 10.42 & 1.43 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+% Data sources: 
+% With PCA + L2: experiments/output/20260818_163709_experiment_962554/summary.json; 
+% No PCA, with L2: experiments/output/20260818_163151_experiment_f3fde7/summary.json; 
+% Without L2: experiments/output/20260818_160231_experiment_f659da/summary.json
 
 While the Semantic embedder achieves the highest overall retrieval performance (Hit@1=0.877), the unsupervised Topological Structure embedder performs competitively (Hit@1=0.822) without relying on pretrained transformer architectures. 
 This is especially relevant because topological graphs depend on structural invariants rather than code natural language and can be computed efficiently on CPU-only infrastructure.
@@ -145,118 +78,7 @@ Furthermore, structural embedders can be an alternative for rare, legacy, or dom
 Given that this baseline is completely unsupervised, supervised fine-tuning of lightweight graph neural networks presents a viable, compute-efficient strategy to surpass transformer-based retrieval baselines without requiring dedicated GPU infrastructure.
 Therefore, a viable direction for future work is to train GIN as an alternative for out-of-distribution codebases, which can simultaneously explore the emergence of graph representation patterns that better capture vulnerabilities across a larger dimensional region, currently limited to  2.19, with PCA, and 6.83, without PCA.
 
-As GIN and WL are reported just as a reference, we consider the Semantic and Topological Structure embedders performance for the 
-
-% Participation ratio of PCA eigenvalues: $(\sum \lambda_i)^2 / \sum \lambda_i^2$. Value of 1 means the space has collapsed to one direction; value of $d$ means all dimensions are used equally.
-
-  % \vspace{0.3em}
-  % {\small
-  % \renewcommand{\arraystretch}{1.25}
-  % \begin{table}
-  % \begin{tabular}{lrr}
-  %   \toprule
-  %   \textbf{Embedder} & \textbf{With L2} & \textbf{No L2} \\
-  %   \midrule
-  %   Topological Structure     & 0.0067   & \cmiss{416{,}081} \\
-  %   CodeBERT seq  & 0.01   & \cmiss{456} \\
-  %   GIN           & 0.99   & \cmiss{260{,}029} \\
-  %   \bottomrule
-  % \end{tabular}
-  % \caption{Mean Pair-wise similarity with and without L2-Normalization }\label{tab:l2_similarity}
-  % \end{table}
-  % }
-
-
-
-%   \vspace{0.3em}
-%   % {\scriptsize\color{black!55}
-%   % Without L2, all vectors appear ``close'' — a graph with more nodes
-%   % produces a larger vector that dominates inner-product ranking.}
-
-% very nice table structure
-%  \begin{tabular}{l *{6}{c} }
-%     \toprule
-%     & \multicolumn{6}{c}{\textbf{Retrieval}} \\
-%     \cmidrule{2-7} 
-%     \textbf{Strategy}
-%       & hit@1 & hit@5 & hit@10 & MRR & nDCG@10 & MAP@10 \\
-%     \midrule
-%     \rowcolor{c1!7}
-%     \texttt{norm\_concat\_pca}
-%       & \chit{80.8\%} & \chit{93.2\%} & \chit{95.9\%} & \chit{.849} & \chit{.645} & \chit{.514} \\
-%     \texttt{concat\_pca}
-%       & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
-%     \texttt{pca\_concat\_pca}
-%       & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
-%     \texttt{pca\_concat}
-%       & \cmiss{64.4\%} & \cmiss{78.1\%} & \cmiss{83.6\%} & \cmiss{.706} & \cmiss{.449} & \cmiss{.334} \\
-%     \addlinespace[3pt]
-%     \multicolumn{7}{l}{\scriptsize\textit{4-way fusion (+ CodeBERT-pattern)}} \\
-%     \addlinespace[1pt]
-%     \texttt{4way\_concat\_pca}
-%       & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336} \\
-%     \texttt{4way\_norm\_concat\_pca}
-%       & \cwarn{72.6\%} & \cwarn{86.3\%} & \cwarn{87.7\%} & \cwarn{.773} & \cwarn{.569} & \cwarn{.440} \\
-%     \bottomrule
-%   \end{tabular}}
-
-% \subsection{Per-CWE Retrieval Breakdown}
-
-% Table~\ref{tab:autopatch_per_cwe} presents a breakdown of retrieval performance by vulnerability category.
-% The Topological Structure embedder achieves perfect CVE retrieval (100\%) on Use After Free (n=12) and Race Condition (n=5), similar performance to the original paper, whereas Semantic+Structure achieves only 66.7\% and 80\%, respectively.
-% This confirms that for memory-safety and concurrency vulnerabilities in the AutoPatch dataset, the structural graph topology provides a stronger discriminative signal than token-level semantics.
-
-
-% \begin{table}[h]
-%   \centering
-%   \caption{Per-CWE Retrieval Performance Comparison on AutoPatch (n=73 queries)}\label{tab:autopatch_per_cwe}
-%   \small
-%   \begin{tabular}{l r r r r r r}
-%     \toprule
-%     \textbf{CWE Category} & \textbf{n} & \multicolumn{2}{c}{\textbf{Topological Structure}} & \multicolumn{2}{c}{\textbf{Semantic}} & \textbf{$\Delta$} \\
-%     \cmidrule(lr){3-4} \cmidrule(lr){5-6}
-%     & & CVE & CWE & CVE & CWE & CVE \\
-%     \midrule
-%     Use After Free & 12 & \chit{100\%} & \chit{100\%} & 66.7\% & 66.7\% & +33pp \\
-%     Race Condition & 5 & \chit{100\%} & \chit{100\%} & 80.0\% & 80.0\% & +20pp \\
-%     Improper Locking & 8 & 100\% & 100\% & 100\% & 100\% & 0pp \\
-%     Deadlock & 4 & 100\% & 100\% & 100\% & 100\% & 0pp \\
-%     Integer Overflow & 10 & 80.0\% & 90.0\% & 70.0\% & \chit{100\%} & +10pp \\
-%     NULL Ptr Deref & 11 & 81.8\% & 90.9\% & 81.8\% & 81.8\% & 0pp \\
-%     \midrule
-%     \textbf{All CWEs} & 73 & \chit{89.0\%} & \chit{91.8\%} & 75.3\% & 80.8\% & +14pp \\
-%     \bottomrule
-%   \end{tabular}
-%   \\[2pt]
-%   {\tiny\textcolor{notecol}{Source: \texttt{cvefixes\_experiments/output/autopatch/20260816\_080855.../converted/*/query/results.jsonl}}}
-% \end{table}
-
-% \begin{table}[h]
-%   \centering
-%   \caption{Per-CWE Retrieval Performance Comparison on AutoPatch (n=73 queries)}\label{tab:autopatch_per_cwe}
-%   \small
-%   \begin{tabular}{l r r r r r r}
-%     \toprule
-%     \textbf{CWE Category} & \textbf{n} & \multicolumn{2}{c}{\textbf{Topological Structure}} & \multicolumn{2}{c}{\textbf{Semantic}} & \textbf{$\Delta$} \\
-%     \cmidrule(lr){3-4} \cmidrule(lr){5-6}
-%     & & CVE & CWE & CVE & CWE & CVE \\
-%     \midrule
-%     Use After Free & 12 & \chit{100.0\%} & \chit{100.0\%} & 91.7\% & 91.7\% & +8pp \\
-%     Race Condition & 5 & \chit{100.0\%} & \chit{100.0\%} & 80.0\% & 80.0\% & +20pp \\
-%     Improper Locking & 8 & 100.0\% & 100.0\% & 100.0\% & 100.0\% & +0pp \\
-%     Deadlock & 4 & 100.0\% & 100.0\% & 100.0\% & 100.0\% & +0pp \\
-%     Integer Overflow or Wraparound & 10 & 70.0\% & 80.0\% & 70.0\% & 90.0\% & +0pp \\
-%     NULL Pointer Dereference & 11 & 45.5\% & 45.5\% & 63.6\% & 90.9\% & -18pp \\
-%     \midrule
-%     \textbf{All CWEs} & 73 & \chit{80.8\%} & \chit{82.2\%} & 84.9\% & 91.8\% & -4pp \\
-%     \bottomrule
-%   \end{tabular}
-%   \\[2pt]
-%   {\tiny\textcolor{notecol}{Source: \texttt{experiments/output/20260818\_163151\_experiment\_f3fde7/results.json}}}
-% \end{table}
-
-% Regardless of this performance, the Topological embedder has a lower average similarity score (0.697) than Semantic+Structure (0.846).
-% This indicates that the topological embeddings are sufficient when the code is short, curated, and well represented in the dataset, whereas surface-level code similarity yields high similarity, thereby mixing the vulnerability patterns.
+As GIN and WL are reported just as a reference, we consider the Semantic and Topological Structure embedders performance as the main reference for the patch generation quality comparison to evaluate the differences between structural and semantic embedders. 
 
 \subsection{Category-Level Retrieval Performance}
 
@@ -287,25 +109,28 @@ As GIN and WL are reported just as a reference, we consider the Semantic and Top
 \begin{table}[h]
 \centering
 \caption{Retrieval Performance by Vulnerability Category}
-\label{tab:autopatch_by_category_scaled}
+\label{tab:autopatch_by_category}
 \small
- \begin{tabular}{l r r r r r r}
+ \begin{tabular}{l r r r r r r r}
     \toprule
-    \textbf{Category} & \textbf{n} & \multicolumn{2}{c}{\textbf{Topological}} & \multicolumn{2}{c}{\textbf{Semantic}} & \textbf{$\Delta$} \\
-    \cmidrule(lr){3-4} \cmidrule(lr){5-6}
-    & & CVE & CWE & CVE & CWE & CVE \\
+    \textbf{Category} & \textbf{n} & \multicolumn{2}{c}{\textbf{Topological}} & \multicolumn{2}{c}{\textbf{Semantic}} & \multicolumn{2}{c}{\textbf{$\Delta$}} \\
+    \cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8}
+    & & CVE & CWE & CVE & CWE & CVE & CWE \\
     \midrule
-    Memory Safety & 28 & 78.6\% & 78.6\% & 82.1\% & 92.9\% & -3.6pp \\
-    Concurrency & 26 & \chit{100.0\%} & \chit{100.0\%} & 92.3\% & 92.3\% & +7.7pp \\
-    Numeric / Type & 9 & 77.8\% & 88.9\% & 77.8\% & 88.9\% & 0.0pp \\
-    Resource Management & 12 & 83.3\% & 83.3\% & 91.7\% & 91.7\% & -8.3pp \\
+    Memory Safety & 28 & 78.6\% & 78.6\% & 82.1\% & 92.9\% & -3.5pp & -14.3pp \\
+    Concurrency & 26 & \chit{100.0\%} & \chit{100.0\%} & 92.3\% & 92.3\% & 7.7pp & 7.7pp \\
+    Numeric / Type & 9 & 77.8\% & 88.9\% & 77.8\% & 88.9\% & 0.0pp & 0.0pp \\
+    Resource Management & 12 & 83.3\% & 83.3\% & 91.7\% & 91.7\% & -8.4pp & -8.4pp \\
     \midrule
-\textbf{All Categories (Scaled Total)} & \textbf{75} & \textbf{86.7\%} & \textbf{88.0\%} & \textbf{86.7\%} & \textbf{92.0\%} & \textbf{-2.2pp} \\
+\textbf{All Categories} & \textbf{75} & \textbf{86.7\%} & \textbf{88.0\%} & \textbf{86.7\%} & \textbf{92.0\%} & \textbf{0.0pp} & \textbf{-4.0pp} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-To evaluate representation preferences across distinct security domains, Table~\ref{tab:autopatch_by_category_scaled} groups the $n=75$ test queries into five primary vulnerability categories: \textit{Memory Safety} ($n=3$), \textit{Concurrency} ($n=26$), \textit{Numeric/Type} ($n=9$), and \textit{Resource Management} ($n=12$). Across the overall benchmark, the \textbf{Semantic embedder} achieves higher general accuracy (84.9\% CVE / 91.8\% CWE) compared to the \textbf{Topological Structure embedder} (80.8\% CVE / 82.2\% CWE), resulting in a 4.1 percentage point margin in favor of sequence-based representations. 
+To evaluate representation preferences across distinct security domains, Table~\ref{tab:autopatch_by_category} groups the $n=75$ test queries into four primary vulnerability categories: \textit{Memory Safety} ($n=28$), \textit{Concurrency} ($n=26$), \textit{Numeric/Type} ($n=9$), and \textit{Resource Management} ($n=12$). 
+Across the overall benchmark, both embedders achieve identical CVE retrieval accuracy (86.7\%), while the \textbf{Semantic embedder} demonstrates stronger category-level generalization with 92.0\% CWE accuracy compared to the \textbf{Topological Structure embedder} (88.0\% CWE), resulting in a 4.0 percentage point margin in CWE performance. 
+This difference may happen because one CWE can show structural heterogeneity across different CVEs, for instance, a topological pattern seem in the training may differ in position within a production code.
+Consequently, the Topological Structure embedder either enforce a wide separation margin between CWEs in the embedding space, so the potential differences don't lead to misclassifications, or encode graph patterns through a mechanism with flexibility similar RegEx, for example. 
 
 % However, domain-level analysis demonstrates that particular architectural strengths.
 % For Concurrency category, the Topological embedder reaches perfect accuracy across all concurrency queries (100.0\% CVE and CWE hit rates), outperforming the Semantic model (94.1\%). Concurrency flaws—such as race conditions and deadlocks—depend heavily on inter-thread execution order, control-flow branching (CFG), and data dependencies (PDG), which are explicitly captured by Code Property Graphs but blurred in linear token sequences.
@@ -489,7 +314,7 @@ This happens because the code contains an arithmetic operation node that feeds d
 \section{Cross-Dataset Comparison: AutoPatch vs.\ CVEFixes}
 
 When comparing embedder rankings across datasets, distinct patterns emerge.
-On AutoPatch, the topological embedder dominates with 89\% hit@1, while on CVEFixes (Section~\ref{sec:cvefixes-retrieval}), Semantic+Similarity achieves 65.17\% overall CWE accuracy while Topological Structure collapses to 23.60\%.
+On AutoPatch, the topological embedder dominates with 82\% hit@1, while on CVEFixes (Section~\ref{sec:cvefixes-retrieval}), Semantic+Similarity achieves 64.93\% overall CWE accuracy while Topological Structure collapses to 21.60\% ~\ref{vulnerability_retrieval_performanc}.
 Possible justifications for this are:
 
 \begin{enumerate}
@@ -531,7 +356,7 @@ This section evaluates how effectively the GPT-5.3-Codex agent leverages the con
     Tool Calling (w/o Retr.) & 0.872 $\pm$ 0.172 & 0.813 $\pm$ 0.218 & 0.912 $\pm$ 0.128 & 36.0 \\
     Semantic+Structure & 0.863 $\pm$ 0.184 & 0.801 $\pm$ 0.235 & 0.906 $\pm$ 0.135 & 33.7 \\
     Semantic & 0.883 $\pm$ 0.168 & 0.825 $\pm$ 0.201 & 0.921 $\pm$ 0.117 & 41.6 \\
-    Topological Structure & 0.871 $\pm$ 0.175 & 0.814 $\pm$ 0.216 & 0.907 $\pm$ 0.131 & 33.7 \\
+    Topological Structure & 0.871 $\pm$ 0.175 & 0.814 $\pm$ 0.216 & 0.907 $\pm$ 0.131 & 44.9 \\
     \bottomrule
   \end{tabular}
   }
@@ -543,7 +368,8 @@ Initial comparisons of the generated patches using standard whole-file surface m
 This inflation occurs because these metrics become saturated by the vast majority of the target code that remains unchanged, masking the actual quality of the fix. 
 To isolate the specific repair modifications, the CVEFixes dataset evaluation first employs hunk-specific metrics. 
 
-When the evaluation is restricted to the modified regions, both the Semantic and Semantic+Structure approaches demonstrate strong lexical alignment. As shown in the patching summaries in \ref{tab:cvefixes_overall_pipeline_performance_gpt_codex}, they achieve high structural precision, with BERTScore-F1 values of 0.825 and 0.801, respectively.
+When the evaluation is restricted to the modified regions, both the Semantic and Semantic+Structure approaches demonstrate strong lexical alignment. 
+As shown in the patching summaries in \ref{tab:cvefixes_overall_pipeline_performance_gpt_codex}, they achieve high structural precision, with BERTScore-F1 values of 0.825 and 0.801, respectively.
 % reaching \texttt{Hunk F$_1$} scores of $0.957$ and $0.934$, respectively. 
 These high scores may indicate that the agent successfully utilizes the retrieved CVE context to generate syntactically plausible, highly targeted edits that closely mirror human patches. 
 \begin{table}[h]
@@ -560,7 +386,7 @@ These high scores may indicate that the agent successfully utilizes the retrieve
     \midrule
     Semantic+Structure  & 31 & 56 & 2 \\
     Semantic &  38 & 46 & 0 \\
-    Topological Structure & 31 & 56 & 2 \\
+    Topological Structure & 40 & 19 & 0 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -568,7 +394,7 @@ These high scores may indicate that the agent successfully utilizes the retrieve
 % cvefixes_experiments/output/20260810_132907_patching_3e9cb9/tool_calling_no_retrieval__default__precomputed__gpt-5.3-codex/llm_judge_results.jsonl
 % cvefixes_experiments/output/20260810_140217_codebert_pattern_fixed_a0975f/codebert_pattern/patching/20260810_154844_patching_656604/tool_calling__default__precomputed__gpt-5.3-codex/llm_judge_results.jsonl (Semantic+Structure)
 % cvefixes_experiments/output/20260810_140217_codebert_pattern_fixed_a0975f/codebert_seq/patching/20260810_165103_patching_9b45a0/tool_calling__default__precomputed__gpt-5.3-codex/llm_judge_results.jsonl (Semantic)
-% cvefixes_experiments/output/20260810_140217_codebert_pattern_fixed_a0975f/codebert_pattern/patching/20260810_154844_patching_656604/tool_calling__default__precomputed__gpt-5.3-codex/llm_judge_results.jsonl (Topological Structure)
+% cvefixes_experiments/output/20260809_051918_embedding_sweep_6afeb5/combined/patching/20260809_061530_patching_4cb115/tool_calling__default__precomputed__gpt-5.3-codex/llm_judge_results.jsonl
 
 
 However, even hunk-isolated lexical alignment presents a critical blind spot in automated repair evaluation. 
@@ -632,76 +458,6 @@ It occurs because the patches simply reproduce the vulnerable input without addi
   \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^{\dagger}$ Fair Confidence ($80\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
 \end{table}
 
-% \begin{figure}
-%     \centering
-%     \label{img:cwe_comparison_all_methods_cvefixes_codex}
-    
-% \begin{tikzpicture}
-% \begin{axis}[
-%     width=0.82\linewidth,
-%     height=6.5cm,
-%     axis on top,
-%     xmin=-0.5, xmax=4.5,
-%     ymin=-0.5, ymax=5.5,
-%     xtick={0,1,2,3,4},
-%     ytick={0,1,2,3,4,5},
-%     colormap/tumseq,
-%     % xtick=data, ytick=data,
-%     xticklabels={Baseline,Tool (no retr.),Semantic,Sem.+Struct.,Topological},
-%     yticklabels={CWE-190,CWE-20,CWE-362,CWE-416,CWE-476,CWE-787},
-%     xticklabel style={rotate=35, anchor=east, font=\scriptsize},
-%     yticklabel style={font=\scriptsize},
-%     y dir=reverse,
-%     enlargelimits=false,
-%     tick align=outside,
-%     label style={font=\small},
-%     colorbar,
-%     colorbar style={ylabel={BERTScore F$_1$ (mean)}, font=\scriptsize},
-%     point meta min=0, point meta max=1,
-% ]
-% \addplot [
-%     matrix plot,
-%     mesh/cols=5,
-%     mesh/rows=6,
-%     point meta=explicit,
-%     nodes near coords={\pgfmathprintnumber[precision=2,fixed]{\pgfplotspointmeta}},
-%     every node near coord/.append style={font=\scriptsize, text=black},
-% ] table [meta=C] {
-% x y C
-% 0 0 0.163
-% 1 0 0.696
-% 2 0 0.695
-% 3 0 0.696
-% 4 0 0.694
-% 0 1 0.348
-% 1 1 0.907
-% 2 1 0.911
-% 3 1 0.911
-% 4 1 0.911
-% 0 2 0.352
-% 1 2 0.957
-% 2 2 0.974
-% 3 2 0.914
-% 4 2 0.967
-% 0 3 0.302
-% 1 3 0.884
-% 2 3 0.939
-% 3 3 0.918
-% 4 3 0.937
-% 0 4 0.198
-% 1 4 0.933
-% 2 4 0.928
-% 3 4 0.915
-% 4 4 0.851
-% 0 5 0.069
-% 1 5 0.510
-% 2 5 0.523
-% 3 5 0.524
-% 4 5 0.517
-% };
-% \end{axis}
-% \end{tikzpicture}
-% \end{figure}
 
 For reference, we also report the Codex-5.3 Baseline, which performs poorly across most of the CWE categories, indicating that prompting alone is insufficient for patching.
 A closer examination of the Codex-5.3 Baseline shows that the Hunk F$_1$ score ($0.692$) is seemingly strong overall. 
@@ -721,7 +477,8 @@ As summarized in Table~\ref{tab:llmjudge_codex53}, the Codex-5.3 Baseline achiev
 This exposes a dangerous hallucination case in which the model produces syntactically correct patches that pass surface-level checks but fail to resolve the underlying security flaw, probably making these silent failures more problematic than outright generation errors. 
 Notably, the integration of agentic tooling alone substantially addresses this gap.
 By simply employing structured ReAct prompting and tool access without any external retrieval, the validity rate jumps to 37.6\% (32/85), representing a 76\% relative improvement over the baseline. 
-While providing external context via retrieval pipelines yields further gains (reaching up to 42.5\% validity for the Semantic retriever and 35.3\% for Semantic+Structure), these additions are secondary to the initial leap provided by the agentic framework. Ultimately, the data suggests that while retrieved examples help contextualize the vulnerability, equipping the model with the structural tools to reason about the code is the most decisive factor in generating functionally valid security patches.
+While providing external context via retrieval pipelines yields further gains (reaching up to 44.9\% for Topology, 42.5\% validity for the Semantic retriever and 35.3\% for Semantic+Structure), these additions are secondary to the initial leap provided by the agentic framework. 
+Ultimately, the data suggests that while retrieved examples help contextualize the vulnerability, equipping the model with the structural tools to reason about the code is the most decisive factor in generating functionally valid security patches.
 
 
 
@@ -783,36 +540,6 @@ Semantic vector alignment suffers a similar degradation.
   \setlength{\tabcolsep}{4pt} % Reduces horizontal padding between columns
   \caption{Patch generation summary by embedding variant/mode -- by language Codex-5.3}
   \label{tab:patch_analysis_summary_by_language_codex}
-  % \textit{(a) Completion and retrieval}
-
-  % \begin{tabular}{llrrrrr}
-  %   \toprule
-  %   \textbf{Mode} & \textbf{Lang.} & \textbf{$N$} & \makecell{\bfseries Success\\(\%)} & \makecell{\bfseries CVE Match\\(\%)} & \makecell{\bfseries CWE Match\\(\%)} & \makecell{\bfseries Retrieval\\Similarity} \\
-  %   \midrule
-  %   \multirow{2}{*}{Codex Baseline} 
-  %     & C   & 65 & 100.0 & -- & -- & -- \\
-  %     & C++ & 24  & 100.0 & -- & -- & -- \\
-  %   \midrule
-  %   \multirow{2}{*}{Tool Calling (No Retr.)} 
-  %     & C   & 65 & 100.0 & -- & -- & -- \\
-  %     & C++ & 24 & 100.0 & -- & -- & -- \\
-  %   \midrule
-  %   \multirow{2}{*}{Semantic+Structure} 
-  %     & C   & 65 & 96.9 & 83.1 & 87.7 & 0.933 \\
-  %     & C++ & 24 & 100.0 & 100.0 & 100.0 & 0.960 \\
-  %   \midrule
-  %   \multirow{2}{*}{Semantic} 
-  %     & C   & 65 & 95.4 & 86.2 & 89.2 & 0.919 \\
-  %     & C++ & 24 & 100.0 & 100.0 & 100.0 & 0.963 \\
-  %   \midrule
-  %   \multirow{2}{*}{Topological Structure} 
-  %     & C   & 65 & 98.5 & 20.0 & 29.2 & 0.930 \\
-  %     & C++ & 24 & 91.7 & 8.3 & 8.3 & 0.858 \\
-  %   \bottomrule
-  % \end{tabular}
-  % \\[0.75em]
-  % \textit{(b) Lexical patch quality}
-
   \begin{tabular}{llrrr}
     \toprule
     \textbf{Mode} & \textbf{Lang.} & \textbf{BLEU-4} & \makecell{\bfseries BERTScore\\F$_1$} & \makecell{\bfseries Hunk\\F$_1$} \\
@@ -848,6 +575,8 @@ Semantic vector alignment suffers a similar degradation.
 This performance drop is likely due to C++'s complex abstractions, object-oriented constructs, Resource Acquisition Is Initialization (RAII) patterns, and the use of standard library templates.
 These features lead to the production of fragmented diff hunks compared to idiomatic, procedural C code, making automated patching more challenging. %TODO add reference showing that the fragmented hunking task is harder
 This is a structural limitation that needs further investigation. 
+
+A notable observation is that C++ performance metrics are remarkably invariant across all retrieval strategies. The BERTScore F$_1$ (0.654) and Hunk F$_1$ (0.310) remain \emph{completely identical} across Tool Calling (No Retrieval), Semantic+Structure, and Semantic methods (with only marginal variation in BLEU-4: 0.853--0.856). This suggests that for C++ code, the retrieval strategy provides zero discriminative benefit; all retrieval variants fail equally at producing viable patches. In contrast, C code shows substantial performance variation across retrieval methods (BERTScore F$_1$ ranges from 0.865--0.977). This pattern indicates that the C++ performance ceiling is determined not by the quality of retrieved examples, but by an intrinsic property of the language and vulnerability patterns themselves---likely the combination of OOP abstractions, template instantiation, and complex control flow that creates fragmented diffs. %TODO: investigate whether C++ metrics are truly invariant due to dataset sampling bias or whether this reflects genuine retrieval-agnosticism on templated/polymorphic code; consider stratifying by CWE to isolate C++-specific failure modes.
 
 \subsection{Patch Powered by GPT-4o}
 
@@ -988,58 +717,6 @@ Overall, the underlying patterns of the task remain identical. For simplicity, o
 
 
 
-% % TODO: Check whether we want to  add C/C++ analysis
-% \begin{table}[H]
-%   \centering
-%   \small
-%   \setlength{\tabcolsep}{2pt}
-%   \caption{CVEFixes: Patch generation summary by embedding variant / mode -- by language GPT-4o}
-%   \label{tab:patch_analysis_summary_by_language_gpt4o}
-%   % \textit{(a) Completion and retrieval}
-
-%   % \begin{tabular}{llrrrrr}
-%   %   \toprule
-%   %   \textbf{Mode} & \textbf{Lang.} & \textbf{$N$} & \makecell{\bfseries Success\\(\%)} & \makecell{\bfseries CVE Match\\(\%)} & \makecell{\bfseries CWE Match\\(\%)} & \makecell{\bfseries Retrieval\\Similarity} \\
-%   %   \midrule
-%   %   \multicolumn{7}{l}{Semantic+Structure} \\
-%   %   \hspace{1em} Prompt only & C   & 65 & 73.8 & 56.9 & 63.1 & 0.120 \\
-%   %   \hspace{1em} Prompt only & C++ & 24 & 91.7 & 29.2 & 29.2 & 0.273 \\
-%   %   \hspace{1em} Tool Calling& C   & 65 & 70.8 & 56.9 & 63.1 & 0.611 \\
-%   %   \hspace{1em} Tool Calling& C++ & 24 & 83.3 & 29.2 & 29.2 & 0.722 \\
-%   %   \midrule
-%   %   \multicolumn{7}{l}{Semantic} \\
-%   %   \hspace{1em} Prompt only & C   & 65 & 66.2 & 56.9 & 63.1 & 0.098 \\
-%   %   \hspace{1em} Prompt only & C++ & 24 & 70.8 & 29.2 & 29.2 & 0.242 \\
-%   %   \hspace{1em} Tool Calling& C   & 65 & 67.7 & 56.9 & 63.1 & 0.565 \\
-%   %   \hspace{1em} Tool Calling& C++ & 24 & 66.7 & 29.2 & 29.2 & 0.591 \\
-%   %   \bottomrule
-%   % \end{tabular}
-%   % \\[0.75em]
-%   % \textit{(b) Lexical patch quality}
-
-%   \begin{tabular}{llrrr}
-%     \toprule
-%     \textbf{Mode} & \textbf{Lang.} & \textbf{BLEU-4} & \makecell{\bfseries BERTScore\\F$_1$} & \makecell{\bfseries Hunk\\F$_1$} \\
-%     \midrule
-%       \multicolumn{5}{l}{Sem.+Struc.} \\
-%     Prompt only & C   & 0.082 & 0.292 & 0.829 \\
-%     Prompt only & C++ & 0.309 & 0.466 & 0.235 \\
-%     Tool Calling& C   & 0.941 & 0.963 & 0.986 \\
-%     Tool Calling& C++ & 0.873 & 0.611 & 0.238 \\
-%     \midrule
-%     \multicolumn{5}{l}{Semantic} \\
-%     Prompt only & C   & 0.064 & 0.252 & 0.864 \\
-%     Prompt only & C++ & 0.152 & 0.229 & 0.215 \\
-%     Tool Calling& C   & 0.796 & 0.904 & 0.925 \\
-%     Tool Calling& C++ & 0.879 & 0.942 & 0.779 \\
-%     \bottomrule
-%   \end{tabular}
-%   \\[2pt]
-%   \begin{minipage}{\linewidth}
-%     \scriptsize Source $N$ is the number of queries in the run. Lexical metrics are reported over successfully generated patches; the table values retain the full language-level summaries available for this run.
-%   \end{minipage}
-% \end{table}
-
 
 \subsection{DeepSeek-V4-Flash}
 
@@ -1123,10 +800,16 @@ The patching performance of the DeepSeek-V4-Flash model (Tables \ref{tab:cvefixe
 
 Unlike the sharp contrasts seen in GPT-4o, DeepSeek's baseline prompt-only generation achieves a 20.2\% functional validity rate, performing on par with its Tool Calling without a retrieval pipeline. This suggests that the model's internal reasoning capacity has hit a ceiling, and that giving it tools does not readily improve its ability to synthesize a security fix if it lacks the deep internal priors of a model like Codex or GPT-4o.
 
-Unlike GPT-4o, which collapsed under RAG, DeepSeek, when equipped with retrieval contexts, significantly improves its performance. The Semantic+Structure and Semantic retrieval methods yield 35 and 32 valid patches, respectively (pushing validity rates to approximately 39.3\% and 32.6\%). Because DeepSeek seems to have weaker memorization of CVEs, it depends on the retrieved context rather than being hurt by it. The retrieved examples provide the necessary semantic trajectory that the model cannot generate zero-shot. This demonstrates that, for open-weight models, enriching the context via RAG can potentially improve the performance ceiling of the model's native generation capabilities.
+Unlike GPT-4o, which collapsed under RAG, DeepSeek, when equipped with retrieval contexts, significantly improves its performance. 
+The Semantic and Topological Structure retrieval methods yield 35 and 32 valid patches, respectively (pushing validity rates to approximately 39.3\% and 32.6\%). 
+Because DeepSeek seems to have weaker memorization of CVEs, it depends on the retrieved context rather than being hurt by it. 
+The retrieved examples provide the necessary semantic trajectory that the model cannot generate zero-shot. This demonstrates that, for open-weight models, enriching the context via RAG can potentially improve the performance ceiling of the model's native generation capabilities.
 
 % TODO: add citation
-Nevertheless, DeepSeek shares the common failure mode of confident hallucination. Despite the improved validity under RAG, the model still generates a vast number of syntactically flawless patches that fail the functional test. The Semantic+Structure strategy highlights this issue: it resulted in only 65 valid patches (Table \ref{tab:deepseek_judge_summary}). When the retriever supplies poor or purely structural context without semantic grounding, DeepSeek mimics the syntax perfectly but fails to grasp the root cause, compounding the retriever's error rather than correcting it.
+Nevertheless, DeepSeek shares the common failure mode of confident hallucination\cite{leewang-etal-2025-astute}. 
+Despite the improved validity under RAG, the model still generates many syntactically flawless patches that fail the functional test. 
+The Semantic+Structure strategy highlights this issue with only 29 valid patches (Table \ref{tab:deepseek_judge_summary}). 
+When the retriever supplies poor semantic grounding, DeepSeek mimics the syntax perfectly but fails to grasp the root cause, compounding the retriever's error rather than correcting it~\cite{zhang2025hallucinationcode}.
 
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -1194,9 +877,6 @@ Nevertheless, DeepSeek shares the common failure mode of confident hallucination
     \bottomrule
   \end{tabular}
   \\[2pt]
-  % \begin{minipage}{\linewidth}
-  %   \scriptsize Metrics are averaged only over evaluated patches; $N$ therefore varies by pipeline and CWE. The Codex-5.3 Baseline is the prompt-only run evaluated in the supplied summary.
-  % \end{minipage}
 \end{table}
 
 
@@ -1205,6 +885,7 @@ Nevertheless, DeepSeek shares the common failure mode of confident hallucination
 % \subsubsection{Synthesis}
 
 % Ultimately, these comparative experiments reveal that automated program repair pipelines cannot be treated as model-agnostic. RAG is not a universal panacea. For highly capable, instruction-tuned models like GPT-4o, external retrieval can act as a distraction, creating a sycophantic loop where the model over-fits to imperfect context; here, unconstrained Tool Calling is vastly superior. Conversely, for models like DeepSeek-V4-Flash, where native internal priors are shallower, a fully integrated agentic pipeline coupling tool use with high-precision Semantic/Structure retrieval is an absolute necessity to achieve functional repair.
+
 \subsection{CVEFixes Generation Cost Analysis}
 % https://developers.openai.com/api/docs/pricing?_sm_nck=1
 % https://platform.claude.com/docs/en/about-claude/pricing
@@ -1251,234 +932,12 @@ Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs
 However, as discussed in Table~\ref{tab:deepseek_judge_summary}, the DeepSeek generation pipeline experienced output formatting issues that limited the patch generation rate. 
 Therefore, the pipeline might include fallbacks and Human-in-the-Loop verifications if this model is deployed in production. The DeepSeek performance is an example that raw cost efficiency must be weighed against functional reliability.
 
-% \begin{figure}
-%     \centering
-%     \includegraphics[width=1\linewidth]{img/patching/cost_vs_quality.png}
-%     \caption{CVEFixes Patching Cost vs. BERTScore as quality measure.}
-%     \label{img:cost_bertscore_cvefixes}
-% \end{figure}
-
-% \definecolor{tumblue}{RGB}{0, 101, 189}
-% \definecolor{tumorange}{RGB}{227, 114, 34}
-% \definecolor{tumgray}{RGB}{204, 204, 204}
-
-%     % \centering
-%     \begin{tikzpicture}
-%         \begin{axis}[
-%             ybar,
-%             bar width=14pt,
-%             width=\textwidth,
-%             height=0.7\textheight,
-%             enlarge x limits=0.25,
-%             legend style={
-%                 at={(0.5,-0.15)}, 
-%                 anchor=north, 
-%                 legend columns=-1,
-%                 draw=none,
-%                 fill=none,
-%                 font=\small
-%             },
-%             ylabel={\textbf{Number of Valid Patches}},
-%             symbolic x coords={DeepSeek-V4-Flash, Codex-5.3, GPT-4o},
-%             xtick=data,
-%             nodes near coords,
-%             nodes near coords align={vertical},
-%             ymin=0, ymax=30,
-%             ymajorgrids=true,
-%             major grid style={dotted, gray!60},
-%             axis line style={thick},
-%             tick align=outside,
-%         ]
-
-%         % Baseline
-%         \addplot[fill=tumgray, draw=none] coordinates {
-%             (DeepSeek-V4-Flash,18) 
-%             (Codex-5.3,16) 
-%             (GPT-4o,13)
-%         };
-        
-%         % Tool-Calling (w/o retrieval)
-%         \addplot[fill=tumblue, draw=none] coordinates {
-%             (DeepSeek-V4-Flash,19) 
-%             (Codex-5.3,21) 
-%             (GPT-4o,20)
-%         };
-        
-%         % Semantic+Structure
-%         \addplot[fill=tumorange, draw=none] coordinates {
-%             (DeepSeek-V4-Flash,24) 
-%             (Codex-5.3,22) 
-%             (GPT-4o,4)
-%         };
-
-%         \legend{Baseline, Tool-Calling, Semantic+Structure}
-%         \end{axis}
-%     \end{tikzpicture}
-    
-    % Note: Codex-5.3 values are placeholders based on the narrative and can be updated with exact counts from your earlier tables.
-% Siemens Corporate Color Palette
-% \definecolor{siemenspetrol}{RGB}{0, 153, 153}     % Siemens Primary Petrol
-% \definecolor{siemensdark}{RGB}{0, 43, 73}        % Siemens Dark Blue
-% \definecolor{siemenscyan}{RGB}{0, 180, 210}      % Siemens Light Cyan / Accent
-% \definecolor{siemensred}{RGB}{235, 50, 35}       % Siemens Red / Alert
-% \definecolor{siemensgray}{RGB}{238, 242, 245}    % Light Neutral Gray
-% \definecolor{siemensdarkgray}{RGB}{90, 105, 120} % Text Gray
-
                     
 \definecolor{siemenspetrol}{RGB}{0, 153, 153}     % Siemens Primary Petrol
 \definecolor{siemensdark}{RGB}{0, 43, 73}        % Siemens Dark Blue
 \definecolor{siemenscyan}{RGB}{0, 180, 210}      % Siemens Light Cyan
 \definecolor{siemensred}{RGB}{235, 50, 35}       % Siemens Red / Alert
 \definecolor{siemensdarkgray}{RGB}{90, 105, 120} % Text Gray
-% TODO: add it back
-% \begin{figure}
-% \label{img:cost_bertscore_cvefixes}
-% \begin{tikzpicture}
-%     \begin{axis}[
-%         width=\textwidth,
-%         height=0.65\textheight,
-%         xlabel={\textbf{Average Cost per Patch (\$) [Log Scale]}},
-%         ylabel={\textbf{Valid Patches (LLM Judge)}},
-%         xmode=log,
-%         xmin=0.002, xmax=0.35,
-%         ymin=0, ymax=42, % Expanded ymax to fit Codex (y=37)
-%         log ticks with fixed point,
-%         x tick label style={/pgf/number format/fixed, /pgf/number format/precision=3, font=\footnotesize},
-%         y tick label style={font=\footnotesize},
-%         label style={font=\small},
-%         axis background/.style={fill=white},
-%         axis line style={draw=siemensdarkgray!40, line width=0.8pt},
-%         grid=both,
-%         major grid style={draw=siemensdarkgray!20, line width=0.5pt},
-%         minor grid style={draw=siemensdarkgray!10, line width=0.3pt},
-%         legend style={
-%             at={(0.03,0.2)},
-%             anchor=north west,
-%             font=\footnotesize,
-%             fill=white,
-%             fill opacity=0.92,
-%             draw=siemensdarkgray!30,
-%             rounded corners=3pt,
-%             inner sep=5pt,
-%             nodes={right}
-%         },
-%         clip=false
-%     ]
-
-%     % Extended High ROI / High Efficiency Zone
-%     \draw[fill=siemenspetrol!12, draw=siemenspetrol, line width=0.8pt, rounded corners=2pt] 
-%         (axis cs:0.0025, 17) rectangle (axis cs:0.095, 39);
-%     \node[font=\footnotesize\bfseries, color=siemenspetrol!90!black, anchor=north west] 
-%         at (axis cs:0.0028, 38.5) {High ROI / Yield Zone};
-
-%     % Danger Zone (High Cost, Low Yield)
-%     \draw[fill=siemensred!10, draw=siemensred, line width=0.8pt, rounded corners=2pt] 
-%         (axis cs:0.15, 1) rectangle (axis cs:0.32, 10);
-%     \node[font=\footnotesize\bfseries, color=siemensred!90!black, anchor=north east] 
-%         at (axis cs:0.31, 9.2) {Danger Zone};
-
-%     % DeepSeek-V4-Flash
-%     \addplot[
-%         only marks, 
-%         mark=square*, 
-%         mark size=3.2pt, 
-%         color=siemenspetrol,
-%         mark options={fill=siemenspetrol, draw=siemenspetrol!80!black, line width=0.5pt}
-%     ] coordinates {
-%         (0.003, 18)   % Baseline
-%         (0.022, 19)   % Tool-calling
-%         (0.024, 24)   % Semantic+Structure RAG
-%     };
-%     \addlegendentry{DeepSeek-V4-Flash}
-
-%     % Codex-5.3 (Updated Coordinates)
-%     \addplot[
-%         only marks, 
-%         mark=triangle*, 
-%         mark size=3.8pt, 
-%         color=siemensdark,
-%         mark options={fill=siemensdark, draw=black, line width=0.5pt}
-%     ] coordinates {
-%         (0.030, 19)   % Baseline
-%         (0.060, 32)   % Tool-calling
-%         (0.090, 37)   % Semantic RAG
-%     };
-%     \addlegendentry{Codex-5.3}
-
-%     % GPT-4o
-%     \addplot[
-%         only marks, 
-%         mark=*, 
-%         mark size=3.2pt, 
-%         color=siemensred,
-%         mark options={fill=siemensred, draw=siemensred!80!black, line width=0.5pt}
-%     ] coordinates {
-%         (0.050, 13)   % Baseline
-%         (0.220, 20)   % Tool-calling
-%         (0.260, 4)    % Semantic+Structure RAG
-%     };
-%     \addlegendentry{GPT-4o}
-
-%     % Key Annotations
-%     \node[font=\scriptsize\bfseries, color=siemenspetrol!90!black, anchor=south, yshift=3pt] 
-%         at (axis cs:0.024, 24) {DeepSeek + RAG};
-%     \node[font=\scriptsize\bfseries, color=siemensdark, anchor=south, yshift=3pt] 
-%         at (axis cs:0.090, 37) {Codex + RAG};
-%     \node[font=\scriptsize\bfseries, color=siemensred!90!black, anchor=west, xshift=4pt] 
-%         at (axis cs:0.260, 4) {GPT-4o + RAG};
-
-%     \end{axis}
-% \end{tikzpicture}
-% \end{figure}
-
-    % \vspace{0.4cm}
-    % \begin{columns}[t]
-    %     \begin{column}{0.48\textwidth}
-    %         \textbf{Key Insights:}
-    %         \begin{itemize}
-    %             \item \textbf{CWE-787} acts as a universal bottleneck across all models due to memory offset complexity.
-    %         \end{itemize}
-    %     \end{column}
-    %     \begin{column}{0.48\textwidth}
-    %         \begin{itemize}
-    %             \item \textbf{GPT-4o+RAG} maintains strong lexical scores on CWE-416 despite poor overall functional validity.
-    %         \end{itemize}
-    %     \end{column}
-    % \end{columns}
-
-    % 
-%     \begin{tikzpicture}
-%     \begin{axis}[
-%         width=\textwidth,
-%         height=0.65\textheight,
-%         xlabel={\textbf{Average Cost per Patch (\$) [Log Scale]}},
-%         ylabel={\textbf{Valid Patches (LLM Judge)}},
-%         xmode=log,
-%         xmin=0.002, xmax=0.35,
-%         ymin=0, ymax=42,
-%         log ticks with fixed point,
-%         x tick label style={/pgf/number format/fixed, /pgf/number format/precision=3, font=\footnotesize},
-%         y tick label style={font=\footnotesize},
-%         label style={font=\small},
-%         axis background/.style={fill=white},
-%         axis line style={draw=siemensdarkgray!40, line width=0.8pt},
-%         grid=both,
-%         major grid style={draw=siemensdarkgray!20, line width=0.5pt},
-%         minor grid style={draw=siemensdarkgray!10, line width=0.3pt},
-%         % Split Legend: Top Left Legend Box
-%         legend style={
-%             at={(0.03,0.96)},
-%             anchor=north west,
-%             font=\footnotesize,
-%             fill=white,
-%             fill opacity=0.92,
-%             draw=siemensdarkgray!30,
-%             rounded corners=3pt,
-%             inner sep=4pt,
-%             nodes={right}
-%         },
-%         clip=false
-%     ]
 % TODO: indiquer la signification des lignes en tiret
 \begin{figure}[H]
 \centering
@@ -1587,7 +1046,7 @@ Therefore, the pipeline might include fallbacks and Human-in-the-Loop verificati
 % \addlegendentry{Semantic}
 
 % ---- Topological Structure (dark blue) — no GPT-4o cost value available ----
-\addplot[only marks, mark=triangle*, mark size=3pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}, forget plot] coordinates {(0.095,33.7)};
+\addplot[only marks, mark=triangle*, mark size=3pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}, forget plot] coordinates {(0.095,44.9)};
 \addplot[only marks, mark=square*, mark size=2.6pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}, forget plot] coordinates {(0.023,36.0)};
 % \addlegendimage{only marks, mark=*, mark size=2.6pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}}
 % \addlegendentry{Topological}
@@ -1922,45 +1381,6 @@ Table
 ~\ref{tab:autopatch_pipeline_similarity_deepseek} break performance down by vulnerability category. 
 As with GPT-4o and Codex, Numeric/Type vulnerabilities exhibit lower BERTScore ($\approx 0.32$--$0.36$) despite high BLEU-4 ($\approx 0.85$). Resource Management patches are the weakest category across all three retrieval variants (BERTScore F$_1$ $0.46$--$0.49$), whereas Memory Safety and Concurrency remain the most stable (BERTScore F$_1$ $0.53$--$0.56$).
 
-
-
-% \begin{table}[H]
-%   \centering
-%   \caption{AutoPatch: DeepSeek-V4-Flash generative similarity metrics by CWE category}
-%   \label{tab:autopatch_pipeline_by_cwe_category_deepseek}
-%   \begin{tabular}{llrrr}
-%     \toprule
-%     Source & Category & Total & Passed & Failures \\
-%     \midrule
-%     \multirow{4}{*}{Semantic+Structure} & Memory Safety & 26 & 21 & 5 \\
-%     & Concurrency & 31 & 30 & 1 \\
-%     & Numeric/Type & 11 & 8 & 3 \\
-%     & Resource Mgmt & 7 & 7 & 0 \\
-%     \midrule
-%     \multirow{4}{*}{Semantic} & Memory Safety & 26 & 23 & 3 \\
-%     & Concurrency & 31 & 30 & 1 \\
-%     & Numeric/Type & 11 & 11 & 0 \\
-%     & Resource Mgmt & 7 & 7 & 0 \\
-%     \midrule
-%     \multirow{4}{*}{Topological Structure} & Memory Safety & 26 & 22 & 4 \\
-%     & Concurrency & 31 & 31 & 0 \\
-%     & Numeric/Type & 11 & 8 & 3 \\
-%     & Resource Mgmt & 7 & 7 & 0 \\
-%     \midrule
-%     \multirow{4}{*}{Model baseline} & Memory Safety & 38 & 18 & 20 \\
-%     & Concurrency & 35 & 10 & 25 \\
-%     & Numeric/Type & 12 & 10 & 2 \\
-%     & Resource Mgmt & 13 & 9 & 4 \\
-%     \midrule
-%     \multirow{4}{*}{Tool w/o retrieval} & Memory Safety & 38 & 15 & 23 \\
-%     & Concurrency & 35 & 28 & 7 \\
-%     & Numeric/Type & 12 & 3 & 9 \\
-%     & Resource Mgmt & 13 & 10 & 3 \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-
-
 % Standard deviations calculated from evaluated records (sample SD, ddof=1).
 % Inputs used:
 %   cvefixes_experiments/output/autopatch/20260816_044125_patching_dad884/codebert_pattern/tool_calling/evaluation.jsonl
@@ -2154,22 +1574,17 @@ Beyond direct cost metrics, the experimental findings reveal critical insights i
 \addplot[only marks, mark=triangle*, mark size=3pt, color=tumgray_plot, mark options={fill=tumgray_plot}, forget plot] coordinates {(0.011,70.7)};
 \addplot[only marks, mark=*, mark size=2.6pt, color=tumgray_plot, mark options={fill=tumgray_plot}, forget plot] coordinates {(0.024,34.7)};
 \addplot[only marks, mark=square*, mark size=2.6pt, color=tumgray_plot, mark options={fill=tumgray_plot}, forget plot] coordinates {(0.001,53.0)};
-% \addlegendimage{only marks, mark=*, mark size=2.6pt, color=tumgray_plot, mark options={fill=tumgray_plot}}
-% \addlegendentry{Baseline}
- 
+
 % ---- Tool calling, no retrieval (light blue) ----
 \addplot[only marks, mark=triangle*, mark size=3pt, color=tumbluelight_plot, mark options={fill=tumbluelight_plot}, forget plot] coordinates {(0.013,73.3)};
 \addplot[only marks, mark=*, mark size=2.6pt, color=tumbluelight_plot, mark options={fill=tumbluelight_plot}, forget plot] coordinates {(0.032,57.3)};
 \addplot[only marks, mark=square*, mark size=2.6pt, color=tumbluelight_plot, mark options={fill=tumbluelight_plot}, forget plot] coordinates {(0.003,58.6)};
-% \addlegendimage{only marks, mark=*, mark size=2.6pt, color=tumbluelight_plot, mark options={fill=tumbluelight_plot}}
-% \addlegendentry{Tool calling (no retr.)}
+
  
 % ---- Semantic + Structure (orange) ----
 \addplot[only marks, mark=triangle*, mark size=3pt, color=tumorange_plot, mark options={fill=tumorange_plot}, forget plot] coordinates {(0.018,76.0)};
 \addplot[only marks, mark=*, mark size=2.6pt, color=tumorange_plot, mark options={fill=tumorange_plot}, forget plot] coordinates {(0.039,54.7)};
 \addplot[only marks, mark=square*, mark size=2.6pt, color=tumorange_plot, mark options={fill=tumorange_plot}, forget plot] coordinates {(0.002,69.3)};
-% \addlegendimage{only marks, mark=*, mark size=2.6pt, color=tumorange_plot, mark options={fill=tumorange_plot}}
-% \addlegendentry{Sem.+Struct.}
  
 % ---- Semantic (green) ----
 \addplot[only marks, mark=triangle*, mark size=3pt, color=tumgreen_plot, mark options={fill=tumgreen_plot}, forget plot] coordinates {(0.019,85.3)};
@@ -2182,8 +1597,6 @@ Beyond direct cost metrics, the experimental findings reveal critical insights i
 \addplot[only marks, mark=triangle*, mark size=3pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}, forget plot] coordinates {(0.020,86.7)};
 \addplot[only marks, mark=*, mark size=2.6pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}, forget plot] coordinates {(0.042,57.3)};
 \addplot[only marks, mark=square*, mark size=2.6pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}, forget plot] coordinates {(0.003,72.0)};
-% \addlegendimage{only marks, mark=*, mark size=2.6pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}}
-% \addlegendentry{Topological}
  
 % ---- callouts on the extreme points ----
 \node[font=\scriptsize\bfseries, color=tumbluedark_plot!80!black, anchor=east, xshift=-4pt]
@@ -2198,84 +1611,3 @@ Beyond direct cost metrics, the experimental findings reveal critical insights i
 \caption{AutoPatch: patch-generation cost vs.\ LLM-Judge validity. Marker shape denotes the backbone model; color denotes the retrieval pipeline. Dashed lines mark the median cost and median validity across all 15 plotted points.}
 \label{img:cost_bertscore_autopatch}
 \end{figure}
-% \begin{tikzpicture}
-%     \begin{axis}[
-%         width=\textwidth,
-%         height=0.65\textheight,
-%         xlabel={\textbf{Average Cost per Patch (\$) [Log Scale]}},
-%         ylabel={\textbf{Valid Patches (LLM Judge)}},
-%         xmode=log,
-%         xmin=0.0008, xmax=0.065,
-%         ymin=25, ymax=70,
-%         log ticks with fixed point,
-%         x tick label style={/pgf/number format/fixed, /pgf/number format/precision=3, font=\footnotesize},
-%         y tick label style={font=\footnotesize},
-%         label style={font=\small},
-%         axis background/.style={fill=white},
-%         axis line style={draw=siemensdarkgray!40, line width=0.8pt},
-%         grid=both,
-%         major grid style={draw=siemensdarkgray!20, line width=0.5pt},
-%         minor grid style={draw=siemensdarkgray!10, line width=0.3pt},
-%         legend style={
-%             at={(0.03,0.2)}, anchor=north west, font=\footnotesize,
-%             fill=white, fill opacity=0.92, draw=siemensdarkgray!30,
-%             rounded corners=3pt, inner sep=5pt, nodes={right}
-%         },
-%         clip=false
-%     ]
-%     % High ROI / Yield Zone
-%     \draw[fill=siemenspetrol!12, draw=siemenspetrol, line width=0.8pt, rounded corners=2pt]
-%         (axis cs:0.009, 57) rectangle (axis cs:0.028, 68);
-%     \node[font=\footnotesize\bfseries, color=siemenspetrol!90!black, anchor=north west]
-%         at (axis cs:0.009, 68) {High ROI / Yield Zone};
-%     % Danger Zone (High Cost, Low Yield)
-%     \draw[fill=siemensred!10, draw=siemensred, line width=0.8pt, rounded corners=2pt]
-%         (axis cs:0.044, 26) rectangle (axis cs:0.06, 40);
-%     \node[font=\footnotesize\bfseries, color=siemensred!90!black, anchor=north east]
-%         at (axis cs:0.059, 39.2) {Danger Zone};
-
-%     \addplot[
-%         only marks, mark=square*, mark size=3.2pt, color=siemenspetrol,
-%         mark options={fill=siemenspetrol, draw=siemenspetrol!80!black, line width=0.5pt}
-%     ] coordinates {
-%         (0.001, 52)
-%         (0.004, 45)
-%         (0.004, 54)
-%         (0.004, 40)
-%         (0.004, 44)
-%     };
-%     \addlegendentry{DeepSeek-V4-Flash}
-
-%     % Codex-5.3: baseline, tool w/o retr., Sem+Struc, Semantic, Topology
-%     \addplot[
-%         only marks, mark=triangle*, mark size=3.8pt, color=siemensdark,
-%         mark options={fill=siemensdark, draw=black, line width=0.5pt}
-%     ] coordinates {
-%         (0.012, 57)
-%         (0.014, 64)
-%         (0.018, 65)
-%         (0.019, 53)
-%         (0.020, 55)
-%     };
-%     \addlegendentry{Codex-5.3}
-
-%     % GPT-4o: baseline, tool-only, Sem+Struc, Semantic, Topology
-%     \addplot[
-%         only marks, mark=*, mark size=3.2pt, color=siemensred,
-%         mark options={fill=siemensred, draw=siemensred!80!black, line width=0.5pt}
-%     ] coordinates {
-%         (0.018, 33)
-%         (0.019, 51)
-%         (0.020, 42)
-%         (0.016, 47)
-%         (0.039, 46)
-%     };
-%     \addlegendentry{GPT-4o}
-
-%     % Annotations
-%     \node[font=\scriptsize\bfseries, color=siemensdark, anchor=south, yshift=3pt]
-%         at (axis cs:0.020, 64) {Codex + Topology};
-%     \node[font=\scriptsize\bfseries, color=siemensred!90!black, anchor=west, xshift=4pt]
-%         at (axis cs:0.053, 33) {GPT-4o baseline (worst ROI)};
-%     \end{axis}
-% \end{tikzpicture}
