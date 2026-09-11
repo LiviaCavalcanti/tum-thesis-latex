@@ -1,7 +1,13 @@
 \chapter{\abstractname}
 
-Automated vulnerability patching promises to close the gap between vulnerability discovery and remediation. The effectiveness of retrieval-augmented, agentic LLM pipelines for this task, however, still has to be explored. 
-This thesis presents an empirical study of retrieval-augmented vulnerability patching, comparing unsupervised structural (Code Property Graph) embeddings against pretrained semantic (CodeBERT) embeddings and their hybrid combination, across two datasets (AutoPatch and CVEFixes) and three LLM backbones (GPT-5.3-Codex, GPT-4o, and DeepSeek-V4-Flash) in an agentic, tool-calling patch-generation pipeline.
+Automated vulnerability patching promises to close the gap between vulnerability discovery and remediation. While Code Property Graphs (CPG) provide rich structural representation for automated discovery, context-aware code patching requires understanding and adherence of the codebase style and logic. 
+Some of the current LLM approaches rely on parametric knowledge acquired during training, which previous studies have shown to be insufficient for complex, real-world patching without external structural guidance and retrieved in-context demonstrations\cite{ye2026well, yin2024thinkrepair, gao2023what, shao2026fix}.
+However, the effectiveness of retrieval-augmented, agentic LLM pipelines in addressing this limitation, and even to what extent it occurs in modern LLMs, remain underexplored. 
 
-The results indicate that structure-aware retrieval is a viable but complementary component of automated patching pipelines, whose performance depends on the vulnerability class and the downstream model, rather than a superior design.
+This thesis presents an empirical study of  structure-aware Retrieval-Augmented Generation (RAG) for vulnerability patching. We evaluated an agentic, tool-calling ReAct patch-generation pipeline by comparing unsupervised structural  embeddings against CodeBERT-based semantic embeddings and their hybrid combination.
+The architecture was assessed on two main tasks: vulnerability classification via retrieval and patch generation.
+Two datasets of different complexity were used to performance evaluation: AutoPatch, a well-curated dataset, and CVEFixes, real-world for different tasks and very rich dataset.
+To compare the impact of the LLM backbones, we benchmarked thee models: GPT-5.3-Codex, security specialized model; GPT-4o, a general purpose cheaper model; and an open weights alternative, DeepSeek-V4-Flash.
+
+The results indicate that structure-aware retrieval is a viable but complementary component of automated patching pipelines. Rather than a superior design, its performance depends on the vulnerability class and the downstream model.
 
