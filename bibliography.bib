@@ -1117,7 +1117,7 @@ url={https://openreview.net/forum?id=SkeHuCVFDr}
   doi       = {10.1109/SP.2017.62}
 }
 
-@Article{vulnerabilityhallucination,
+@inproceedings{vulnerabilityhallucination,
 AUTHOR = {Zhao, Tiancheng and Ma, Chao and Zhang, Luogang and Yang, Jinbo and Nie, Lili},
 TITLE = {Retrieval-Augmented Semantic Mapping for Vulnerability Detection via Multi-View Code Similarity},
 JOURNAL = {Electronics},
@@ -1128,4 +1128,107 @@ ARTICLE-NUMBER = {612},
 URL = {https://www.mdpi.com/2079-9292/15/3/612},
 ISSN = {2079-9292},
 DOI = {10.3390/electronics15030612}
+}
+@inproceedings{ye2026well,
+  author = {Ye, Zhen and Sun, Xiaobing and Cao, Sicong and Bo, Liang and Li, Bin},
+  title = {Well Begun is Half Done: Location-Aware and Trace-Guided Iterative Automated Vulnerability Repair},
+  booktitle = {Proceedings of the IEEE/ACM 48th International Conference on Software Engineering (ICSE '26)},
+  year = {2026},
+  publisher = {ACM},
+  address = {New York, NY, USA},
+  pages = {1--12},
+  doi = {10.1145/3744916.3773218},
+  location = {Rio de Janeiro, Brazil}
+}
+
+@inproceedings{yin2024thinkrepair,
+  author = {Yin, Yu and Ni, Chao and Wang, Shangqing and Li, Zhenguo and Zeng, Li and Yang, Xiaofei},
+  title = {ThinkRepair: Self-directed automated program repair},
+  booktitle = {Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis (ISSTA)},
+  year = {2024},
+  pages = {1274--1286}
+}
+
+@inproceedings{gao2023what,
+  author = {Gao, Shen and Wen, Xin and Gao, Cuiyun and Wang, Wenxuan and Zhang, Hongyu and Lyu, Michael R.},
+  title = {What makes good in-context demonstrations for code intelligence tasks with llms?},
+  booktitle = {Proceedings of the 38th IEEE/ACM International Conference on Automated Software Engineering (ASE)},
+  year = {2023},
+  publisher = {IEEE},
+  pages = {761--773}
+}
+
+@article{shao2026fix,
+  author = {Shao, Ming and Ding, Yihua and Gao, Cuiyun and Zhu, Guiping},
+  title = {Fix pattern-aware vulnerability patch generation via in-context learning},
+  journal = {ACM Transactions on Software Engineering and Methodology (TOSEM)},
+  year = {2026},
+  pages = {1--44},
+  publisher = {ACM}
+}
+@inproceedings{wang-etal-2025-astute,
+    title = "Astute {RAG}: Overcoming Imperfect Retrieval Augmentation and Knowledge Conflicts for Large Language Models",
+    author = "Wang, Fei  and
+      Wan, Xingchen  and
+      Sun, Ruoxi  and
+      Chen, Jiefeng  and
+      Arik, Sercan O",
+    editor = "Che, Wanxiang  and
+      Nabende, Joyce  and
+      Shutova, Ekaterina  and
+      Pilehvar, Mohammad Taher",
+    booktitle = "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+    month = jul,
+    year = "2025",
+    address = "Vienna, Austria",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.acl-long.1476/",
+    doi = "10.18653/v1/2025.acl-long.1476",
+    pages = "30553--30571",
+    ISBN = "979-8-89176-251-0"
+}
+
+@inproceedings{lee-etal-2025-towards,
+    title = "Towards a Holistic and Automated Evaluation Framework for Multi-Level Comprehension of {LLM}s in Book-Length Contexts",
+    author = "Lee, Yuho  and
+      Deng, Jiaqi  and
+      Kim, Nicole Hee-Yeon  and
+      Min, Hyangsuk  and
+      Yun, Taewon  and
+      Ban, Minjeong  and
+      Yul, Kim  and
+      Song, Hwanjun",
+    editor = "Christodoulopoulos, Christos  and
+      Chakraborty, Tanmoy  and
+      Rose, Carolyn  and
+      Peng, Violet",
+    booktitle = "Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing",
+    month = nov,
+    year = "2025",
+    address = "Suzhou, China",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.emnlp-main.1241/",
+    doi = "10.18653/v1/2025.emnlp-main.1241",
+    pages = "24401--24425",
+    ISBN = "979-8-89176-332-6",
+    abstract = "We introduce HAMLET, a holistic and automated framework for evaluating the long-context comprehension of large language models (LLMs). HAMLET structures key information of source texts into a three-level hierarchy at root-, branch-, and leaf-levels, and employs query-focused summarization to evaluate how well models faithfully recall the key information at each level. To validate the reliability of our fully automated pipeline, we conduct a systematic human study, demonstrating that our automatic evaluation achieves over 90{\%} agreement with expert human judgments, while reducing the evaluation cost by up to 25$\times$. HAMLET reveals that LLMs struggle with fine-grained comprehension, especially at the leaf level, and are sensitive to positional effects like the lost-in-the-middle. Analytical queries pose greater challenges than narrative ones, and consistent performance gaps emerge between open-source and proprietary models, as well as across model scales. Our code and dataset are publicly available at \url{https://github.com/DISL-Lab/HAMLET}."
+}
+
+@article{zhang2025hallucinationcode,
+author = {Zhang, Ziyao and Wang, Chong and Wang, Yanlin and Shi, Ensheng and Ma, Yuchi and Zhong, Wanjun and Chen, Jiachi and Mao, Mingzhi and Zheng, Zibin},
+title = {LLM Hallucinations in Practical Code Generation: Phenomena, Mechanism, and Mitigation},
+year = {2025},
+issue_date = {July 2025},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {2},
+number = {ISSTA},
+url = {https://doi.org/10.1145/3728894},
+doi = {10.1145/3728894},
+abstract = {Code generation aims to automatically generate code from input requirements, significantly enhancing development efficiency. Recent large language models (LLMs) based approaches have shown promising results and revolutionized code generation task. Despite the promising performance, LLMs often generate contents with hallucinations, especially for the code generation scenario requiring the handling of complex contextual dependencies in practical development process. Although previous study has analyzed hallucinations in LLM-powered code generation, the study is limited to standalone function generation. In this paper, we conduct an empirical study to study the phenomena, mechanism, and mitigation of LLM hallucinations within more practical and complex development contexts in repository-level generation scenario. First, we manually examine the code generation results from six mainstream LLMs to establish a hallucination taxonomy of LLMgenerated code. Next, we elaborate on the phenomenon of hallucinations, analyze their distribution across different models. We then analyze causes of hallucinations and identify four potential factors contributing to hallucinations. Finally, we propose an RAG-based mitigation method, which demonstrates consistent effectiveness in all studied LLMs.},
+journal = {Proc. ACM Softw. Eng.},
+month = jun,
+articleno = {ISSTA022},
+numpages = {23},
+keywords = {Repository-Level Code Generation, Hallucination, Large Language Models}
 }
