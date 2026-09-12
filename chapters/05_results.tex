@@ -109,8 +109,8 @@ As GIN and WL are reported only as reference points, we use the Semantic and Top
 
 To evaluate representation preferences across distinct security domains, Table~\ref{tab:autopatch_by_category} groups the $n=75$ test queries into four primary vulnerability categories: \textit{Memory Safety} ($n=28$), \textit{Concurrency} ($n=26$), \textit{Numeric/Type} ($n=9$), and \textit{Resource Management} ($n=12$). 
 Across the overall benchmark, both embedders achieve identical CVE retrieval accuracy (86.7\%), while the \textbf{Semantic embedder} demonstrates stronger category-level generalization with 92.0\% CWE accuracy compared to the \textbf{Topological Structure embedder} (88.0\% CWE), resulting in a 4.0 percentage point margin in CWE performance. 
-This difference may occur because one CWE can exhibit structural heterogeneity across different CVEs; for instance, a topological pattern similar in training may differ in position within production code.
-Consequently, the Topological Structure embedder could, for intance, either enforce a wide separation margin between CWEs in the embedding space, so that potential differences don't lead to misclassifications, or encode graph patterns through a mechanism with flexibility similar to RegEx. 
+One possible explanation for this difference is that a single CWE can exhibit structural heterogeneity across different CVEs; for instance, a topological pattern seen during retrieval may differ in position within production code.
+Under this hypothesis, the Topological Structure embedder could, for instance, either enforce a wide separation margin between CWEs in the embedding space, so that potential differences don't lead to misclassifications, or encode graph patterns through a mechanism with flexibility similar to RegEx. 
 
 % However, domain-level analysis demonstrates that particular architectural strengths.
 % For Concurrency category, the Topological Structure reaches perfect accuracy across all concurrency queries (100.0\% CVE and CWE hit rates), outperforming the Semantic model (94.1\%). Concurrency flaws—such as race conditions and deadlocks—depend heavily on inter-thread execution order, control-flow branching (CFG), and data dependencies (PDG), which are explicitly captured by Code Property Graphs but blurred in linear token sequences.
@@ -155,8 +155,8 @@ The retrieval difficulty varies by variant type as shown by Table~\ref{tab:autop
 \end{table}
 
 The augmented variants, which used targeted augmentation strategies for each CVE type to increase code diversity, have lower retrieval accuracy (35.7\% CVE match vs.\ 81-92\% for LLM-generated variants).
-This suggests that the embedders rely on surface-level structural patterns that LLMs tend to preserve.
-For a production vulnerability retrieval system, this may suggest that real-world code written by different developers may exhibit retrieval failures on novel implementations of known vulnerability patterns, since they have the same structural diversity as the augmented variants.
+This observation is consistent with the embedders relying on surface-level structural patterns that LLMs tend to preserve.
+One implication for a production vulnerability retrieval system is that real-world code written by different developers could exhibit retrieval failures on novel implementations of known vulnerability patterns, to the extent that such code shares the structural diversity observed in the augmented variants.
 
 \section{CVEFixes: Embedder Retrieval Performance}\label{sec:cvefixes-retrieval}
 As with the AutoPatch results, the CodeBERT-based retrievers outperform the Topological Structure embedding model. This suggests that for these real-world scenarios, the underlying semantic signal carries more weight than the aggregated code topological structure representations crafted under the settings used in this work.
@@ -185,7 +185,7 @@ This suggests these specific vulnerabilities possess distinct lexical signatures
 Conversely, the models struggle significantly with other CWEs.
 The CWE-362 (Race Conditions) IQR overlap between correct matches and errors indicates the models struggle to differentiate between safe and unsafe concurrent code operations.
 Additionally, the Semantic model exhibits a wide IQR for CWE-476 (NULL Pointer Dereference) errors, and its median is close to the correct match median. 
-This high volume of high-ranking false positives likely occurs because a vulnerable missing null check appears textually and sequentially identical to safe code in which a null check is unnecessary.
+One possible explanation for this high volume of high-ranking false positives is that a vulnerable missing null check appears textually and sequentially identical to safe code in which a null check is unnecessary.
 
 
 \begin{figure}
@@ -197,10 +197,10 @@ This high volume of high-ranking false positives likely occurs because a vulnera
 
 The Semantic+Structure Retriever excels in both vulnerability retrieval and downstream program repair. 
 It achieves the highest retrieval accuracy in both CWEs (64.93\%) and CVEs (53.93\%).
-This hybrid architecture likely achieves this strong performance by capturing localized lexical semantics, such as variable names and types, and maximizing its signal by encoding program flow control using regex vulnerability searches. 
+One possible explanation for this hybrid architecture's strong performance is that it captures localized lexical semantics, such as variable names and types, while separately encoding program flow control through regex-based vulnerability patterns. 
 Explicit graph patterns improved the identification of memory-safety vulnerabilities. 
 For instance, the retrieval accuracy for Out-of-bounds Writes (CWE-787) goes from 26.67\% using only Semantic embeddings to 73.33\% when structural embeddings are used. 
-Conversely, pure topological descriptors fail to capture the localized lexical nuances that differentiate the CWEs; in a diverse dataset, code complexity likely creates graphs that require deeper processing by graph embedders than the approach used in this work, resulting in a collapse in overall retrieval performance.
+Conversely, pure topological descriptors fail to capture the localized lexical nuances that differentiate the CWEs. A possible explanation is that, in a diverse dataset, code complexity produces graphs that would require deeper processing by graph embedders than the approach used in this work, contributing to the collapse in overall retrieval performance.
 % add space stats
 
 \begin{table}[htbp]
@@ -240,7 +240,7 @@ On the other hand, non-local semantic weaknesses, where the vulnerability stems 
 To illustrate, representative instances include:
 \begin{itemize}
     \item Complex Concurrency and Race Conditions (CWE-362): Multi-threaded race conditions (e.g., double-fetch bugs in kernel ioctls like CVE-2020-12652 or callback destruction races in network stacks like CVE-2021-32686; both $\text{hit@1}=0.0$) depend on inter-procedural execution order and implicit timing invariants. 
-    Because AST and static graph embeddings inspect local function boundaries, they did not capture missing inter-function synchronization mechanisms under the graph representation and embedding configuration evaluated in this study.
+    This is consistent with the hypothesis that, because AST and static graph embeddings inspect local function boundaries, they do not capture missing inter-function synchronization mechanisms under the graph representation and embedding configuration evaluated in this study.
     \item CVE-2021-32686 ($\text{hit@1}=0.0$, $n=1$): A race condition between socket destroy and callback in PJSIP TLS connections.
 \end{itemize}
 
@@ -451,16 +451,17 @@ Given the similar performance of the tool-only architecture and the Semantic+Str
 
 This disconnection between patch generation and its functional validity is an important insight from the LLM-as-a-Judge evaluation. 
 As summarized in Table~\ref{tab:llmjudge_codex53}, the Codex-5.3 Baseline achieved a 100\% generation rate (89/89) without a single execution error, yet yielded only a 21.3\% validity rate (19/89). 
-This exposes a dangerous hallucination case in which the model produces syntactically correct patches that pass surface-level checks but fail to resolve the underlying security flaw, probably making these silent failures more problematic than outright generation errors. 
+This exposes a dangerous hallucination case in which the model produces syntactically correct patches that pass surface-level checks but fail to resolve the underlying security flaw. One possible implication is that these silent failures are more problematic than outright generation errors, since they are harder to detect during review. 
 Notably, the integration of agentic tooling alone substantially addresses this gap.
 By simply employing structured ReAct prompting and tool access without any external retrieval, the validity rate jumps to 37.1\%, representing a 76\% relative improvement over the baseline. 
 While providing external context via retrieval pipelines yields further gains (reaching up to 44.9\% for Topological Structure, 39.3\% validity for the Semantic retriever, and 34.8\% for Semantic+Structure), these additions are secondary to the initial leap provided by the agentic framework. 
 Ultimately, the data suggests that while retrieved examples help contextualize the vulnerability, equipping the model with the structural tools to reason about the code is the most decisive factor in generating functionally valid security patches.
 
+The counterintuitive performance of CWE-190 in Table~\ref{tab:cwe_comparison_all_methods}, where the Codex-5.3 Baseline achieves the highest Hunk F$_1$ (0.698) despite the lowest BERTScore and ROUGE scores, illustrates a critical blind spot in hunk-level metrics when fixes primarily involve removing vulnerable code. Integer overflow patches frequently address unsafe arithmetic or memory allocations by deletion rather than replacement; thus, the baseline's strategy of identifying and deleting the vulnerable operation without synthesizing a correct addition inflates the Hunk F$_1$ score, as the metric rewards the removed code without penalizing the failed synthesis. This pattern is consistent with the earlier finding that the baseline's overall Hunk F$_1$ was driven by high \texttt{hunk\_removed\_f1} but near-zero \texttt{hunk\_added\_f1}.
 
 Analyzing the results by vulnerability type, CWE-787 (Out-of-bounds Write) is the hardest class across all the strategies. Despite having the highest number of small files ($52.41\%$ are $<500$ lines), it yields the lowest Hunk score, close to 0, indicating a low number of valid patches across the three evaluations.
 Conversely, CWE-362 (Race Conditions) has 0.0\% files under 500 lines, yet achieves strong retrieval alignment (BERTScore-F1 in the range 0.914-0.974) and up to 33.3\% valid patch rates.
-This suggests that patch-generation difficulty is more closely related to the type of semantic vulnerability than to raw code length.
+This observation is consistent with patch-generation difficulty being more closely related to the type of semantic vulnerability than to raw code length.
 
 
 Qualitative analysis of the generated patches further illustrates the limitations of surface-level evaluations. For example, for  CVE-2020-15211 (CWE-787), the Semantic+Structure pipeline retrieved a CVE-2020-35538 (CWE-476) snippet, which constitutes a mismatch. On top of that, the pipeline powered by the GPT-5.3 model generated a patch addressing another CVE, namely CVE-2021-37637, a shape-alignment validation issue. 
@@ -483,7 +484,7 @@ where the CVE and CWE were correctly retrieved according to the dataset, but the
 \end{quote}
 
 This justification is factually incorrect, since it associates the CWE-476 fix with the CWE-787 stated in the input prompt. 
-This mismatch likely occurs because the files were passed separately and stripped of their broader repository context. Therefore, the model lacks the grounding to patch the CWE-787 vulnerability and falls back on its memorized 2021 code structure with the prompt's 2020 metadata.
+One possible explanation for this mismatch is that the files were passed separately and stripped of their broader repository context, leaving the model without grounding to patch the CWE-787 vulnerability, so that it falls back on its memorized 2021 code structure with the prompt's 2020 metadata.
 
 This has two downstream consequences. In an automated pipeline, having an LLM that generates technically sound patches but hallucinates justifications erodes engineers' trust. This may lead them to perform manual review to evaluate the LLM patch and its justification. Furthermore, if the team decides to increase pipeline robustness by attempting more complex prompting, it will increase token usage and inference costs, thereby degrading the patching agent's economic viability.
 % This may indicate that the prompt context overrides the model's latent factual knowledge of vulnerability classifications.
@@ -548,12 +549,12 @@ Semantic vector alignment suffers a similar degradation.
   \end{minipage}
 \end{table}
 %TODO:  add a reference on diff/hunk fragmentation for OOP/templated code
-This performance drop is likely due to C++'s complex abstractions, object-oriented constructs, Resource Acquisition Is Initialization (RAII) patterns, and the use of standard library templates.
+This performance drop is consistent with the hypothesis that C++'s complex abstractions, object-oriented constructs, Resource Acquisition Is Initialization (RAII) patterns, and the use of standard library templates contribute to the gap.
 These features lead to the production of fragmented diff hunks compared to idiomatic, procedural C code, making automated patching more challenging. %TODO add reference showing that the fragmented hunking task is harder
 This is a structural limitation that needs further investigation. 
 
 A notable observation is that C++ performance metrics are remarkably invariant across all retrieval strategies. The BERTScore F$_1$ (0.654) and Hunk F$_1$ (0.310) remain \emph{completely identical} across Tool Calling (No Retrieval), Semantic+Structure and Semantic methods (with only marginal variation in BLEU-4: 0.853--0.856). 
-This suggests that for C++ code, the retrieval strategy provides zero discriminative benefit; all retrieval variants fail equally at producing viable patches. 
+This is consistent with the retrieval strategy providing little to no discriminative benefit for C++ code; all retrieval variants fail similarly at producing viable patches. 
 In contrast, C code shows substantial performance variation across retrieval methods (BERTScore F$_1$ ranges from 0.865--0.977). 
 This pattern is consistent with the hypothesis that C++ vulnerability repairs performance face challenges due related to intrinsic properties of the language and vulnerability patterns themselves, such as abstractions, templates, and complex control flow that creates fragmented diffs. 
 % As the language conclusion absolute needs more investigation
@@ -564,7 +565,7 @@ However, the identical scores across several pipelines may also reflect dataset 
 
 To evaluate the generalizability of the agentic repair architectures, the experiments were also run with GPT-4o and DeepSeek-V4-Flash. The results demonstrate that while the challenges of automated program repair remain, the optimal pipeline configuration is sensitive to the underlying model's reasoning mechanics and its susceptibility to external context.
 
-Some results for GPT-4o (Table \ref{tab:cwe_comparison_gpt4o}) follow the patterns seen at the Codex-5.3 results. At the lexical level, integrating the Tool Calling framework yields significant improvements over the prompt-only baseline. Prompt-only BERTScore and ROUGE-L scores generally hover in the 0.10–0.43 range, whereas Tool Calling variants elevate these to 0.60–0.99. Vulnerability-specific difficulties also remain static, for example, CWE-787 (Out-of-bounds Write) consistently breaks hunk alignment across all configurations (Hunk $\text{F}_1$ of 0.01--0.13), reinforcing that failures on CWE-787 are probably intrinsic to the complexity of the required memory-management patches rather than a model-specific limitation. Thus, even without being expressly trained for code tasks, its ability to use tools is sufficient for performance improvement.
+Some results for GPT-4o (Table \ref{tab:cwe_comparison_gpt4o}) follow the patterns seen at the Codex-5.3 results. At the lexical level, integrating the Tool Calling framework yields significant improvements over the prompt-only baseline. Prompt-only BERTScore and ROUGE-L scores generally hover in the 0.10–0.43 range, whereas Tool Calling variants elevate these to 0.60–0.99. Vulnerability-specific difficulties also remain static, for example, CWE-787 (Out-of-bounds Write) consistently breaks hunk alignment across all configurations (Hunk $\text{F}_1$ of 0.01--0.13). One possible explanation is that failures on CWE-787 are intrinsic to the complexity of the required memory-management patches rather than a model-specific limitation. Thus, even without being expressly trained for code tasks, its ability to use tools is sufficient for performance improvement.
 
 \begin{table}[H]
   \centering
@@ -676,7 +677,7 @@ However, analyzing the LLM-as-a-Judge functional validity (Table \ref{tab:llmjud
 This probably happens because GPT-4o is optimized for instruction-following and context adherence. When the Semantic or Structure retrievers supply a vulnerability blueprint that is structurally similar but semantically distinct from the target (e.g., retrieving a CWE-476 null-pointer fix for a CWE-787 out-of-bounds write), GPT-4o attempts to force-fit the retrieved solution into the target codebase. Instead of relying on its strong internal priors to independently analyze the target code using its tools, it becomes anchored to the retrieved context, propagating the retriever's slight inaccuracies into catastrophic downstream patch failures. 
 
 GPT-4o performs worse than Codex-5.3. Considering tool calling and Structure, for example, in CWE-416, the Tool Calling (without retrieval) achieves a 0.791 Hunk $\text{F}_1$, which underperforms the Codex-5.3 table's maximum of 0.934. 
-Prompt-only performs badly regardless of the model. This suggests that complex code repair requires iterative tool use. The low performance when using the Topological Structure indicates that GPT-4o struggles to handle retrieval noise. In contrast, GPT-5.3-Codex maintains higher accuracy, demonstrating ability to recover from wrong context.
+Prompt-only performs badly regardless of the model. This is consistent with complex code repair requiring iterative tool use. The low performance when using the Topological Structure indicates that GPT-4o struggles to handle retrieval noise. In contrast, GPT-5.3-Codex maintains higher accuracy, demonstrating ability to recover from wrong context.
 
 Overall, the underlying patterns of the task remain consistent. For simplicity, one should prioritize Tool Calling w/o retrieval and avoid Patching with prompting without tools. One might also watch for failures for specific vulnerabilities, such as CWE-787, that break hunk alignment. If going for a less powerful model than GPT-5.3-Codex, as exemplified by GPT-4o, one might expect some drop in performance.
 
@@ -769,13 +770,13 @@ The patching performance of the DeepSeek-V4-Flash model (Tables \ref{tab:cvefixe
 % Baseline cvefixes_experiments/output/autopatch/deepseek_baselines_rerun/codex_baseline/20260903_173810_patching_9e8be5/codex_baseline__default__precomputed__DeepSeek-V4-Flash/evaluation_summary.json
 
 Unlike the contrasts seen in GPT-4o, DeepSeek's baseline prompt-only generation achieves a 20.2\% functional validity rate, performing almost 50\% better than its Tool Calling without a retrieval pipeline. 
-Given the higher invalid count under Tool Calling, the model seems to be unable to successfully use the tools to generate correct patches.
+Given the higher invalid count under Tool Calling, one possible explanation is that the model is unable to successfully use the tools to generate correct patches.
 However, its internal priors are insufficient to deliver good performance.
 
 Unlike GPT-4o, which collapsed under RAG, DeepSeek, when equipped with retrieval contexts, significantly improves its performance. 
 The Semantic and Topological Structure retrieval methods yield 35 and 32 valid patches, respectively (pushing validity rates to approximately 39.3\% and 36.0\%). 
-Because DeepSeek seems to have weaker memorization of CVEs, it depends on the retrieved context rather than being hurt by it. 
-The retrieved examples provide the necessary semantic trajectory that the model cannot generate zero-shot. This demonstrates that, for open-weight models, enriching the context via RAG can potentially improve the performance ceiling of the model's native generation capabilities.
+One possible explanation is that DeepSeek has weaker memorization of CVEs, so it depends on the retrieved context rather than being hurt by it. 
+The retrieved examples provide the necessary semantic trajectory that the model cannot generate zero-shot. This is consistent with the hypothesis that, for open-weight models, enriching the context via RAG can improve the performance ceiling of the model's native generation capabilities.
 
 % TODO: add citation
 Nevertheless, DeepSeek shares the common failure mode of confident hallucination\cite{lee-etal-2025-towards}. 
@@ -897,11 +898,11 @@ Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs
 The retrieval-augmented tool-calling variants average \$0.08--0.10 per entry. 
 This is approximately 1.66–3.67 times cheaper than GPT-4o for comparable configurations (see below), and therefore more cost-efficient for CVEFixes. This cost advantage, combined with stronger performance metrics (Table~\ref{tab:cwe_comparison_all_methods}), makes it the preferred choice among those evaluated for production deployments of the tested models and pipeline.
 
-\paragraph{GPT-4o.} Once again, the tool-calling pipeline with retrieval has the highest costs, \$0.24-0.278 per entry on average. The model baseline without tools averages \$0.05 per entry, while the tool-calling baseline without retrieval costs \$0.22 per entry. This indicates that the agentic interaction pattern is the main cost reason, even though the retrieval context itself probably contributes to the costs, since the prompt tokens used in each run add up to millions.
+\paragraph{GPT-4o.} Once again, the tool-calling pipeline with retrieval has the highest costs, \$0.24-0.278 per entry on average. The model baseline without tools averages \$0.05 per entry, while the tool-calling baseline without retrieval costs \$0.22 per entry. This is consistent with the agentic interaction pattern being the main cost driver; the retrieval context itself likely contributes as well, since the prompt tokens used in each run add up to millions.
 
 \paragraph{DeepSeek-V4-Flash.} As expected, DeepSeek offers the most cost-effective option with an average of \$0.022--0.024 per entry across all configurations of Agent with tools and retrieval. The model baseline costs only \$0.003 per entry. 
 However, as discussed in Table~\ref{tab:deepseek_judge_summary}, the DeepSeek generation pipeline experienced output formatting issues that limited the patch generation rate. 
-Therefore, the pipeline might include fallbacks and Human-in-the-Loop verifications if this model is deployed in production. The DeepSeek performance is an example that raw cost efficiency must be weighed against functional reliability.
+Therefore, the pipeline should likely include fallbacks and Human-in-the-Loop verifications if this model is deployed in production. The DeepSeek performance is an example that raw cost efficiency must be weighed against functional reliability.
 
                     
 \definecolor{siemenspetrol}{RGB}{0, 153, 153}     % Siemens Primary Petrol
@@ -1179,7 +1180,7 @@ In contrast, Resource Management yields lower lexical metrics (e.g., BLEU-4 $= 0
 Table~\ref{tab:autopatch_overall_pipeline_performance_gpt4o} presents the GPT-4o patch agent's performance on the AutoPatch dataset. Compared to GPT-5.3-Codex, GPT-4o achieves similar or higher completion rates (93.3 - 98.7\%) but lower LLM-as-a-Judge validity (34.7 - 62.7\%). 
 This suggests that, given the implemented pipeline configuration, the model's capabilities are important to task performance, and the retrieval augmentation is an enhancer rather than an equalizer.
 
-The Semantic pipeline yields the highest functional validity ($62.7\%$), slightly higher than the Topological Structure validity of 57.3, and 8~p.p higher than Semantic+Structure. Considering the retrieval pipelines had very similar performances, especially those CodeBERT-powered, this may indicate that the implemented grounding is not sufficient to guarantee the patching consistency 
+The Semantic pipeline yields the highest functional validity ($62.7\%$), slightly higher than the Topological Structure validity of 57.3, and 8~p.p higher than Semantic+Structure. Considering the retrieval pipelines had very similar performances, especially those CodeBERT-powered, one possible explanation is that the implemented grounding is not sufficient to guarantee the patching consistency 
 
 
 \begin{table}[H]
@@ -1240,8 +1241,8 @@ Figure~\ref{img:autopatch_gpt4o_bertscore} reveals semantic performance heteroge
 Table~\ref{tab:autopatch_pipeline_by_cwe_category_gpt4o} shows the GPT-4o's category-level performance variance.
 The Tool-only baseline struggles especially with Concurrency vulnerabilities (BLEU-4: 0.42, BERTScore: 0.27), whereas retrieval pipelines achieve BLEU-4> 0.85 in the same category. Memory Safety patches show the best performance with retrieval methods achieving BERTScore $>$ 0.58.
 
-Across all four vulnerability categories, the model baseline consistently achieves the highest BERTScore F1 among pipelines (0.666--0.764), outperforming the best retrieval or tool-augmented variant in each category by 0.14-0.22, despite the baseline presenting a drop of $13.4~p.p$ to Tool w/o retrieval in Judge validity (Table~\ref{tab:autopatch_overall_pipeline_performance_gpt4o}). It reinforces that embedding-based similarity to the ground truth is not a reliable proxy for functional correctness, as the patch may stay closer to the unmodified input and thus inflate BERTScore without necessarily producing a valid fix.
-Within Concurrency, the retrieval variants also diverge. Topological Structure achieves the highest lexical overlap among the three (BLEU-4 0.914, ROUGE-L 0.962) but the lowest BERTScore (0.524, versus 0.537 for Semantic+Structure and 0.549 for Semantic), suggesting its patches are closer in surface form to the reference fix while drifting semantically.
+Across all four vulnerability categories, the model baseline consistently achieves the highest BERTScore F1 among pipelines (0.666--0.764), outperforming the best retrieval or tool-augmented variant in each category by 0.14-0.22, despite the baseline presenting a drop of $13.4~p.p$ to Tool w/o retrieval in Judge validity (Table~\ref{tab:autopatch_overall_pipeline_performance_gpt4o}). It is consistent with embedding-based similarity to the ground truth not being a reliable proxy for functional correctness, as the patch may stay closer to the unmodified input and thus inflate BERTScore without necessarily producing a valid fix.
+Within Concurrency, the retrieval variants also diverge. Topological Structure achieves the highest lexical overlap among the three (BLEU-4 0.914, ROUGE-L 0.962) but the lowest BERTScore (0.524, versus 0.537 for Semantic+Structure and 0.549 for Semantic). This is consistent with its patches being closer in surface form to the reference fix while drifting semantically.
 
 % Standard deviations calculated from evaluated records (sample SD, ddof=1).
 % Inputs used:
@@ -1411,8 +1412,8 @@ Run & Model & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makec
     Sem.+Struc & codex & 380K & 51K & 430K & \$1.37 & \$0.018 \\
     Semantic & codex & 400K & 55K & 452K & \$1.46 & \$0.019 \\
     Topological Structure & codex & 399K & 55K & 453K & \$1.47 & \$0.020 \\
-    Model baseline & codex & 238K & 33K & 269K & \$0.88 & \$0.011 \\
-    Tool w/o retrieval & codex & 247K & 43K & 290K & \$1.03 & \$0.013 \\
+    Model baseline & codex & 238K & 33K & 269K & \$0.88 & \$0.012 \\
+    Tool w/o retrieval & codex & 247K & 43K & 290K & \$1.03 & \$0.014 \\
     \midrule
     Sem.+Struc & GPT-4o & 559K & 57K & 616K & \$2.95 & \$0.039 \\
     Semantic & GPT-4o & 625K & 56K & 681K & \$3.18 & \$0.042 \\
@@ -1422,7 +1423,7 @@ Run & Model & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makec
     \midrule
     Sem.+Struc & DeepSeek & 950K & 162K & 1.11M & \$0.18 & \$0.002 \\
     Semantic & DeepSeek &  950K & 158.5K & 1.11M & \$0.18 & \$0.002 \\
-    Topological Structure & DeepSeek &  1M & 158.7K & 1.16M & \$0.18 & \$0.003 \\
+    Topological Structure & DeepSeek &  1M & 158.7K & 1.16M & \$0.18 & \$0.002 \\
     Model baseline & DeepSeek & 251.4K & 47.9K & 299.3K & \$0.05 & \$0.001 \\
     Tool w/o retrieval & DeepSeek & 939.5K & 190.9K & 1.13M & \$0.19 & \$0.003 \\
     \bottomrule
@@ -1538,12 +1539,12 @@ Beyond direct cost metrics, the experimental findings reveal critical insights i
 \addlegendentry{Topological}
 
 % ---- Model baseline (gray) ----
-\addplot[only marks, mark=triangle*, mark size=3pt, color=tumgray_plot, mark options={fill=tumgray_plot}, forget plot] coordinates {(0.011,53.3)};
+\addplot[only marks, mark=triangle*, mark size=3pt, color=tumgray_plot, mark options={fill=tumgray_plot}, forget plot] coordinates {(0.012,53.3)};
 \addplot[only marks, mark=*, mark size=2.6pt, color=tumgray_plot, mark options={fill=tumgray_plot}, forget plot] coordinates {(0.024,34.7)};
 \addplot[only marks, mark=square*, mark size=2.6pt, color=tumgray_plot, mark options={fill=tumgray_plot}, forget plot] coordinates {(0.001,53.0)};
 
 % ---- Tool calling, no retrieval (light blue) ----
-\addplot[only marks, mark=triangle*, mark size=3pt, color=tumbluelight_plot, mark options={fill=tumbluelight_plot}, forget plot] coordinates {(0.013,78.7)};
+\addplot[only marks, mark=triangle*, mark size=3pt, color=tumbluelight_plot, mark options={fill=tumbluelight_plot}, forget plot] coordinates {(0.014,78.7)};
 \addplot[only marks, mark=*, mark size=2.6pt, color=tumbluelight_plot, mark options={fill=tumbluelight_plot}, forget plot] coordinates {(0.032,57.3)};
 \addplot[only marks, mark=square*, mark size=2.6pt, color=tumbluelight_plot, mark options={fill=tumbluelight_plot}, forget plot] coordinates {(0.003,58.6)};
 
@@ -1564,7 +1565,7 @@ Beyond direct cost metrics, the experimental findings reveal critical insights i
 % ---- Topological Structure (dark blue) ----
 \addplot[only marks, mark=triangle*, mark size=3pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}, forget plot] coordinates {(0.020,86.7)};
 \addplot[only marks, mark=*, mark size=2.6pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}, forget plot] coordinates {(0.042,57.3)};
-\addplot[only marks, mark=square*, mark size=2.6pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}, forget plot] coordinates {(0.003,72.0)};
+\addplot[only marks, mark=square*, mark size=2.6pt, color=tumbluedark_plot, mark options={fill=tumbluedark_plot}, forget plot] coordinates {(0.002,72.0)};
  
 % ---- callouts on the extreme points ----
 \node[font=\scriptsize\bfseries, color=tumbluedark_plot!80!black, anchor=east, xshift=-4pt]
