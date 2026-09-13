@@ -296,7 +296,7 @@ Possible justifications for this are:
 \begin{enumerate}
   \item Even though AutoPatch is primarily built from a crawler on real repositories, it is mostly composed of synthetically augmented code with controlled variations, probably highly preserving core graph topology.
     While CVEFixes contains real-world multi-file patches with few interventions to adapt the format to the dataset storage structure, containing domain-specific identifiers that CodeBERT's vocabulary captures.
-  \item CVEFixes vulnerabilities demand greater expertise; for example, the race conditions (CWE-362) often involve domain-specific locking primitives (e.g., \texttt{ip\_setup\_cork}) that the regex-based pattern embedder cannot match.
+  \item CVEFixes vulnerabilities require greater expertise; for example, the race conditions (CWE-362) often involve domain-specific locking primitives (e.g., \texttt{ip\_setup \_cork}) that the regex-based pattern embedder cannot match.
         On the other hand, AutoPatch locking patterns use standard primitives (\texttt{mutex\_lock}, \texttt{spin\_lock}) more commonly found in codebases, making them more generalizable and easier to identify and patch.
   \item By construction, AutoPatch queries draw from structurally similar augmentations of the same CVE, whereas CVEFixes embedders must learn to identify patterns that distinguish queries among different vulnerability instances, a harder task.
 \end{enumerate}
@@ -584,33 +584,6 @@ Some results for GPT-4o (Table~\ref{tab:cwe_comparison_gpt4o}) follow the patter
   \end{tabular}
 \end{table}
 
-However, analyzing the LLM-as-a-Judge functional validity (Table~\ref{tab:llmjudge_gpt4o}) reveals a difference in how GPT-4o handles RAG compared to Codex. For Codex-5.3, RAG pipelines maintained or slightly boosted functional validity. For GPT-4o, applying agentic tooling \textit{without} retrieval yielded the highest functional validity. Yet, introducing retrieval (Semantic and Semantic+Structure) degraded performance, dropping the number of valid patches to just 6 and 4, respectively, performing worse than the prompt-only baseline (13 valid).
-
-\begin{table}[H]
-  \centering
-  \caption{CVEFixes: Overall Pipeline Performance Summary on GPT-4o}
-  \label{tab:cvefixes_overall_pipeline_performance_gpt4o}
-    \resizebox{\linewidth}{!}{%
-  \begin{tabular}{lcccc}
-    \toprule
-    \makecell[b]{Pipeline} & 
-    \makecell[b]{BLEU-4} & 
-    \makecell[b]{BERTScore\\F1} & 
-    \makecell[b]{ROUGE-L\\F1} & 
-    \makecell[b]{LLM Judge\\Valid (\%)} \\
-    \midrule
-    GPT-4o Baseline & $0.165 \pm 0.068$ & $0.274 \pm 0.135$ & $0.318 \pm 0.139$ & 14.6  \\
-    Tool Calling (w/o Retrieval) & $0.798 \pm 0.042$ & $0.702 \pm 0.047$ & $0.838 \pm 0.038$ & $22.5$ \\
-    Semantic+Structure  & $0.805 \pm 0.040$ & $0.740 \pm 0.046$ & $0.833 \pm 0.039$ & $4.5$ \\
-    Semantic & $0.766 \pm 0.044$ & $0.710 \pm 0.049$ & $0.803 \pm 0.042$ & $6.7$ \\
-    Topological Structure & $0.535 \pm 0.056$ & $0.478 \pm 0.063$ & $0.587 \pm 0.054$ & $15.7$ \\
-    \bottomrule
-  \end{tabular}
-  }
-\end{table}
-
-
-
 
 \begin{table}[H]
   \centering
@@ -672,6 +645,33 @@ However, analyzing the LLM-as-a-Judge functional validity (Table~\ref{tab:llmjud
     \quad $^{\S}$ Very High Confidence ($99\%$) \quad $^{\ddagger}$ High Confidence ($95\%$) \quad $^{\mathparagraph}$ Moderate Confidence ($90\%$) \quad $^\dagger$ Moderate Confidence ($80\%$) \quad $^*$ Low Confidence ($<80\%$, margin exceeds threshold $0.05$).
   \end{minipage}
 \end{table}
+
+However, analyzing the LLM-as-a-Judge functional validity (Table~\ref{tab:llmjudge_gpt4o}) reveals a difference in how GPT-4o handles RAG compared to Codex. For Codex-5.3, RAG pipelines maintained or slightly boosted functional validity. For GPT-4o, applying agentic tooling \textit{without} retrieval yielded the highest functional validity. Yet, introducing retrieval (Semantic and Semantic+Structure) degraded performance, dropping the number of valid patches to just 6 and 4, respectively, performing worse than the prompt-only baseline (13 valid).
+
+
+\begin{table}[H]
+  \centering
+  \caption{CVEFixes: Overall Pipeline Performance Summary on GPT-4o}
+  \label{tab:cvefixes_overall_pipeline_performance_gpt4o}
+    \resizebox{\linewidth}{!}{%
+  \begin{tabular}{lcccc}
+    \toprule
+    \makecell[b]{Pipeline} & 
+    \makecell[b]{BLEU-4} & 
+    \makecell[b]{BERTScore\\F1} & 
+    \makecell[b]{ROUGE-L\\F1} & 
+    \makecell[b]{LLM Judge\\Valid (\%)} \\
+    \midrule
+    GPT-4o Baseline & $0.165 \pm 0.068$ & $0.274 \pm 0.135$ & $0.318 \pm 0.139$ & 14.6  \\
+    Tool Calling (w/o Retrieval) & $0.798 \pm 0.042$ & $0.702 \pm 0.047$ & $0.838 \pm 0.038$ & $22.5$ \\
+    Semantic+Structure  & $0.805 \pm 0.040$ & $0.740 \pm 0.046$ & $0.833 \pm 0.039$ & $4.5$ \\
+    Semantic & $0.766 \pm 0.044$ & $0.710 \pm 0.049$ & $0.803 \pm 0.042$ & $6.7$ \\
+    Topological Structure & $0.535 \pm 0.056$ & $0.478 \pm 0.063$ & $0.587 \pm 0.054$ & $15.7$ \\
+    \bottomrule
+  \end{tabular}
+  }
+\end{table}
+
 
 
 This probably happens because GPT-4o is optimized for instruction-following and context adherence. 
@@ -786,12 +786,6 @@ The Semantic and Topological Structure retrieval methods yield 35 and 32 valid p
 This may stem from DeepSeek having weaker memorization of CVEs, so it depends on the retrieved context rather than being hurt by it. 
 The retrieved examples provide the necessary semantic trajectory that the model cannot generate zero-shot. This is consistent with the hypothesis that, for open-weight models, enriching the context via RAG can improve the performance ceiling of the model's native generation capabilities.
 
-% TODO: add citation
-Nevertheless, DeepSeek shares the common failure mode of confident hallucination~\cite{lee-etal-2025-towards}. 
-Despite the improved validity under RAG, the model still generates many syntactically flawless patches that fail the functional test. 
-The Semantic+Structure strategy highlights this issue with only 29 valid patches (Table\ref{tab:deepseek_judge_summary}). 
-When the retriever supplies poor semantic grounding, DeepSeek mimics the syntax perfectly but fails to grasp the root cause, compounding the retriever's error rather than correcting it~\cite{zhang2025hallucinationcode}.
-
 
 % ─────────────────────────────────────────────────────────────────────────────
 % SOURCE FILES FOR TABLE tab:patch_similarity_by_cwe_deepseek
@@ -861,6 +855,11 @@ When the retriever supplies poor semantic grounding, DeepSeek mimics the syntax 
 \end{table}
 
 
+% TODO: add citation
+Nevertheless, DeepSeek shares the common failure mode of confident hallucination~\cite{lee-etal-2025-towards}. 
+Despite the improved validity under RAG, the model still generates many syntactically flawless patches that fail the functional test. 
+The Semantic+Structure strategy highlights this issue with only 29 valid patches (Table\ref{tab:deepseek_judge_summary}). 
+When the retriever supplies poor semantic grounding, DeepSeek mimics the syntax perfectly but fails to grasp the root cause, compounding the retriever's error rather than correcting it~\cite{zhang2025hallucinationcode}.
 
 
 \subsubsection{Synthesis}\label{sec:capability_synthesis}
@@ -868,6 +867,16 @@ When the retriever supplies poor semantic grounding, DeepSeek mimics the syntax 
 Ultimately, these comparative experiments reveal that automated program repair pipelines cannot be treated as model-agnostic. RAG is not a universal improvement. For highly capable, instruction-tuned models like GPT-4o, external retrieval can act as a distraction, over-fitting to incorrect retrieved context; here, unconstrained Tool Calling is vastly superior. Conversely, for models like DeepSeek-V4-Flash, where native internal priors are shallower, a fully integrated agentic pipeline coupling tool use with high-precision Semantic/Structure retrieval is an absolute necessity to achieve functional repair.
 
 \subsection{CVEFixes Generation Cost Analysis}
+
+Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs for the CVEFixes dataset experiments across different models and pipeline configurations. 
+
+\paragraph{GPT-5.3-Codex.} Codex-5.3 Baseline costs \$0.03 per entry, while tool-calling without retrieval averages \$0.06 per entry. 
+The retrieval-augmented tool-calling variants average \$0.08--0.10 per entry. 
+This is approximately 2.6–3.1 times cheaper than GPT-4o for comparable configurations (see below), and therefore more cost-efficient for CVEFixes. This cost advantage, combined with stronger performance metrics (Table~\ref{tab:cwe_comparison_all_methods}), makes it the preferred choice among those evaluated for production deployments of the tested models and pipeline.
+
+\paragraph{GPT-4o.} Once again, the tool-calling pipeline with retrieval has the highest costs, \$0.244-0.278 per entry on average. The model baseline without tools averages \$0.05 per entry, while the tool-calling baseline without retrieval costs \$0.22 per entry. This is consistent with the agentic interaction pattern being the main cost driver; the retrieval context itself likely contributes as well, since the prompt tokens used in each run add up to millions.
+
+
 % https://developers.openai.com/api/docs/pricing?_sm_nck=1
 % https://platform.claude.com/docs/en/about-claude/pricing
 % https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/deepseek/
@@ -900,17 +909,12 @@ Run & Model & \makecell{Prompt\\Tokens} & \makecell{Completion\\Tokens} & \makec
   \end{tabular}
 \end{table}
 
-Table~\ref{tab:cvefixes_generation_cost_summary} summarizes the generation costs for the CVEFixes dataset experiments across different models and pipeline configurations. 
-
-\paragraph{GPT-5.3-Codex.} Codex-5.3 Baseline costs \$0.03 per entry, while tool-calling without retrieval averages \$0.06 per entry. 
-The retrieval-augmented tool-calling variants average \$0.08--0.10 per entry. 
-This is approximately 1.66–3.67 times cheaper than GPT-4o for comparable configurations (see below), and therefore more cost-efficient for CVEFixes. This cost advantage, combined with stronger performance metrics (Table~\ref{tab:cwe_comparison_all_methods}), makes it the preferred choice among those evaluated for production deployments of the tested models and pipeline.
-
-\paragraph{GPT-4o.} Once again, the tool-calling pipeline with retrieval has the highest costs, \$0.24-0.278 per entry on average. The model baseline without tools averages \$0.05 per entry, while the tool-calling baseline without retrieval costs \$0.22 per entry. This is consistent with the agentic interaction pattern being the main cost driver; the retrieval context itself likely contributes as well, since the prompt tokens used in each run add up to millions.
 
 \paragraph{DeepSeek-V4-Flash.} As expected, DeepSeek offers the most cost-effective option with an average of \$0.022--0.024 per entry across all configurations of Agent with tools and retrieval. The model baseline costs only \$0.003 per entry. 
 However, as discussed in Table~\ref{tab:deepseek_judge_summary}, the DeepSeek generation pipeline experienced output formatting issues that limited the patch generation rate. 
 Therefore, the pipeline should likely include fallbacks and Human-in-the-Loop verifications if this model is deployed in production. The DeepSeek performance is an example that raw cost efficiency must be weighed against functional reliability.
+
+
 
                     
 \definecolor{siemenspetrol}{RGB}{0, 153, 153}     % Siemens Primary Petrol
@@ -948,12 +952,12 @@ Therefore, the pipeline should likely include fallbacks and Human-in-the-Loop ve
     },
     clip=false,
 ]
-
+% TODO: update median
 % ---- median reference lines (data-driven quadrant split) ----
 \addplot[dashed, color=tumgray_plot!70, no markers, forget plot]
-    coordinates {(0.057,0) (0.057,46)};
+    coordinates {(0.061,0) (0.061,46)};
 \addplot[dashed, color=tumgray_plot!70, no markers, forget plot]
-    coordinates {(0.0022,27.6) (0.34,27.6)};
+    coordinates {(0.0022,22.5) (0.34,22.5)};
 \node[font=\tiny, color=tumgray_plot!90!black, anchor=north west]
     at (axis cs:0.0025,45.5) {\textit{cheaper / more valid} $\nwarrow$};
 \node[font=\tiny, color=tumgray_plot!90!black, anchor=south east]
@@ -1043,7 +1047,7 @@ Therefore, the pipeline should likely include fallbacks and Human-in-the-Loop ve
 
 \end{axis}
 \end{tikzpicture}
-\caption{CVEFixes: patch-generation cost vs.\ LLM-Judge validity. Marker shape denotes the backbone model; color denotes the retrieval pipeline. Dashed lines mark the median cost and median validity across all plotted points. GPT-4o's Topological Structure pipeline is omitted — no per-entry cost was recorded for that configuration.}
+\caption{CVEFixes: patch-generation cost vs.\ LLM-Judge validity. Marker shape denotes the backbone model; color denotes the retrieval pipeline. Dashed lines mark the median cost and median validity across all plotted points.}
 \label{img:cost_bertscore_cvefixes}
 \end{figure}
 
@@ -1510,7 +1514,7 @@ The optimal retrieval paradigm depends on the underlying vulnerability topology:
 \addplot[dashed, color=tumgray_plot!70, no markers, forget plot]
     coordinates {(0.0197,25) (0.0197,92)};
 \addplot[dashed, color=tumgray_plot!70, no markers, forget plot]
-    coordinates {(0.0007,64.7) (0.055,64.7)};
+    coordinates {(0.0007,60.0) (0.055,60.0)};
 \node[font=\tiny, color=tumgray_plot!90!black, anchor=north west]
     at (axis cs:0.0008,91) {\textit{cheaper / more valid} $\nwarrow$};
 \node[font=\tiny, color=tumgray_plot!90!black, anchor=south east]
@@ -1556,7 +1560,7 @@ The optimal retrieval paradigm depends on the underlying vulnerability topology:
 
  
 % ---- Semantic+Structure (orange) ----
-\addplot[only marks, mark=triangle*, mark size=3pt, color=tumorange_plot, mark options={fill=tumorange_plot}, forget plot] coordinates {(0.018,76.0)};
+\addplot[only marks, mark=triangle*, mark size=3pt, color=tumorange_plot, mark options={fill=tumorange_plot}, forget plot] coordinates {(0.018,69.3)};
 \addplot[only marks, mark=*, mark size=2.6pt, color=tumorange_plot, mark options={fill=tumorange_plot}, forget plot] coordinates {(0.039,57.3)};
 
 \addplot[only marks, mark=square*, mark size=2.6pt, color=tumorange_plot, mark options={fill=tumorange_plot}, forget plot] coordinates {(0.002,69.3)};
