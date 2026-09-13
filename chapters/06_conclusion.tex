@@ -18,17 +18,17 @@ Breaking down the performance by CWE, the Semantic embedder performs consistentl
 On CVEFixes, conversely, the hybrid Semantic+Structure retriever leads with 64.93\% CWE accuracy (Section~\ref{sec:cvefixes-retrieval}), while Topological Structure shows 21.19\% CWE accuracy.
 
 Given the difference between the datasets, it is possible to infer the sharpest capabilities of each embedder. 
-The Structural embeddings excel using the vulnerability's signature is expressed within the local structure represented by the Code Property Graph passed as input, which encodes the control-flow and data-flow structure.
-On AutoPatch, the vulnerabilities are single-function, Topological Structure reaches 100\% CWE hit rate on Concurrency (Table~\ref{tab:autopatch_by_category_scaled}), and correctly identifies arithmetic allocation bugs (CWE-190) through WL/GIN kernels even with frozen, shallow weights. 
+The Structural embeddings excel when the vulnerability's signature is expressed within the local structure represented by the Code Property Graph passed as input, which encodes the control-flow and data-flow structures (see Section~\ref{sec:autopatch_retrieval}).
+% On AutoPatch, the vulnerabilities are single-function, Topological Structure reaches 100\% CWE hit rate on Concurrency (Table~\ref{tab:autopatch_by_category}), and correctly identifies arithmetic allocation bugs (CWE-190) through WL/GIN kernels even with frozen, shallow weights. 
 These vulnerability signals are local and follow execution order or control- or data-flow patterns visible in one function's graph. 
-Conversely, the CWE-362 CVEFixes exemplify the fragility of the structural embeddings ($hit@1 \approx 0.0$) because these bugs stem from inter-procedural synchronization and arise from the absence of cross-function lock leaves.
-Conversely, Semantic embeddings perform well in such cases, as well as when the signal resides in the domain vocabulary or is a non-local or configuration-dependent trigger, such as Memory Safety and Resource Management vulnerabilities, since tokens can carry signal when graph topology cannot.
+In contrast, the CWE-362 CVEFixes exemplify the fragility of structural embeddings, as these bugs stem from inter-procedural synchronization and arise from the absence of cross-function lock guards.
+Contrariwise, Semantic embeddings perform well in such cases, as well as when the signal resides in the domain vocabulary or is a non-local or configuration-dependent trigger, such as Memory Safety and Resource Management vulnerabilities, since tokens can carry signal when graph topology cannot.
 
 % Besides that, the dataset's single-function scope guarantees that the relevant signal is within the CPG in the first place.
 
-Conversely, NULL Pointer Dereference (CWE-476) is a case where no embedder succeeded. The Semantic model's wide IQR of false positives is a known, documented weakness, since a missing null check is lexically and sequentially near-identical to code where no check was ever needed, a distinction no embedder investigated in this thesis reliably captures.
+Conversely, NULL Pointer Dereference (CWE-476) is a case where no embedder achieved a strong accuracy. The Semantic model's wide IQR of false positives is a known, documented weakness, since a missing null check is lexically and sequentially near-identical to code where no check was ever needed, a distinction no embedder investigated in this thesis reliably captures.
 
-Regarding the pipeline, we identified that $L_2$-normalization is a major preprocessing component for retrieval quality. Removing this normalization degrades hit@1 to 0.014 for Topological Structure, 0.055 for GIN, and 0.000 for WL (Table~\ref{tab:pca_l2}). PCA, for comparison, was characterized as a second-order effect component on the performance impact. 
+Regarding the pipeline, we identified that $L_2$-normalization is a major preprocessing component for retrieval quality. Removing this normalization degrades hit@1 to near zero for Topological Structure, GIN, and WL (Table~\ref{tab:pca_l2}). PCA, for comparison, was characterized as a second-order effect component on the performance impact. 
 
 The composition of the dataset also shows great importance. The CWE-362 subset, for example, with the Semantic+Structure pipeline, has a brittle retrieval due to the structural component. For this embedding, the structural feature vector is built from regex matches against standard locking primitives (e.g., \texttt{mutex\_lock}, \texttt{spin\_lock}); when a codebase uses a custom primitive (\texttt{ip\_setup\_cork()}), that feature group goes to zero, and the vector becomes near-constant noise. Concatenating the structural vector with the CodeBERT embedding and reducing dimensionality with PCA dilutes the semantic signal. 
 A hand-crafted structural detector is only as good as its pattern list.
@@ -37,7 +37,7 @@ Nevertheless, once the patterns are identified, this vector can be enriched with
 
 The variant analysis reinforces this sensitivity to code structure. This was observed on the manually augmented dataset, which does not preserve the original code structure and achieves much lower performance than the LLM-augmented variants, which retain it. In practice, classification performance may vary with code style and quality, hindering the adoption of such strategies.
 
-Taken together, in answer to RQ1, the main finding of the retrieval experiments is that unsupervised Topological Structure is as competitive as semantic embeddings for classifying vulnerabilities. This is an important option for legacy or domain-specific languages where pretrained Language models, such as a CodeBERT-class model, have no coverage, while it remains viable (0.822 hit@1).
+Taken together, in answer to RQ1, the main finding of the retrieval experiments is that unsupervised Topological Structure is as competitive as semantic embeddings for classifying vulnerabilities. This is an important option for legacy or domain-specific languages where pretrained language models, such as a CodeBERT-class model, have no coverage, while it remains viable.
 Besides not needing training, these embedder models can run on CPU, enabling a lightweight, cheaper approach for deployment early in the pipeline as a filter or a fallback to a semantic retriever.
 
 
@@ -47,27 +47,27 @@ Besides not needing training, these embedder models can run on CPU, enabling a l
  
 \section{Patch Generation Trade-offs}\label{sec:conclusion_patch_generation}
 
-The patching experiment results demonstrate that retrieval quality does not consistently translate into improved judge-assessed patch quality, debunking a hypothesis held at the beginning of this work.
-Whereas the retrieval results showed that some approaches are better suited to a given vulnerability type, there is no clear "model specialist per CWE" in the patching quality results. 
+The patching experiment results demonstrate that retrieval quality does not consistently translate into improved judge-assessed patch quality.
+Whereas the retrieval results showed that some approaches are better suited to a given vulnerability type, there is no clear best per CWE in the patching quality results. 
 Instead, the interaction between retrieval and the LLM as a judge of patch validity is model-dependent, the central and least expected finding of the patching section.
 
-By isolating the retrieval contribution by comparing the best retrieval pipeline against its own baselines (directly prompting the LLM and tool calling without retrieval), a clear decrease is evident. 
-Retrieval helps GPT-5.3-Codex, increasing validity from 21.3\% (baseline, no tooling, no retrieval) to 41.6\% with the Semantic embedder (see Table~\ref{tab:llmjudge_codex53}).
-It helps DeepSeek-V4-Flash substantially, pushing baseline 20.2\% (or Tool calling without retrieval with 13.5\%) to $\sim$32\% Semantic+Structure, as shown in Table~\ref{tab:deepseek_judge_summary}.
-However, retrieval augmentation hurts GPT-4o pipeline, reducing the Tool Calling without retrieval from 20 valid patches to 5 on average for Semantic and Semantic+Structure retrieval (see Table~\ref{tab:llmjudge_gpt4o}), performing worse than the prompt-only baseline. 
-This could be explained by the increase in the input length and complexity from injecting the retrieved code example into the prompt. Besides, GPT-4o is less capable than GPT-5.3-Codex for such a task, as it is specialized in programming and security and can even rely on its training knowledge, for example, to recover from potential retrieval errors.
-This finding suggests that LLM selection cannot be reduced to buying the most capable general-purpose model outright and reinforces the case for domain-specialist models over specialist models~\cite{vulnerabilityhallucination}.
+By isolating the retrieval contribution by comparing the best retrieval pipeline against its own baselines (directly prompting the LLM and tool-calling without retrieval), the effect varies across models. 
+Retrieval helps GPT-5.3-Codex, increasing validity from 21.3\% (prompt-only baseline) to 37.2\% (tool-calling baseline) to 39.3\% with the Semantic embedder (see Table~\ref{tab:llmjudge_codex53}).
+It helps DeepSeek-V4-Flash substantially with both baselines (Table~\ref{tab:deepseek_judge_summary}).
+However, some tested retrieval augmentations harmed the GPT-4o pipeline, reducing Tool Calling without retrieval from 20 valid patches to 5 on average for Semantic and Semantic+Structure retrieval (see Table~\ref{tab:llmjudge_gpt4o}) and performing worse than the prompt-only baseline. 
+This could be explained by the increase in the input length and complexity from injecting the retrieved code example into the prompt. Besides, in contrast to GPT-4o, GPT-5.3-Codex is specialized in programming and security and can even rely on its training knowledge, for example, to recover from potential retrieval errors.
+This finding suggests that LLM selection cannot be reduced to buying the most capable general-purpose model outright and reinforces the case for domain-specialist models over general-purpose models~\cite{vulnerabilityhallucination}.
  
 A qualitative case illustrates a further risk beyond raw validity.
-For one GPT-5.3-Codex query where the retriever returned the wrong CVE, the LLM generated a technically coherent patch for a different, correctly diagnosed vulnerability. But its own chain of thought explicitly claimed to address the CWE stated in the (wrong) retrieved prompt. 
-Even though the patch was correct, the misattributed reasoning raises trustworthiness concerns for production use and motivates stronger verification harnesses or, ultimately, specialists, to ensure the system's safety, as it remains unclear how often or in which direction this kind of dissimulation occurs.
+For one GPT-5.3-Codex query in which the retriever returned the correct CWE and CVE, the LLM generated a technically coherent patch for a drifted yet correctly diagnosed vulnerability. But its own chain of thought explicitly claimed to address the retrieved CWE stated in the augmented prompt. 
+Even though the patch was correct, the misattributed reasoning raises trustworthiness concerns for production use and motivates stronger verification harnesses or, ultimately, specialists, to ensure the system's safety, as it remains unclear how often or in which direction this kind of drift occurs.
 
-A related concern, relevant to engineering teams beyond this thesis, is that aggregated metrics can appear strong even when the patch of matter is missed.
+A related concern, relevant to engineering teams beyond this thesis, is that aggregated metrics can appear strong even when the substance of the fix is missed.
 These errors may pass undetected, even when measurements capture a different spectrum of the evaluated object. 
 As discussed in the Chapter \ref{chapter:results} on the baseline, empty fixes may result in inflating lexical scores that calculate F1 based on code addition and removal. For example, Codex's near-zero \texttt{hunk\_added\_f1} (0.011) against a high \texttt{hunk\_removed\_f1} (0.719) indicates that the model deletes vulnerable code without replacing it, resulting in an empty, non-functional fix. 
 Consequently, aggregate lexical metrics (BLEU-4, BERTScore, ROUGE-L, and even whole-file Hunk F1) can stay high in cases like this, or when a patch's stated justification does not match what the model actually did. 
 Detailed dataset annotations, e.g., indicating what should be added or removed, would help surface this, but such labeling is expensive and was not feasible for this work.
-LLM-Judge validity was, therefore, treated as the decisive metric throughout, despite its own limitations.
+LLM as a Judge's validity was, therefore, treated as the decisive metric throughout, despite its own limitations.
  
 The adoption of a RAG pipeline and its configuration depend on the model adopted. 
 For GPT-5.3-Codex and DeepSeek-V4-Flash, retrieval (particularly Semantic for Codex) yields a real gain in validity over tool-calling without retrieval and is worth its added cost. 
@@ -75,35 +75,35 @@ For GPT-4o, retrieval degrades validity below even the prompt-only baseline on C
 
 % Error rate is a second factor worth weighing independently of validity.
 Error rate is a second factor to consider when choosing a model. 
-For Codex, almost all generated patches were well-formed, and validity rate losses were semantic rather than a failure to produce output at all. 
-On the complex CVEFixes dataset, DeepSeek's patch generation validity rate is low (12-35 of 89 records produced a non-empty patch for the retrieval pipelines; see Table~\ref{tab:deepseek_judge_summary}) despite almost complete generation (93.3--100\% completion; Table~\ref{tab:cvefixes_overall_pipeline_performance_deepseek}) — so the shortfall is semantic, instead of completeness. 
-On the single-function AutoPatch dataset, validity is comparatively higher (53.0--72.0\%), 
-Deploying this model in production would likely require additional engineering effort, such as creating new tools, exploring alternative pipeline architectures, or implementing error-recovery mechanisms.
+For Codex, almost all generated patches were well-formed on AutoPatch, and the loss in validity rate was semantic rather than due to a failure to produce output at all. 
+On the complex CVEFixes dataset, DeepSeek's patch generation validity rate is low (12-35 of 89, see Table~\ref{tab:deepseek_judge_summary}) despite near-full completion generation (Table~\ref{tab:cvefixes_overall_pipeline_performance_deepseek}), suggesting the shortfall is semantic rather than completeness. 
+On the single-function AutoPatch dataset, validity is comparatively higher (53.3-72.0\%). 
+Nevertheless, deploying DeepSeek-V4-Flash in production would likely require additional engineering effort, such as creating new tools, exploring alternative pipeline architectures, or implementing error-recovery mechanisms.
 
 One approach to further reduce failure modes is to compile or run the generated patch against a test harness or a proof-of-concept exploit rather than only reading it.
-As of today, the pipeline only performs text-similarity evaluation, and has a validity LLM judge diff. 
+As of today, the pipeline only performs text-similarity evaluation and has an LLM judge validity check for the code changes. 
 A sandboxed build-and-test step, e.g., compile success, existing unit tests still pass, PoC no longer triggers the CVE where one exists, would give a more reliable validity signal than the LLM judgment alone, and could plausibly also serve as an agent feedback signal during generation rather than only a post-hoc filter. This would concomitantly address a real limitation of the evaluation methodology itself.
  
-Grounding the model directly in the Code Property Graph, rather than only in linguistic prompt context, could reduce the seen hallucinated justifications. 
+Grounding the model directly in the Code Property Graph, rather than only in the linguistic prompt context, could reduce the hallucinated justifications observed above. 
 % TODO: rephrase this
-As a model that is shown a retrieved CVE only as text can misattribute its own reasoning to that text, whereas a model whose retrieved evidence is a structured graph object or whose patch is checked against one after the fact has less room to produce a plausible but false causal reasoning, because the check no longer relies on the model's own narration.
+When models process retrieved CVE data only as unstructured text, they can misattribute their own reasoning to the retrieved context. However, providing evidence as a structured graph object or validating the generated patch against one restricts the model's ability to produce plausible but false causal reasoning. This is because the verification becomes grounded in an objective constraint rather than relying on the model's own narration.
 
-Regarding the cost, GPT-5.3-Codex is a cost vs. performance leader among the two proprietary models: on CVEFixes, it costs \$0.078-0.099 per entry with retrieval versus GPT-4o's \$0.244-0.262 (Table~\ref{tab:cvefixes_generation_cost_summary}), a $\sim$2.5$\times$ gap, while also producing higher BERTScore and far higher validity.
+Regarding the cost, GPT-5.3-Codex is a cost vs. performance leader among the two proprietary models: on CVEFixes, it costs \$0.078-0.099 per entry with retrieval versus GPT-4o's \$0.244-0.278 (Table~\ref{tab:cvefixes_generation_cost_summary}), a $\sim$2.9$\times$ gap, while also producing higher BERTScore and far higher validity.
 On AutoPatch, the gap narrows to $\sim$2.1--2.2$\times$, but Codex remains the winner (Table~\ref{tab:generation_cost_summary_condensed}).
-For the open-weights model, DeepSeek-V4-Flash is 8-17$\times$ cheaper than Codex and GPT-4o, respectively, but its cost advantage is amortized by the high error rate, since many entries had their pipelines fail.
-On the single-function AutoPatch dataset, the formatting bottleneck largely disappears (74-93\% completion), suggesting that DeepSeek's reliability is dataset-complexity-dependent, whereas Codex's is not.
+For the open-weight model, DeepSeek-V4-Flash is cheaper than Codex and GPT-4o Section~\ref{sec:autopatch_cost}, but its cost advantage is offset by the high error rate, as many entries had pipeline failures.
+On the single-function AutoPatch dataset, the formatting bottleneck is much lower than with tooling and retrieval (74-93\% completion), suggesting that DeepSeek's reliability is dataset-complexity-dependent, whereas Codex's is not.
 
 Summing up in answer to RQ2, retrieval augmentation is not cost-neutral, and its cost is not always justified by the outcome. 
 For Codex and DeepSeek, paying for retrieval improves validity. 
-For GPT-4o, retrieval is simultaneously the most expensive configuration on CVEFixes (\$0.220-0.260/entry) and the worst-performing one (4-6 valid patches, versus 20 for tool-calling without retrieval).
-Future implementations should treat context augmentation costs justified for each backbone model relative to its no-retrieval baseline.
-Besides, a cheaper model with a higher completion rate should not be automatically considered as the better production choice if a meaningful share of its outputs "successes" are unparseable or format-broken outputs rather than absent generation.
+For GPT-4o, retrieval is simultaneously the most expensive configuration on CVEFixes and the worst-performing one (4-6 valid patches, versus 20 for tool-calling without retrieval).
+Future implementations should treat context augmentation costs justified for each backbone model relative to its no-retrieval baseline. %is the "justified" weird?
+Besides, a cheaper model with a higher completion rate should not be automatically considered the better production choice if a meaningful share of its outputs ''successes`` are unparseable or format-broken outputs rather than absent generation.
 
 \section{Takeaways}\label{sec:conclusion_takeaways}
 
 Three takeaways summarize the answer to RQ2 and its implications for deployment.
 
-First, no embedder wins unanimously; therefore, it might be considered as an auxiliary component, and rankings flip between datasets.
+First, no embedder wins unanimously; therefore, it might be considered an auxiliary component, and rankings flip between datasets.
 The AutoPatch numbers most favorable to Topological Structure are the ones most likely to be inflated by the dataset's single-function, topology-preserving construction.
 
 Second, base model capabilities dominate retrieval and prompting choices for patch validity, meaning that choosing a stronger backbone outweighs investment in retrieval sophistication. 
@@ -113,7 +113,7 @@ Third, retrieval augmentation is not a safe default. Instead, it is a per-model 
  
 \section{Future Work}
  
-The concrete next steps, in rough priority order: (1) a sandboxed compile-and-test verification stage, replacing or checked against LLM-Judge validity, ideally reused as an agent feedback signal during generation, not only as a post-hoc filter; (2) a Generator/Reviewer dual-agent architecture in which the Reviewer checks the patch's CPG against known-secure topologies rather than the Generator's self-reported reasoning, targeting the hallucinated-justification failure mode directly; (3) supervised fine-tuning of the GIN embedder to test whether a trained structural model can close or reverse the gap with CodeBERT-based retrieval on CPU-only infrastructure; (4) a controlled ablation isolating how much of AutoPatch's retrieval advantage is a dataset-construction artifact of topology-preserving augmentation, as raised in Section~\ref{sec:conclusion_takeaways}; (5) replacing the regex-based structural pattern detectors (synchronization primitives being the clearest failure case) with a learned or more comprehensive alternative; and (6) extending the model-dependence finding on retrieval's helpfulness to additional backbones, since right now it rests on three models and one plausible but unconfirmed explanation; (7) investigating the C-to-C++ Hunk F1 degradation as a diff/hunk fragmentation problem under RAII and in template-heavy code. 
+The concrete next steps, in rough priority order: (1) a sandboxed compile-and-test verification stage, replacing or being checked against LLM as a Judge validity, ideally reused as an agent feedback signal during generation, not only as a post-hoc filter; (2) a Generator/Reviewer dual-agent architecture in which the Reviewer checks the patch's CPG against known-secure topologies rather than the Generator's self-reported reasoning, targeting the hallucinated-justification failure mode directly; (3) supervised fine-tuning of the GIN embedder to test whether a trained structural model can close or reverse the gap with CodeBERT-based retrieval on CPU-only infrastructure; (4) a controlled ablation isolating how much of AutoPatch's retrieval advantage is a dataset-construction artifact of topology-preserving augmentation, as raised in Section~\ref{sec:conclusion_takeaways}; (5) replacing the regex-based structural pattern detectors (synchronization primitives being the clearest failure case) with a learned or more comprehensive alternative; and (6) extending the model-dependence finding on retrieval's helpfulness to additional backbones, since right now it rests on three models and one plausible but unconfirmed explanation; (7) investigating the C-to-C++ Hunk F1 degradation as a diff/hunk fragmentation problem under RAII and in template-heavy code. 
 % Finally, the model-dependent retrieval performance should be replicated on at least one more backbone to be able to judge its generalization or if it is a GPT-4o-specific behavior.
 
 % Extend the pipeline to vulnerability identification, not only classification. As it could give a complementary signal to the LLM patching loop and avoid regression.  
